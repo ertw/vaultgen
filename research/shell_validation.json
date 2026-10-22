@@ -1,0 +1,129 @@
+{
+  "description": "Final shell corrections: stable upper wall/skin loft correspondence, one critical Y130.85 event station, opposed mouth ledges bounded by the existing hook profile, and independent measured envelope constants.",
+  "source_sha256": "70e689ceb22a620764bd98eb776c7c143292c52dedabe13c9d3ecafe5a4b9e03",
+  "file_sha256": {
+    "src/vault/shell.py": "587368720619e5b117ee40f0101cc7c77d4c124239160c40916c31acaf665960",
+    "src/vault/shell_profiles.json": "78c87fdd77b4d71469f56172eff74e3a7489abff8b9c9bd1e5dc84cb5f67909c",
+    "tools/measure_shell_profiles.py": "aa114a381aaf06a920aec301ded341f62f51d442a345d3f83c5aef9fafa992c9"
+  },
+  "generator_geometry_replay_exact": true,
+  "outer_sections": 82,
+  "native_and_mesh": {
+    "valid": true,
+    "solids": 1,
+    "faces": 11303,
+    "build_seconds": 18.94140813697595,
+    "former_pocket_points_inside": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "mesh": {
+      "watertight": true,
+      "winding_consistent": true,
+      "faces": 64408
+    },
+    "source_to_shell": {
+      "count": 246,
+      "max_distance": 0.017266295655701744,
+      "p99_distance": 0.01689682778265071,
+      "worst": [
+        81.912109375,
+        173.33612060546875,
+        46.100830078125
+      ],
+      "nearest": [
+        81.89634425673654,
+        173.32907887188892,
+        46.100830078125
+      ]
+    },
+    "shell_to_source": {
+      "count": 787,
+      "max_distance": 0.06934356689453125,
+      "p99_distance": 0.02196405911388178,
+      "worst": [
+        -82.33104705810547,
+        132.375,
+        46.998748779296875
+      ],
+      "nearest": [
+        -82.400390625,
+        132.375,
+        46.998748779296875
+      ]
+    },
+    "elapsed_seconds": 37.4967905789963
+  },
+  "upper_corner_wide_comparison": {
+    "source_to_model": {
+      "count": 1162,
+      "max_distance": 0.0787085900816368,
+      "p99_distance": 0.05942409795328486,
+      "worst": [
+        -81.7216796875,
+        173.68316650390625,
+        40.32977294921875
+      ],
+      "nearest": [
+        -81.79503587561784,
+        173.70888351426402,
+        40.3421239490049
+      ]
+    },
+    "model_to_source": {
+      "count": 2393,
+      "max_distance": 0.08449099669435724,
+      "p99_distance": 0.06270932589813037,
+      "worst": [
+        81.3516845703125,
+        174.34722900390625,
+        41.628021240234375
+      ],
+      "nearest": [
+        81.27419014227756,
+        174.34747945155732,
+        41.59435702448653
+      ]
+    }
+  },
+  "opposed_mouth_relief_comparison_and_dimension_check": {
+    "reported_source_point_mm": 9.480102539072277e-05,
+    "source_to_model": {
+      "count": 159,
+      "max_distance": 0.003742251762503109,
+      "p99_distance": 0.003400496093529996,
+      "worst": [
+        75.1396484375,
+        187.48675537109375,
+        8.93731689453125
+      ],
+      "nearest": [
+        75.14335300222311,
+        187.48672129493193,
+        8.937845560097989
+      ]
+    },
+    "model_to_source": {
+      "count": 58,
+      "max_distance": 0.00424736735788662,
+      "p99_distance": 0.004228230310366852,
+      "worst": [
+        75.13876342773438,
+        187.4595489501953,
+        8.968255043029785
+      ],
+      "nearest": [
+        75.1388222589302,
+        187.45666494460838,
+        8.965137483064401
+      ]
+    },
+    "height_50_outside": {
+      "valid": true,
+      "max_z": 50.0000001
+    }
+  },
+  "comparison_note": "Distances are exact point-to-triangle queries on sampled mesh vertices, not a Hausdorff proof. The broad upper-corner maximum is under 0.085 mm, accepted in favor of compact semantic correspondence. The established 0.02 mm connector root overlaps are unchanged."
+}

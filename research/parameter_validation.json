@@ -1,0 +1,110 @@
+{
+  "default_pocket_geometry": [
+    {
+      "native_valid": true,
+      "native_faces": 16,
+      "max_bound_delta_mm": 0.0,
+      "symmetric_difference_mm3": 0,
+      "volume_delta_mm3": -2.842170943040401e-14
+    },
+    {
+      "native_valid": true,
+      "native_faces": 7,
+      "max_bound_delta_mm": 0.0,
+      "symmetric_difference_mm3": 0,
+      "volume_delta_mm3": 3.907985046680551e-14
+    },
+    {
+      "native_valid": true,
+      "native_faces": 14,
+      "max_bound_delta_mm": 0.0,
+      "symmetric_difference_mm3": 0,
+      "volume_delta_mm3": -1.4210854715202004e-13
+    },
+    {
+      "native_valid": true,
+      "native_faces": 7,
+      "max_bound_delta_mm": 0.0,
+      "symmetric_difference_mm3": 0,
+      "volume_delta_mm3": 3.552713678800501e-14
+    }
+  ],
+  "pocket_floor_response": [
+    {
+      "pocket_floor_mm": 6.4914,
+      "native_valid": true,
+      "section_x_mm": 70.3344,
+      "section_intersections_z_mm": {
+        "185.0": [
+          0.0,
+          6.4914,
+          37.501408,
+          47.0
+        ],
+        "187.5": [
+          0.0,
+          8.6478,
+          38.07312231,
+          47.0
+        ]
+      }
+    },
+    {
+      "pocket_floor_mm": 6.091399999999999,
+      "native_valid": true,
+      "section_x_mm": 70.3344,
+      "section_intersections_z_mm": {
+        "185.0": [
+          0.0,
+          6.0914,
+          37.501408,
+          47.0
+        ],
+        "187.5": [
+          0.0,
+          8.2478,
+          38.07312231,
+          47.0
+        ]
+      }
+    }
+  ],
+  "default_corner_radii": [
+    21.26160934,
+    8.06525726,
+    19.947083882105154,
+    149.03446022578333
+  ],
+  "invalid_corner_inputs": [
+    {
+      "input": "{'corner_height': 13}",
+      "rejected": true,
+      "message": "Corner spans, radii and angles are coupled: these values give a nonpositive derived arc radius. Use ModuleSpec to change box size."
+    },
+    {
+      "input": "{'corner_height': 11}",
+      "rejected": true,
+      "message": "Corner spans, radii and angles are coupled: these values give a nonpositive derived arc radius. Use ModuleSpec to change box size."
+    },
+    {
+      "input": "{'corner_width': 0}",
+      "rejected": true,
+      "message": "Corner width, height and radii must be positive and finite"
+    },
+    {
+      "input": "{'corner_first_radius': inf}",
+      "rejected": true,
+      "message": "Corner width, height and radii must be positive and finite"
+    },
+    {
+      "input": "{'corner_turns': (0.5, 0.4, 1.2)}",
+      "rejected": true,
+      "message": "Corner tangent angles must satisfy 0 < first < second < third < pi/2"
+    }
+  ],
+  "source_sha256": {
+    "src/vault/shell.py": "17e248d4304cdbb11a7e3c2223c785e833bcb03c69cd9dd8063397b02962bc21",
+    "src/vault/envelope.py": "32a78508e1d86e2b838e2ac2e8a44056dcb19b144d5977e8daee5494bc5b3608"
+  },
+  "before_shell_sha256": "0a8c5bd3f79e413a7cb05041284896d59e54f1822bdff5462f816db1015dca0f"
+}

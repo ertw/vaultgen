@@ -1,0 +1,333 @@
+{
+  "description": "Upper rail tip correspondence registered at the measured constant-arc tangent Y165.0999. The same source contours and 0.04 mm station-reduction rule are retained. No added measurement stations or runtime fitting.",
+  "profile_sha256": "28ae57161b6536528d34d7770b836f39553f0751fc0bede5687c4fcffaad1e3b",
+  "source_sha256": "70e689ceb22a620764bd98eb776c7c143292c52dedabe13c9d3ecafe5a4b9e03",
+  "reproducibility": "Cached raw source rail sections reproduce the previous full-resolution profiles exactly under the prior registration. The corrected registration and existing station reducer were applied to these same raw sections.",
+  "measurement_section_count": 3328,
+  "stored_section_count": 905,
+  "validation_scope": "Native individual rails and model-to-source sampled surface distance, excluding hidden root material below Z47.03. Final full-model comparison and build manifest remain authoritative.",
+  "rails": [
+    {
+      "name": "upper_outer_rail_left",
+      "sections": 53,
+      "valid": true,
+      "solids": 1,
+      "shells": 1,
+      "watertight": true,
+      "winding_consistent": true,
+      "repair": {
+        "triangles_added": 0,
+        "missing_triangles_filled": 0,
+        "t_junctions_split": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.005,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "surface_samples": 19135,
+      "surface_distance_mm": {
+        "max": 0.01774927853749375,
+        "p99": 0.00583195403042241,
+        "p95": 0.002044086261818611
+      },
+      "tip_samples": 12,
+      "tip_max_distance_mm": 0.0014844386831685888,
+      "worst_points": [
+        {
+          "point": [
+            -82.3826413464625,
+            135.67399927677744,
+            49.869267958879796
+          ],
+          "nearest": [
+            -82.400390625,
+            135.67399927677744,
+            49.869267958879796
+          ],
+          "distance": 0.01774927853749375
+        },
+        {
+          "point": [
+            -82.38279194634363,
+            151.3740506012025,
+            50.723642050339045
+          ],
+          "nearest": [
+            -82.400390625,
+            151.3740506012025,
+            50.723642050339045
+          ],
+          "distance": 0.01759867865636977
+        },
+        {
+          "point": [
+            -82.37255674688313,
+            139.33157927456352,
+            50.74278707891081
+          ],
+          "nearest": [
+            -82.38439819220747,
+            139.33157927456352,
+            50.75460741648948
+          ],
+          "distance": 0.016731413802872106
+        },
+        {
+          "point": [
+            -82.37295834830223,
+            147.42829421704238,
+            50.743066314763745
+          ],
+          "nearest": [
+            -82.38444850376264,
+            147.42829421704238,
+            50.75454478135796
+          ],
+          "distance": 0.016241270512456305
+        },
+        {
+          "point": [
+            -82.37540981041502,
+            170.82088822052023,
+            50.74235137542339
+          ],
+          "nearest": [
+            -82.38601774288644,
+            170.82088822052023,
+            50.75295930789481
+          ],
+          "distance": 0.015001881969819325
+        },
+        {
+          "point": [
+            -82.37341634383786,
+            163.77900632315803,
+            50.74518419406138
+          ],
+          "nearest": [
+            -82.38361832935358,
+            163.77900632315803,
+            50.75537580115847
+          ],
+          "distance": 0.014420449496616482
+        },
+        {
+          "point": [
+            -82.36927161498905,
+            141.32213979789015,
+            50.7494809018011
+          ],
+          "nearest": [
+            -82.37939972144832,
+            141.32213979789015,
+            50.75959870499846
+          ],
+          "distance": 0.014316021863316663
+        },
+        {
+          "point": [
+            -82.38645055703107,
+            170.18945303870078,
+            50.71811616741733
+          ],
+          "nearest": [
+            -82.400390625,
+            170.18945303870078,
+            50.71811616741733
+          ],
+          "distance": 0.013940067968931658
+        },
+        {
+          "point": [
+            -82.3695021059498,
+            147.2018869890558,
+            50.750094634548326
+          ],
+          "nearest": [
+            -82.37920798341587,
+            147.2018869890558,
+            50.7597906382835
+          ],
+          "distance": 0.013719203541702482
+        },
+        {
+          "point": [
+            -59.65693231079774,
+            12.610107454876013,
+            51.580177928822565
+          ],
+          "nearest": [
+            -59.65693230506104,
+            12.610099224625987,
+            51.593606080452844
+          ],
+          "distance": 0.013428154152481971
+        }
+      ],
+      "seconds": 15.884202003479004
+    },
+    {
+      "name": "upper_outer_rail_right",
+      "sections": 53,
+      "valid": true,
+      "solids": 1,
+      "shells": 1,
+      "watertight": true,
+      "winding_consistent": true,
+      "repair": {
+        "triangles_added": 0,
+        "missing_triangles_filled": 0,
+        "t_junctions_split": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.005,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "surface_samples": 19135,
+      "surface_distance_mm": {
+        "max": 0.0225849418792012,
+        "p99": 0.005089800743559588,
+        "p95": 0.0020122143009697053
+      },
+      "tip_samples": 13,
+      "tip_max_distance_mm": 0.001373295755228668,
+      "worst_points": [
+        {
+          "point": [
+            82.37616465460948,
+            140.37219957728573,
+            50.730804085278464
+          ],
+          "nearest": [
+            82.39212751496001,
+            140.37219957728573,
+            50.74678115287914
+          ],
+          "distance": 0.0225849418792012
+        },
+        {
+          "point": [
+            82.3774744094595,
+            145.8551092055355,
+            50.729764498184785
+          ],
+          "nearest": [
+            82.39330276832018,
+            145.8551092055355,
+            50.74560694458673
+          ],
+          "distance": 0.022394643382320115
+        },
+        {
+          "point": [
+            82.37868857460396,
+            157.8873212652523,
+            50.730877265837705
+          ],
+          "nearest": [
+            82.39335400736074,
+            157.8873212652523,
+            50.74555575110934
+          ],
+          "distance": 0.02074928547717971
+        },
+        {
+          "point": [
+            82.37996401716714,
+            154.64159071389713,
+            50.727107793423926
+          ],
+          "nearest": [
+            82.400390625,
+            154.64159071389713,
+            50.727107793423926
+          ],
+          "distance": 0.0204266078328601
+        },
+        {
+          "point": [
+            82.37977303139566,
+            163.89968005643703,
+            50.73037364965547
+          ],
+          "nearest": [
+            82.39414852612693,
+            163.89968005643703,
+            50.74476193885121
+          ],
+          "distance": 0.020339068679491524
+        },
+        {
+          "point": [
+            82.37759339360198,
+            158.58436683226978,
+            50.73347615505053
+          ],
+          "nearest": [
+            82.39150648561845,
+            158.58436683226978,
+            50.74740162998424
+          ],
+          "distance": 0.019684841416378076
+        },
+        {
+          "point": [
+            82.3817049323064,
+            142.9055712725906,
+            50.719630391615475
+          ],
+          "nearest": [
+            82.400390625,
+            142.9055712725906,
+            50.719630391615475
+          ],
+          "distance": 0.018685692693594547
+        },
+        {
+          "point": [
+            82.37895478323433,
+            169.14115499623284,
+            50.73384994902106
+          ],
+          "nearest": [
+            82.39200088908508,
+            169.14115499623284,
+            50.746907666154826
+          ],
+          "distance": 0.018458192073289432
+        },
+        {
+          "point": [
+            82.38237208473153,
+            138.35025037570628,
+            50.7167115717535
+          ],
+          "nearest": [
+            82.39470937237142,
+            138.34939483584805,
+            50.72940302395522
+          ],
+          "distance": 0.01772042814796278
+        },
+        {
+          "point": [
+            82.37437221350424,
+            164.18923667780024,
+            50.74232715340465
+          ],
+          "nearest": [
+            82.3854689653258,
+            164.18923667780024,
+            50.75343378154696
+          ],
+          "distance": 0.015700162090904593
+        }
+      ],
+      "seconds": 9.097771406173706
+    }
+  ]
+}

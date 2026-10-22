@@ -1,0 +1,197 @@
+{
+  "default_model_sha256": "d03f9acb8fdf4264a012142d42ba68df32accfedd7a9da322a1048cce9ad4d82",
+  "regression_tests_passed": 20,
+  "source_files": {
+    "src/vault/__init__.py": "90eac6b6934ef77b14a25fc936163cb17253a945c1aacb671f9eec81438df6bc",
+    "src/vault/__main__.py": "47e141e80a99f69f2319d05fa4dae0e2cf350d6bf0f5af3edf4b8cddabfe8d87",
+    "src/vault/alignment_features.py": "10b1edad5b061173cfe5745c79c587bc78e2e53e35ace40abdee8e5bce67cb83",
+    "src/vault/connectors.py": "79ff8d21c475b83847c29f065b84a3e6c3d334076827d712bb8bb8136767ec5f",
+    "src/vault/envelope.py": "32a78508e1d86e2b838e2ac2e8a44056dcb19b144d5977e8daee5494bc5b3608",
+    "src/vault/hook_features.py": "16f5d47eb86333bb7f1f6651c575192130fa3feda829e7c80faf663ee6d784e2",
+    "src/vault/mating_features.py": "ae73729c1131a2b4ae853e39f7a38aab515d570d8fd64df427d84ceadc82c470",
+    "src/vault/mesh_cleanup.py": "ad88d2623967045126cae52ce087c0034b026e26249bf42bcccaefadd91085a4",
+    "src/vault/model.py": "480c7a7d4a0819f0769733e38c686d040313da5d4f45847f15600e84c893bc69",
+    "src/vault/native_renderer.py": "bb61a46a0257defef36136dd621128504ce6df584d34f194072432fd2ce46bf1",
+    "src/vault/rasterizer.c": "e91498f6eaa6506049d6f1bc00c78f6bc2f1c4c91e2f03f0b7863a65c9d1af1a",
+    "src/vault/reference.py": "0f71dec16b5f5e2a65948028934e16339f55de1b89499a9bb843ebf4befa9626",
+    "src/vault/render.py": "0a62dc758f66dfb00c7e31fdfcbe45bd0843e9623c9f1a75d11e414b2f326f24",
+    "src/vault/shell.py": "17e248d4304cdbb11a7e3c2223c785e833bcb03c69cd9dd8063397b02962bc21",
+    "src/vault/spec.py": "19e8287b91c1a37013e2f4909fc41390d7deb70f7a7e65e7d4b341b07f5facd9",
+    "src/vault/validation.py": "57761e10bf28bcc17cbf5109f565e8f058f7bfb1b3eaa5eb9d678d0eb3e14fda"
+  },
+  "variants": [
+    {
+      "name": "S4 Module 1F",
+      "module": {
+        "family": "S",
+        "depth_units": 4,
+        "height_units": 1
+      },
+      "native_faces": 564,
+      "stl_triangles": 10386,
+      "stl_bytes": 519384,
+      "cad_valid": true,
+      "solids": 1,
+      "boundary_shells": 1,
+      "stl_watertight": true,
+      "stl_winding_consistent": true,
+      "microscopic_triangle_closure": {
+        "triangles_added": 0,
+        "missing_triangles_filled": 0,
+        "t_junctions_split": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.005,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "files": {
+        "s4_module_1f.brep": "c23ca358f306828c9931f461ce1ebe07b1dc82db825f24453d7b41c17fbaf40e",
+        "s4_module_1f.step": "46b8a58f8149e3d8ef7cedb7bcb7d35704af48e992385f12d0e37423a3c45915",
+        "s4_module_1f.stl": "2d760f2e39a59ea4a8947b8a4718671918a71dc00b4a981d7061bdf84f007ae0",
+        "s4_module_1f_model.stl": "d03f9acb8fdf4264a012142d42ba68df32accfedd7a9da322a1048cce9ad4d82"
+      }
+    },
+    {
+      "name": "L4 Module 2F",
+      "module": {
+        "family": "L",
+        "depth_units": 4,
+        "height_units": 2
+      },
+      "native_faces": 913,
+      "stl_triangles": 18182,
+      "stl_bytes": 909184,
+      "cad_valid": true,
+      "solids": 1,
+      "boundary_shells": 1,
+      "stl_watertight": true,
+      "stl_winding_consistent": true,
+      "microscopic_triangle_closure": {
+        "triangles_added": 0,
+        "missing_triangles_filled": 0,
+        "t_junctions_split": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.005,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "files": {
+        "l4_module_2f.brep": "d53d500e3df3a2737c9f7de5fa1e13dd5a5854de975b6d016a222c75a12c349b",
+        "l4_module_2f.step": "23450b3d3c089fe606c67be9ee48bd1ed3982359c282474a7e3306edd345b35d",
+        "l4_module_2f.stl": "864bfcf1f1646eff20a83686b635dcc4e481c372de7e37fd3a3e91da2e51e101",
+        "l4_module_2f_model.stl": "42badf4bd83cabf6058c0a8e0adecffa875e5df05258837f29d4ed59ccd22ca2"
+      }
+    },
+    {
+      "name": "M5 Module 1F",
+      "module": {
+        "family": "M",
+        "depth_units": 5,
+        "height_units": 1
+      },
+      "native_faces": 564,
+      "stl_triangles": 10442,
+      "stl_bytes": 522184,
+      "cad_valid": true,
+      "solids": 1,
+      "boundary_shells": 1,
+      "stl_watertight": true,
+      "stl_winding_consistent": true,
+      "microscopic_triangle_closure": {
+        "triangles_added": 0,
+        "missing_triangles_filled": 0,
+        "t_junctions_split": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.005,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "files": {
+        "m5_module_1f.brep": "c7665481c0f98fe021d912275af8e6438354c41fca2693801f79f42fbd250a75",
+        "m5_module_1f.step": "256731063154e07b754817a1980cab607ee5079fe43927447beafdf9d0dbcefb",
+        "m5_module_1f.stl": "0ddcfd9a9062010822c0428908fdef896f7be3d5b1fc8f7644fd00f823b7d232",
+        "m5_module_1f_model.stl": "61b6934a963f420702be64ae85df6b8f9882ac067abf095a30c1f7e108e9ed01"
+      }
+    },
+    {
+      "name": "S3 Module 2F",
+      "module": {
+        "family": "S",
+        "depth_units": 3,
+        "height_units": 2
+      },
+      "native_faces": 656,
+      "stl_triangles": 12788,
+      "stl_bytes": 639484,
+      "cad_valid": true,
+      "solids": 1,
+      "boundary_shells": 1,
+      "stl_watertight": true,
+      "stl_winding_consistent": true,
+      "microscopic_triangle_closure": {
+        "triangles_added": 0,
+        "missing_triangles_filled": 0,
+        "t_junctions_split": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.005,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "files": {
+        "s3_module_2f.brep": "9b6974fecf24f6b69e67b4f4f7c61c47dfe11df7dd6552d3614be4f566838a8d",
+        "s3_module_2f.step": "951e2c3eec320a526a957c19a7c627626d5a350128a527a08fbcb91dd520e28f",
+        "s3_module_2f.stl": "3e4c8d47093407dcee0f10e842874fb46150df887c300e6b8eb1824052145b1b",
+        "s3_module_2f_model.stl": "c9a6bc8f5d9ab76f5c1336a4062b5537c32b369fecb97964ac9f4868ec3b6179"
+      }
+    },
+    {
+      "name": "XL4 Module 1F",
+      "module": {
+        "family": "XL",
+        "depth_units": 4,
+        "height_units": 1
+      },
+      "native_faces": 821,
+      "stl_triangles": 15772,
+      "stl_bytes": 788684,
+      "cad_valid": true,
+      "solids": 1,
+      "boundary_shells": 1,
+      "stl_watertight": true,
+      "stl_winding_consistent": true,
+      "microscopic_triangle_closure": {
+        "triangles_added": 0,
+        "missing_triangles_filled": 0,
+        "t_junctions_split": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.005,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "files": {
+        "xl4_module_1f.brep": "1045f8a923c7848d703eb8c36d25bbcd3dd3a51d3b22a9b3c8e8f05ebcec33d0",
+        "xl4_module_1f.step": "9d30ac785f5a2b09f5e187e8ad7e92e4701939b11f5dc44b334f32b46750d718",
+        "xl4_module_1f.stl": "71447e82a697926af6d9549b41d8390b21a432a2b1ab2fc02955cf2de8ac04f3",
+        "xl4_module_1f_model.stl": "4113274eef7f9417b374784dc9aa32cdfd7b15c1d1efa170787b52851ac5626c"
+      }
+    }
+  ],
+  "default_source_comparison": {
+    "sample_points": 292761,
+    "max_retained_surface_mm": 0.20377991793684272,
+    "max_mechanical_region_mm": 0.07976454032090431,
+    "cleanup_max_mm": 0.0002798596191402325,
+    "passed": true
+  },
+  "scope": "Full bidirectional source accuracy comparison is S4 1F only. Other variants passed native validity, connectedness, mesh closure/winding, and CAD/mesh volume checks."
+}

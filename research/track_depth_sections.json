@@ -1,0 +1,17 @@
+[
+  {
+    "depth_units": 3,
+    "floor_endpoints_y": 76.89708886718745,
+    "floor_y_max": 104.69970117187495
+  },
+  {
+    "depth_units": 4,
+    "floor_endpoints_y": 118.8980043945312,
+    "floor_y_max": 146.70055566406245
+  },
+  {
+    "depth_units": 5,
+    "floor_endpoints_y": 160.89710794067383,
+    "floor_y_max": 188.69967446899415
+  }
+]

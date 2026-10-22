@@ -1,0 +1,343 @@
+{
+  "profile_audit": {
+    "method": "Reflect X and compare dense contour samples to exact opposite contour segments at every retained Z station (connectors) or Y station (outside). This measures the checked-in reconstruction data, including its sampling/reduction error, not design intent.",
+    "connector_pairs": [
+      {
+        "pair": "lower_closed_end_dovetail",
+        "stations": 90,
+        "max_mm": 0.21528777083834427,
+        "p95_mm": 0.151526426948401,
+        "p99_mm": 0.15212990480998476,
+        "worst": {
+          "max": 0.21528777083834427,
+          "p95": 0.15168692058465932,
+          "rms": 0.04415626130513156,
+          "point": [
+            49.6816,
+            12.7302
+          ],
+          "nearest": [
+            49.46631222916166,
+            12.7302
+          ],
+          "z": -1.34375,
+          "direction": "left_reflected_to_right"
+        }
+      },
+      {
+        "pair": "lower_alignment_tab",
+        "stations": 30,
+        "max_mm": 0.0061845589921101915,
+        "p95_mm": 0.0005223240741250474,
+        "p99_mm": 0.002914239597827765,
+        "worst": {
+          "max": 0.0061845589921101915,
+          "p95": 0.00365685038048912,
+          "rms": 0.0014215565690945022,
+          "point": [
+            14.0811,
+            4.6328
+          ],
+          "nearest": [
+            14.081125750112935,
+            4.638984505385119
+          ],
+          "z": -0.4,
+          "direction": "left_reflected_to_right"
+        }
+      },
+      {
+        "pair": "lower_open_end_dovetail",
+        "stations": 107,
+        "max_mm": 0.03989367877288891,
+        "p95_mm": 0.0014299868320291908,
+        "p99_mm": 0.005961533417310952,
+        "worst": {
+          "max": 0.03989367877288891,
+          "p95": 0.0008297218149363777,
+          "rms": 0.006153441363345231,
+          "point": [
+            35.1215,
+            145.3037
+          ],
+          "nearest": [
+            35.12474929686818,
+            145.34346113272903
+          ],
+          "z": -0.02575,
+          "direction": "left_reflected_to_right"
+        }
+      },
+      {
+        "pair": "lower_open_end_detent",
+        "stations": 14,
+        "max_mm": 0.006671499540949533,
+        "p95_mm": 0.001690455820918959,
+        "p99_mm": 0.004834511965471237,
+        "worst": {
+          "max": 0.006671499540949533,
+          "p95": 0.0026304821682971782,
+          "rms": 0.0010916449674522254,
+          "point": [
+            43.3027,
+            153.0194
+          ],
+          "nearest": [
+            43.30270175001621,
+            153.01272850068855
+          ],
+          "z": -4.5,
+          "direction": "left_reflected_to_right"
+        }
+      },
+      {
+        "pair": "lower_outer_hook",
+        "stations": 43,
+        "max_mm": 0.03540997043520709,
+        "p95_mm": 0.003309541667495601,
+        "p99_mm": 0.00524141808067101,
+        "worst": {
+          "max": 0.03540997043520709,
+          "p95": 0.0038175196316988336,
+          "rms": 0.0033619925203934027,
+          "point": [
+            73.5933,
+            148.4259
+          ],
+          "nearest": [
+            73.55871179129595,
+            148.43348431439665
+          ],
+          "z": -2.15625,
+          "direction": "left_reflected_to_right"
+        }
+      },
+      {
+        "pair": "upper_outer_rail",
+        "stations": 73,
+        "max_mm": 0.0677000000000021,
+        "p95_mm": 0.0014804264102151572,
+        "p99_mm": 0.0036539457796834532,
+        "worst": {
+          "max": 0.0677000000000021,
+          "p95": 0.005099999999998772,
+          "rms": 0.007825727348844912,
+          "point": [
+            79.5784,
+            173.6924340307656
+          ],
+          "nearest": [
+            79.6461,
+            173.6924340307656
+          ],
+          "z": 51.6998,
+          "direction": "left_reflected_to_right"
+        }
+      },
+      {
+        "pair": "upper_alignment_tab",
+        "stations": 20,
+        "max_mm": 0.016502433997838996,
+        "p95_mm": 0.0012287771727163526,
+        "p99_mm": 0.007194256611986977,
+        "worst": {
+          "max": 0.016502433997838996,
+          "p95": 0.0009953630044616528,
+          "rms": 0.0022860476082520293,
+          "point": [
+            13.5709,
+            14.5147
+          ],
+          "nearest": [
+            13.584765822357712,
+            14.52364814495845
+          ],
+          "z": 47.4,
+          "direction": "right_to_left_reflected"
+        }
+      },
+      {
+        "pair": "upper_open_end_dovetail",
+        "stations": 86,
+        "max_mm": 0.019466297222664422,
+        "p95_mm": 0.0014461455112034479,
+        "p99_mm": 0.0037706026610582954,
+        "worst": {
+          "max": 0.019466297222664422,
+          "p95": 0.002047414769890812,
+          "rms": 0.002903971666870993,
+          "point": [
+            31.8983,
+            146.2248
+          ],
+          "nearest": [
+            31.880144849047454,
+            146.23182333406945
+          ],
+          "z": 49.375,
+          "direction": "left_reflected_to_right"
+        }
+      }
+    ],
+    "outside_corners": [
+      {
+        "region": "lower",
+        "max_mm": 0.20591563398716362,
+        "p95_mm": 0.00099996729182961,
+        "p99_mm": 0.00227341912051685,
+        "worst": {
+          "max": 0.20591563398716362,
+          "p95": 0.17073385618589354,
+          "rms": 0.06595324817953345,
+          "point": [
+            82.594,
+            11.647
+          ],
+          "nearest": [
+            82.38890164552869,
+            11.66532793805914
+          ],
+          "y": 75.632,
+          "direction": "left_reflected_to_right"
+        }
+      },
+      {
+        "region": "upper",
+        "max_mm": 0.027951638491932256,
+        "p95_mm": 0.001333838603964466,
+        "p99_mm": 0.0036653992190846764,
+        "worst": {
+          "max": 0.027951638491932256,
+          "p95": 0.02353292342989032,
+          "rms": 0.009113501322992571,
+          "point": [
+            82.4004,
+            35.882
+          ],
+          "nearest": [
+            82.3724746204022,
+            35.880788691326536
+          ],
+          "y": 0.0,
+          "direction": "right_to_left_reflected"
+        }
+      }
+    ]
+  },
+  "source_confirmation": [
+    {
+      "region": "closed_end_dovetail",
+      "profile_point": [
+        -49.6816,
+        12.7302,
+        -1.34375
+      ],
+      "source_point": [
+        -49.6816,
+        12.73016357421875,
+        -1.34375
+      ],
+      "profile_to_source_mm": 3.642578124996021e-05,
+      "reflected_source_point": [
+        49.6816,
+        12.73016357421875,
+        -1.34375
+      ],
+      "opposite_source_nearest": [
+        49.4892578125,
+        12.73016357421875,
+        -1.34375
+      ],
+      "reflection_error_mm": 0.1923421875000031,
+      "cropped_triangle_counts": [
+        65,
+        65
+      ]
+    },
+    {
+      "region": "left_lower_bulge",
+      "profile_point": [
+        -82.594,
+        75.632,
+        11.647
+      ],
+      "source_point": [
+        -82.59374986747393,
+        75.6320006950065,
+        11.646911372607361
+      ],
+      "profile_to_source_mm": 0.0002653706433545164,
+      "reflected_source_point": [
+        82.59374986747393,
+        75.6320006950065,
+        11.646911372607361
+      ],
+      "opposite_source_nearest": [
+        82.39230473221733,
+        75.63238124060372,
+        11.651428292527063
+      ],
+      "reflection_error_mm": 0.20149612874461056,
+      "cropped_triangle_counts": [
+        175,
+        128
+      ]
+    },
+    {
+      "region": "opposed_mouth_pockets",
+      "source_vertical_sections": [
+        {
+          "x": -70.3344,
+          "y": 187.1,
+          "z_hits": [
+            9.2294465,
+            40.1039236
+          ]
+        },
+        {
+          "x": 70.3344,
+          "y": 187.1,
+          "z_hits": [
+            6.6665116,
+            37.7695266
+          ]
+        }
+      ]
+    }
+  ],
+  "native_counts": {
+    "brep_sha256": "f9267d95af0e8e2444f3a6e1f6aa8ea9da970431273cca87816429dd30866526",
+    "native_valid": true,
+    "solids": 1,
+    "shells": 1,
+    "native_faces": 11258,
+    "native_face_types": {
+      "GeomType.BSPLINE": 5434,
+      "GeomType.PLANE": 5772,
+      "GeomType.CYLINDER": 42,
+      "GeomType.CONE": 8,
+      "GeomType.EXTRUSION": 2
+    },
+    "bspline_surface_degrees_u_by_v": {
+      "1x1": 5432,
+      "3x1": 2
+    },
+    "stl_triangles": 416452,
+    "stl_binary_size_matches_header": true
+  },
+  "mouth_pocket_flat_region_confirmation": {
+    "method": "Intersect original STL triangles vertically at identical Y and |X|, with the same coordinate transform on both sides.",
+    "x_abs_mm": 70.3344,
+    "y_mm": [
+      185.0,
+      186.0
+    ],
+    "left_lower_z_mm": 9.50140380859375,
+    "left_upper_z_mm": 40.5113525390625,
+    "right_lower_z_mm": 6.49139404296875,
+    "right_upper_z_mm": 37.50140380859375,
+    "additional_clearance_mm": 3.010009765625,
+    "picture": "research/mouth_pocket_section.png",
+    "triangle_details": "/tmp/vault-symmetry/pocket_recheck.json"
+  }
+}

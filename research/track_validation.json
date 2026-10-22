@@ -1,0 +1,23 @@
+{
+  "native_valid": true,
+  "solids": 1,
+  "mesh_watertight": true,
+  "source_to_model": {
+    "points": 4169,
+    "max": 0.00152587890625,
+    "p99": 0.001354126889429713,
+    "mean": 0.0002657466186499433
+  },
+  "model_to_source": {
+    "points": 3855,
+    "max": 0.0014771339214552412,
+    "p99": 0.0012948500410747004,
+    "mean": 0.00017910731264620544
+  },
+  "scope": "Two shallow upper mechanical tracks and adjacent skin; final assembled validation is separate",
+  "source_sha256": "70e689ceb22a620764bd98eb776c7c143292c52dedabe13c9d3ecafe5a4b9e03",
+  "connector_source_sha256": "70c1cc8ac8e57de8e00d644eeeef927be8e88846c4ec98864c33699c5c3bc902",
+  "construction": "Ruled six-corner XZ sections at each measured floor station; side bevel follows the local floor height",
+  "distance_unit": "mm",
+  "method": "Exact point-to-triangle distances from deterministic surface samples plus vertices in the two track regions"
+}

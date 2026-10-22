@@ -1,0 +1,82 @@
+{
+  "purpose": "Local validation of native attachment construction; final assembled model validation is separate",
+  "source_sha256": "70e689ceb22a620764bd98eb776c7c143292c52dedabe13c9d3ecafe5a4b9e03",
+  "connector_source_sha256": "33b5f86b77b09de80133b3ab90e994adc78792a246f910ff4c74a177bfb1186c",
+  "method": {
+    "caps": "Explicit straight-edged polygon faces, sewn to unchanged loft sides",
+    "constant_outline_bands": "Native polygon extrusions, including the measured attachment bands",
+    "sleeve_overlap_mm": 0.02,
+    "sleeve_skin_unification": "Only neighboring planar faces at Z=0 or47; all other edges protected",
+    "boolean": "Ordinary BRepAlgoAPI_Fuse; no glue shortcut or fuzzy tolerance"
+  },
+  "geometry_preservation": {
+    "right_rail_polygon_cap_volume_difference_mm3": -4.547473508864641e-12,
+    "right_hook_polygon_cap_volume_difference_mm3": -6.821210263296962e-13,
+    "root_band_xy_outlines_identical": true,
+    "root_band_geometry": "Same exact prism previously represented by a degree-one B-spline loft"
+  },
+  "all_18_individual_solids_valid": true,
+  "both_detent_pairs_valid_one_solid_one_shell": true,
+  "stl_meshing": {
+    "absolute_chord_tolerance_mm": 0.005,
+    "angular_tolerance_rad": 1.0
+  },
+  "local_contacts": [
+    {
+      "feature": "lower_outer_hook_right",
+      "valid": true,
+      "solids": 1,
+      "shells": 1,
+      "boolean_seconds": 10.276239156723022,
+      "triangles": 72006,
+      "repair": {
+        "triangles_added": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.0001,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "watertight": true,
+      "winding_consistent": true
+    },
+    {
+      "feature": "upper_outer_rail_right",
+      "valid": true,
+      "solids": 1,
+      "shells": 1,
+      "boolean_seconds": 123.16498327255249,
+      "triangles": 114334,
+      "repair": {
+        "triangles_added": 0,
+        "max_repaired_diameter_mm": 0.0,
+        "allowed_diameter_mm": 0.0001,
+        "boundary_edges_before": 0,
+        "boundary_edges_after": 0,
+        "boundary_components_left_open": 0,
+        "nonmanifold_edges": 0
+      },
+      "watertight": true,
+      "winding_consistent": true
+    }
+  ],
+  "internal_cap_probe": {
+    "point": [
+      69.118,
+      139.333,
+      0.0
+    ],
+    "z_offsets_mm": [
+      -0.01,
+      0.0,
+      0.01
+    ],
+    "states": [
+      "IN",
+      "IN",
+      "IN"
+    ]
+  },
+  "notes": "These local checks establish the attachment construction. The final build manifest and full surface comparison are the authoritative checks of the assembled model."
+}

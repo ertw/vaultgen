@@ -1,0 +1,45 @@
+{
+  "purpose": "Historical targeted meshing checks on full-resolution connector profiles before station reduction; final assembled-part validation supersedes these measurements",
+  "source_sha256": "70e689ceb22a620764bd98eb776c7c143292c52dedabe13c9d3ecafe5a4b9e03",
+  "native_geometry": "18 additive measured-section BRep solids and two mechanical track cutters",
+  "mesh_settings": {
+    "absolute_chord_tolerance_mm": 0.005,
+    "angular_tolerance_rad": 1.0,
+    "relative": false
+  },
+  "checks": [
+    {
+      "feature": "upper_outer_rail_left",
+      "native_valid": true,
+      "export_faces": 118896,
+      "export_watertight": true,
+      "export_winding_consistent": true,
+      "triangles_repaired": 0,
+      "surface_sample_count": 3046,
+      "source_distance_mm": {
+        "median": 0.0003290115989074138,
+        "p95": 0.0017597540715780498,
+        "p99": 0.003205891172092209,
+        "maximum": 0.021342209676916468
+      }
+    },
+    {
+      "feature": "upper_closed_end_locking_bridge",
+      "native_valid": true,
+      "export_faces": 144608,
+      "export_watertight": true,
+      "export_winding_consistent": true,
+      "triangles_repaired": 0,
+      "surface_sample_count": 3183,
+      "source_distance_mm": {
+        "median": 0.00037104125986430435,
+        "p95": 0.001978092245562467,
+        "p99": 0.003348922603237042,
+        "maximum": 0.006818430075439163
+      }
+    }
+  ],
+  "sampling": "4000 area-weighted points per feature, random seed 42; root overlap faces within 0.03 mm of Z=47 excluded; distances to source triangles, not source vertices",
+  "limitations": "Sampled distance checks are not a mathematical Hausdorff bound or a substitute for full assembled-part validation.",
+  "meshing_rationale": "Angular tolerance 0.2 over-refined tiny C0 spans and produced microscopic omissions. Angular tolerance 1.0 retained the 0.005 mm absolute chord criterion and produced closed rail and bridge meshes without repair."
+}

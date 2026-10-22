@@ -1,0 +1,11 @@
+.venv/
+.cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+out/
+result
+.local-env
+
+# Purchased reference assets stay local.
+original_files/

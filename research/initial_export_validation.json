@@ -1,0 +1,68 @@
+{
+  "checked_at_utc": "2026-10-22T05:18:30.698255+00:00",
+  "method": "Reload the published STEP and BREP files; check native topology, bounds, and closed-shell adaptive volume. No geometry or source files are modified.",
+  "build_manifest_sha256": "a8b2a0135e4b9a57c6eda0ac07dee681be09840d928f14ce8adc15265943e03b",
+  "adaptive_volume_relative_epsilon": 1e-07,
+  "bounds_tolerance_mm": 1e-06,
+  "relative_volume_tolerance": 1e-07,
+  "artifacts": {
+    "s4_module_1f.brep": {
+      "sha256": "f9267d95af0e8e2444f3a6e1f6aa8ea9da970431273cca87816429dd30866526",
+      "matches_build_manifest_hash": true,
+      "unchanged_during_check": true,
+      "valid": true,
+      "solids": 1,
+      "boundary_shells": 1,
+      "faces": 11258,
+      "bounds_mm": [
+        [
+          -82.59400009999999,
+          -1e-07,
+          -5.2063001
+        ],
+        [
+          82.40040010000001,
+          188.10000010000002,
+          51.8007001
+        ]
+      ],
+      "volume_mm3": 325491.23815700057,
+      "adaptive_integration_error_estimate": 1.2109618427687837e-09,
+      "maximum_bounds_difference_from_build_mm": 7.105427357601002e-15,
+      "relative_volume_difference_from_build": 5.364905787607493e-16,
+      "passed": true
+    },
+    "s4_module_1f.step": {
+      "sha256": "93bb451eb1fc39a5c03b3dafea016e012df6ca21dafe1eb38266247e411f82ca",
+      "matches_build_manifest_hash": true,
+      "unchanged_during_check": true,
+      "valid": true,
+      "solids": 1,
+      "boundary_shells": 1,
+      "faces": 11258,
+      "bounds_mm": [
+        [
+          -82.59400010000003,
+          -1.0000000710542735e-07,
+          -5.2063001
+        ],
+        [
+          82.40040010000025,
+          188.1000001,
+          51.8007001
+        ]
+      ],
+      "volume_mm3": 325491.2381447678,
+      "adaptive_integration_error_estimate": 1.2109618087736238e-09,
+      "maximum_bounds_difference_from_build_mm": 2.4158453015843406e-13,
+      "relative_volume_difference_from_build": 3.758295334411969e-11,
+      "passed": true
+    }
+  },
+  "between_formats": {
+    "maximum_bounds_difference_mm": 2.4158453015843406e-13,
+    "absolute_volume_difference_mm3": 1.223274739459157e-05,
+    "relative_volume_difference": 3.758241685354095e-11
+  },
+  "passed": true
+}

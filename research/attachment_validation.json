@@ -1,0 +1,43 @@
+{
+  "purpose": "Local validation of the clean detent-to-carrier attachment; assembled-part validation is separate",
+  "source_sha256": "70e689ceb22a620764bd98eb776c7c143292c52dedabe13c9d3ecafe5a4b9e03",
+  "profile_section_count": 887,
+  "datum_z_mm": {
+    "measured_detent_shoulder": -4.5,
+    "carrier_crown": -4.4976
+  },
+  "attachment_regularization": {
+    "xy_scale_about_profile_center": 0.999,
+    "affected_sections": "Only the shoulder and crown profiles; all lower detent profiles are retained",
+    "reason": "The measured shoulder nearly coincides with the carrier outline. A contained attachment avoids sliver faces; the explicit shoulder-point displacement is below 0.012 mm, and the cap extends 0.0024 mm to the carrier crown. Full source-fidelity validation remains separate."
+  },
+  "native_union": "Ordinary native BRep union; no glue shortcut, no fuzzy tolerance, no global face unification",
+  "stl_meshing": {
+    "absolute_chord_tolerance_mm": 0.005,
+    "angular_tolerance_rad": 1.0
+  },
+  "checks": [
+    {
+      "side": "left",
+      "maximum_shoulder_xy_shift_mm": 0.011879023392621674,
+      "root_footprint_clearance_mm": 0.003450200000003178,
+      "native_valid": true,
+      "native_solid_count": 1,
+      "stl_triangles": 34744,
+      "stl_watertight": true,
+      "stl_winding_consistent": true,
+      "stl_repairs": 0
+    },
+    {
+      "side": "right",
+      "maximum_shoulder_xy_shift_mm": 0.011879023392621674,
+      "root_footprint_clearance_mm": 0.003450200000003178,
+      "native_valid": true,
+      "native_solid_count": 1,
+      "stl_triangles": 35280,
+      "stl_watertight": true,
+      "stl_winding_consistent": true,
+      "stl_repairs": 0
+    }
+  ]
+}
