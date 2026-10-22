@@ -115,7 +115,8 @@ def _summary(points, distances, closest, tolerance):
 def compare(model_path: Path, output: Path, samples=100_000, tolerance=.25, mating_tolerance=.1):
     print('Loading the reference and exported model…', flush=True)
     reference = load_reference()
-    model = trimesh.load_mesh(model_path)
+    from .tessellation import load_model
+    model = load_model(model_path)
     source_points = _surface_points(reference, samples, seed=12345)
     model_points = _surface_points(model, samples, seed=54321)
     source_mask = decoration_mask(source_points)

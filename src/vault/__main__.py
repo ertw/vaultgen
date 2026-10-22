@@ -25,59 +25,27 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
 def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAULT_SPEC):
     """Export and check an already constructed native model."""
     from build123d import export_brep, export_step
+    from .model import print_orientation
     from .render import render_review
-    import trimesh
     from dataclasses import asdict
 
     output.mkdir(parents=True, exist_ok=True)
     stem = spec.slug
-    print('Exporting STEP, BREP, and STL…', flush=True)
-    export_step(module, output / f'{stem}.step')
-    export_brep(module, output / f'{stem}.brep')
-    # Model-space mesh is retained explicitly for reproducible surface checks.
-    # build123d 0.13's STL helper uses relative deflection. Use an absolute
-    # 0.05 mm edge chord tolerance, suitable for these printable features.
-    from OCP.BRepMesh import BRepMesh_IncrementalMesh
-    from OCP.BRepTools import BRepTools
-    from OCP.StlAPI import StlAPI_Writer
-    BRepTools.Clean_s(module.wrapped)
-    mesher = BRepMesh_IncrementalMesh()
-    mesher.SetShape(module.wrapped)
-    settings = mesher.ChangeParameters()
-    settings.Deflection = .05
-    settings.Angle = .5
-    settings.Relative = False
-    settings.InParallel = True
-    # Retain interior deflection control: trimming a curved face can otherwise
-    # leave long triangles whose interiors miss the native surface badly.
-    settings.ControlSurfaceDeflection = True
-    mesher.Perform()
-    if not mesher.IsDone():
-        raise ValueError('Absolute-tolerance CAD tessellation failed')
-    writer = StlAPI_Writer()
-    writer.ASCIIMode = False
-    if not writer.Write(module.wrapped, str(output / f'{stem}_model.stl')):
-        raise ValueError('STL export failed')
-    mesh = trimesh.load_mesh(output / f'{stem}_model.stl')
-    faces_before = len(mesh.faces)
-    # OCC can emit repeated or collapsed triangles on very short trimmed edges.
-    # Remove only exact zero-area/repeated triangles. A minimum-height filter
-    # would incorrectly remove skinny valid triangles on the connector ramps.
-    # No remeshing or smoothing is performed.
-    mesh.update_faces(mesh.area_faces > 0.0)
-    mesh.update_faces(mesh.unique_faces())
-    mesh.remove_unreferenced_vertices()
-    removed_triangles = faces_before - len(mesh.faces)
-    from .mesh_cleanup import close_micro_triangles
-    repair = close_micro_triangles(mesh)
-    mesh.export(output / f'{stem}_model.stl')
-    printable_mesh = mesh.copy()
-    from trimesh.transformations import rotation_matrix
-    import numpy as np
-    printable_mesh.apply_transform(rotation_matrix(np.pi / 2, [1, 0, 0]))
-    printable_mesh.export(output / f'{stem}.stl')
-    if not mesh.is_watertight or not mesh.is_winding_consistent or mesh.volume <= 0:
-        raise ValueError('Exported STL is not a closed, consistently oriented positive-volume mesh')
+    print('Exporting STEP solids and BREP…', flush=True)
+    if not module.is_valid or len(module.solids()) != 1 or len(module.shells()) != 1:
+        raise ValueError('Expected one valid solid with one boundary shell')
+    from .exports import check_step
+    if not export_step(module, output / f'{stem}.step'):
+        raise ValueError('STEP export failed')
+    restored, step_check = check_step(module, output / f'{stem}.step')
+    printable = print_orientation(module)
+    if not export_step(printable, output / f'{stem}_print.step'):
+        raise ValueError('Print STEP export failed')
+    _, print_step_check = check_step(printable, output / f'{stem}_print.step')
+    if not export_brep(module, output / f'{stem}.brep'):
+        raise ValueError('BREP export failed')
+    from .tessellation import review_mesh
+    mesh = review_mesh(restored)
     print('Rendering exported geometry…', flush=True)
     render_review(mesh, output / 'review')
     bbox = module.bounding_box()
@@ -97,19 +65,14 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         'boundary_shells': len(module.shells()),
         'cad_volume_mm3': cad_volume,
         'cad_volume_integration_error': volume_error,
-        'cad_mesh_volume_relative_difference': volume_difference,
+        'cad_review_mesh_volume_relative_difference': volume_difference,
         'model_bounds_mm': [list(bbox.min), list(bbox.max)],
-        'stl_watertight': bool(mesh.is_watertight),
         'native_faces': len(module.faces()),
-        'stl_triangles': len(mesh.faces),
-        'stl_bytes': (output / f'{stem}.stl').stat().st_size,
-        'stl_absolute_deflection_mm': .05, 'stl_angular_deflection_radians': .5,
-        'stl_control_surface_deflection': True,
-        'stl_volume_mm3': float(mesh.volume),
-        'removed_degenerate_or_duplicate_triangles': removed_triangles,
-        'microscopic_triangle_closure': repair,
-        'stl_winding_consistent': bool(mesh.is_winding_consistent),
+        'step_roundtrip': step_check,
+        'print_step_roundtrip': print_step_check,
+        'step_bytes': (output / f'{stem}.step').stat().st_size,
         'elapsed_seconds': time.monotonic() - started,
+        'print_bbox_mm': list(printable.bounding_box().size),
         'print_orientation': 'Closed back on Z=0; model rotated +90 degrees about X.',
         'source_files': source_hashes(PROJECT_ROOT),
         'files': {
@@ -128,15 +91,23 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     with Build(PROJECT_ROOT, configuration_hash, output=output) as state:
         manifest = _build_into(state.stage, spec)
         if not (manifest.get('cad_valid') is True and manifest.get('solids') == 1
-                and manifest.get('stl_watertight') is True
-                and manifest.get('stl_winding_consistent') is True
-                and manifest.get('stl_volume_mm3', 0) > 0):
-            raise ValueError('CAD and mesh validation must pass before publishing')
+                and manifest.get('boundary_shells') == 1
+                and manifest.get('step_roundtrip', {}).get('passed') is True
+                and manifest.get('print_step_roundtrip', {}).get('passed') is True):
+            raise ValueError('CAD and STEP validation must pass before publishing')
         write_json(state.stage / 'resolved-parameters.json', configuration)
+        write_json(state.stage / 'viewer.json', {
+            'build_id': state.id, 'assembly': f'{spec.slug}.step',
+            'components': [{'name': spec.slug, 'step': f'{spec.slug}.step', 'kind': 'module'}],
+        })
+        manifest.update(viewer='viewer.json', status='Completed CAD build', parts={spec.slug: {
+            'kind': 'module', 'print_note': manifest.get('print_orientation', ''),
+            'print_bbox_mm': manifest.get('print_bbox_mm', []),
+        }})
         destination = state.complete({**manifest, 'passed': True, 'project': 'vault'})
         set_latest(destination, state.output / 'latest' / spec.slug)
-    print(f"Built {spec.name}: one valid solid, {manifest['stl_triangles']:,} triangles, "
-          f"{manifest['stl_bytes'] / 1000:,.1f} KB STL. Files: {destination}", flush=True)
+    print(f"Built {spec.name}: one valid STEP solid, "
+          f"{manifest['step_bytes'] / 1000:,.1f} KB STEP. Files: {destination}", flush=True)
     return destination
 
 
@@ -151,7 +122,7 @@ def selected_build(output, spec):
         verify_files(output)
         return output.resolve()
     legacy = output if spec == DEFAULT_SPEC else output / spec.slug
-    if not (legacy / f'{spec.slug}_model.stl').is_file():
+    if not any((legacy / name).is_file() for name in (f'{spec.slug}.step', f'{spec.slug}_model.stl')):
         raise RuntimeError('No successful build for this size. Run build first.')
     return legacy
 
@@ -182,15 +153,18 @@ def main():
     review_root = selected.parent.parent if selected.parent.name == 'builds' else args.output
     review = review_root / 'reviews' / selected.name if (selected / 'manifest.json').is_file() else selected / 'review'
     review.mkdir(parents=True, exist_ok=True)
+    model_path = selected / f'{spec.slug}.step'
+    if not model_path.is_file():
+        model_path = selected / f'{spec.slug}_model.stl'
     if args.command == 'render':
         from .render import render_review
-        import trimesh
-        render_review(trimesh.load_mesh(selected / f'{spec.slug}_model.stl'), review)
+        from .tessellation import load_model
+        render_review(load_model(model_path), review)
     else:
         if spec != DEFAULT_SPEC:
             parser.error('The full source comparison currently supports S4 1F; other sizes need their own source registration.')
         from .validation import compare
-        result = compare(selected / 's4_module_1f_model.stl', review / 'comparison.json',
+        result = compare(model_path, review / 'comparison.json',
                          args.samples, args.tolerance, args.mating_tolerance)
         for direction in ['reference_to_model', 'model_to_reference']:
             row = result[direction]

@@ -15,12 +15,13 @@ class StorageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             def export(stage, spec):
-                data = b'mesh'
-                (stage / f'{spec.slug}_model.stl').write_bytes(data)
-                return {'cad_valid': True, 'solids': 1, 'stl_watertight': True,
-                        'stl_winding_consistent': True, 'stl_volume_mm3': 10,
-                        'stl_triangles': 12, 'stl_bytes': len(data),
-                        'files': {f'{spec.slug}_model.stl': hashlib.sha256(data).hexdigest()}}
+                data = b'solid'
+                (stage / f'{spec.slug}.step').write_bytes(data)
+                return {'cad_valid': True, 'solids': 1, 'boundary_shells': 1,
+                        'step_roundtrip': {'passed': True},
+                        'print_step_roundtrip': {'passed': True}, 'step_bytes': len(data),
+                        'files': {f'{spec.slug}.step': hashlib.sha256(data).hexdigest()}}
+
             try:
                 with patch.object(cli, 'PROJECT_ROOT', root), patch.object(cli, '_build_into', export):
                     first = cli.build(root / 'out')
@@ -30,6 +31,13 @@ class StorageTests(unittest.TestCase):
                     self.assertEqual(json.loads((first / 'manifest.json').read_text())['schema'], 'cad-build-v1')
                     with patch.object(cli, '_build_into', side_effect=ValueError('geometry failed')):
                         with self.assertRaises(ValueError):
+                            cli.build(root / 'out')
+                    def rejected(stage, spec):
+                        report = export(stage, spec)
+                        report['print_step_roundtrip']['passed'] = False
+                        return report
+                    with patch.object(cli, '_build_into', rejected):
+                        with self.assertRaisesRegex(ValueError, 'STEP validation'):
                             cli.build(root / 'out')
                     self.assertEqual(cli.selected_build(root / 'out', DEFAULT_SPEC), second)
                     self.assertEqual((root / 'out/latest-successful').resolve(), second)
