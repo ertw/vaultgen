@@ -18,7 +18,11 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     started = time.monotonic()
     output.mkdir(parents=True, exist_ok=True)
     print('Building native shell and mechanical connectors…', flush=True)
-    module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
+    if spec.slug == 's1f_facade':
+        from .facade import build_facade
+        module = build_facade()
+    else:
+        module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
     return _export_into(module, output, started, spec)
 
 
@@ -77,7 +81,7 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         'step_bytes': (output / f'{stem}.step').stat().st_size,
         'elapsed_seconds': time.monotonic() - started,
         'print_bbox_mm': list(printable.bounding_box().size),
-        'print_orientation': 'Closed back on Z=0; model rotated +90 degrees about X.',
+        'print_orientation': 'Rear face on Z=0; model rotated +90 degrees about X.',
         'source_files': source_hashes(PROJECT_ROOT),
         'files': {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
@@ -90,7 +94,10 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
 
 def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     from dataclasses import asdict
-    configuration = asdict(spec)
+    configuration = {**asdict(spec), 'part': spec.slug}
+    if spec.slug in {'s1f_facade', DEFAULT_SPEC.slug}:
+        from .shadow_gap import DEFAULT_GAP
+        configuration['shadow_gap'] = asdict(DEFAULT_GAP)
     configuration_hash = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
     def generate(state):
         manifest = _build_into(state.stage, spec)
@@ -101,10 +108,10 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
             raise ValueError('CAD and STEP validation must pass before publishing')
         viewer = {
             'build_id': state.id, 'assembly': f'{spec.slug}.step',
-            'components': [{'name': spec.slug, 'step': f'{spec.slug}.step', 'kind': 'module'}],
+            'components': [{'name': spec.slug, 'step': f'{spec.slug}.step', 'kind': 'facade' if spec.slug == 's1f_facade' else 'module'}],
         }
         manifest.update(viewer='viewer.json', status='Completed CAD build', parts={spec.slug: {
-            'kind': 'module', 'print_note': manifest.get('print_orientation', ''),
+            'kind': 'facade' if spec.slug == 's1f_facade' else 'module', 'print_note': manifest.get('print_orientation', ''),
             'print_bbox_mm': manifest.get('print_bbox_mm', []),
         }})
         return {**manifest, 'passed': True, 'project': 'vault'}, viewer
@@ -113,6 +120,9 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
 
 
 def build_preview(configuration):
+    if configuration == 's1f_facade':
+        from .facade import SPEC
+        return build(PROJECT_ROOT / 'out', SPEC)
     family, depth, height = configuration.split('-')
     return build(PROJECT_ROOT / 'out', ModuleSpec(family, int(depth), int(height)))
 
@@ -137,6 +147,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['build', 'validate', 'render'])
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--part', choices=['module', 'facade'], default='module')
     parser.add_argument('--family', choices=FAMILIES, default='S')
     parser.add_argument('--depth-units', type=int, default=4)
     parser.add_argument('--height-units', type=int, default=1)
@@ -148,6 +159,11 @@ def main():
         spec = ModuleSpec(args.family, args.depth_units, args.height_units)
     except ValueError as error:
         parser.error(str(error))
+    if args.part == 'facade':
+        if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
+            parser.error('The facade currently supports S1F only; omit size options.')
+        from .facade import SPEC
+        spec = SPEC
     if args.output is None:
         args.output = PROJECT_ROOT / 'out'
     if args.samples < 1 or args.tolerance <= 0 or args.mating_tolerance <= 0:

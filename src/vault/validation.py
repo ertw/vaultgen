@@ -167,6 +167,7 @@ def compare(model_path: Path, output: Path, samples=100_000, tolerance=.25, mati
         'mating_regions': mating_regions,
         'mating_regions_within_sampled_tolerance': mating_passed,
         'decoration_exclusion_boxes_mm': DECORATION_BOXES,
+        'shadow_gap_exclusion': 'Front Y=187.59..188.11, within 1.01 mm of the native outer silhouette.',
         'excluded_points': {'reference': int(source_mask.sum()), 'model': int(model_mask.sum())},
         'source_bounds_mm': reference.bounds.tolist(),
         'model_bounds_mm': model.bounds.tolist(),

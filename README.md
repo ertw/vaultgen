@@ -173,3 +173,37 @@ Results and worst points go to `comparison.json`; sampled points/distances go
 to `comparison.npz`. Rebuilding invalidates old comparisons. Research reports
 identify checked source/artifacts by hashes. `initial_export_validation.json`
 belongs to the superseded detailed model.
+
+## S1F facade and matching shadow line
+
+`python -m vault build --part facade` builds the native S1F drawer facade
+from `S1F (Turn On Supports).stl` measurements. `python -m vault build`
+builds the corresponding S4 Module 1F. Both use the usual immutable build
+storage and appear in the existing Vault viewer. The latest files are
+`out/latest/s1f_facade/s1f_facade.step` and
+`out/latest/s4_module_1f/s4_module_1f.step`.
+
+The facade constructor is `src/vault/facade.py`; it uses native lofts, arcs,
+extrusions and booleans, without loading the source mesh. It retains the
+164.8 × 47 × 10 mm envelope, rear pockets, flat-sided screw bosses at
+X=±51.45 / Z=23.5, 4.4 mm screw clearances, 10 mm counterbores, shaped finger
+opening and shallow front-side recess. Curved blends are reconstructed
+approximations. Small molded branding and front indexing marks are omitted,
+consistent with the project's unbranded models. Run
+`python tools/measure_facade.py` for a sampled, bidirectional source comparison;
+its report includes the intended changes rather than hiding them. A successful
+CAD export establishes solid validity, not exact source equivalence.
+
+`ShadowGap` in `src/vault/shadow_gap.py` defines a **0.5 mm axial depth and
+1 mm peripheral width on each mating face**. Together they form a 1 mm axial
+shadow line, while the inner seating lands retain the original face positions.
+The facade's rear seating plane is Y=0 and its front is Y=10. For a closed
+assembly, translate it by (0, 188.1, 0) beside the S4 module. The module rebate
+applies only to S4 1F; other module sizes retain their previous geometry.
+Passing `shadow_gap=None` to `build_module` or `gap=None` to `build_facade`
+builds an unrecessed part. Gap tests probe both rebates, preserved lands and
+screw clearances. Physical fit has not been tested.
+
+The facade's curved surfaces can require finer mesh resolution: tessellation
+now retries at 0.01 mm if the default 0.05 mm mesh exceeds the existing 0.1%
+CAD-volume tolerance. STEP remains independent of the mesh resolution.

@@ -49,6 +49,21 @@ def decoration_mask(points):
     mask = np.zeros(len(points), dtype=bool)
     for low, high in DECORATION_BOXES.values():
         mask |= ((points >= low) & (points <= high)).all(axis=1)
+    # Requested peripheral shadow rebate at the front seating face. Restrict
+    # the exclusion to the actual curved outline, never the whole front rim.
+    from .shadow_gap import DEFAULT_GAP
+    front = (points[:, 1] >= 188.1 - DEFAULT_GAP.depth - .01) & (points[:, 1] <= 188.11)
+    if np.any(front):
+        from .envelope import _smooth_sleeve, EnvelopeDimensions
+        from .spec import DEFAULT_SPEC
+        from shapely import points as shapely_points, distance
+        from shapely.geometry import LineString
+        sleeve = _smooth_sleeve(DEFAULT_SPEC, EnvelopeDimensions())
+        face = min(sleeve.faces(), key=lambda f: f.center().Y)
+        outline = face.outer_wire()
+        samples = [outline.position_at(t) for t in np.linspace(0, 1, 2001)]
+        boundary = LineString([(p.X, p.Z) for p in samples])
+        mask[front] |= distance(shapely_points(points[front][:, [0, 2]]), boundary) <= DEFAULT_GAP.width + .01
     return mask
 
 

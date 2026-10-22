@@ -12,6 +12,7 @@ from build123d import Axis, Shape
 from .connectors import ConnectorParameters, add_connectors
 from .shell import DEFAULT_DIMENSIONS, ShellDimensions, build_shell
 from .spec import ModuleSpec, DEFAULT_SPEC
+from .shadow_gap import DEFAULT_GAP, ShadowGap, perimeter_rebate
 
 
 def build_module(
@@ -19,6 +20,7 @@ def build_module(
     shell_dimensions: ShellDimensions = DEFAULT_DIMENSIONS,
     connector_parameters: ConnectorParameters = ConnectorParameters(),
     progress: Callable[[str], None] | None = None,
+    shadow_gap: ShadowGap | None = DEFAULT_GAP,
 ) -> Shape:
     """Build one valid solid, with independently editable mating features.
 
@@ -32,6 +34,8 @@ def build_module(
         progress('Building sleeve, drawer runners, and retention details')
     shell = build_shell(spec=spec, dimensions=shell_dimensions)
     part = add_connectors(shell, spec=spec, parameters=connector_parameters, progress=progress)
+    if shadow_gap is not None and spec == DEFAULT_SPEC:
+        part = perimeter_rebate(part, spec.depth, -1, spec, shadow_gap)
     part.label = f'{spec.name} — unbranded'
     if not part.is_valid:
         raise ValueError('Reconstructed module is not a valid CAD shape')

@@ -16,7 +16,7 @@ def load_model(path):
     return trimesh.load_mesh(path)
 
 
-def _tessellate(module, mesh_path):
+def _tessellate(module, mesh_path, deflection=.05):
     import trimesh
     # Model-space tessellation is used only for surface checks and rendering.
     # build123d 0.13's STL helper uses relative deflection. Use an absolute
@@ -28,7 +28,7 @@ def _tessellate(module, mesh_path):
     mesher = BRepMesh_IncrementalMesh()
     mesher.SetShape(module.wrapped)
     settings = mesher.ChangeParameters()
-    settings.Deflection = .05
+    settings.Deflection = deflection
     settings.Angle = .5
     settings.Relative = False
     settings.InParallel = True
@@ -54,6 +54,13 @@ def _tessellate(module, mesh_path):
     close_micro_triangles(mesh)
     if not mesh.is_watertight or not mesh.is_winding_consistent or mesh.volume <= 0:
         raise ValueError('Review tessellation is not a closed, consistently oriented positive-volume mesh')
+    from .exports import precise_volume
+    volume = precise_volume(module)
+    error = abs(mesh.volume - volume) / max(abs(volume), 1.)
+    if error > .001:
+        if deflection > .01:
+            return _tessellate(module, mesh_path, deflection=.01)
+        raise ValueError(f'CAD and tessellated volume disagree by {error:.2%}')
     return mesh
 
 
