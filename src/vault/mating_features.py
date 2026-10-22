@@ -177,14 +177,25 @@ def upper_open_end_dovetail(d=UpperOpenDovetailDimensions()):
     c, e = p(-cx - r * cs, cz - r * sn), p(-cx, d.height)
     f, g = p(cx, d.height), p(cx + r * cs, cz - r * sn)
     h, i = p(d.root_half_width, 0), p(d.root_half_width, -ROOT_OVERLAP)
+    # Three chords replace each small crown round. Sweeping planar facets
+    # avoids the dense, irregular triangulation of the oblique cylinders.
+    # Keep the tangent endpoints and crown height; nominal chord error < .05 mm.
+    crown_points = [
+        p(-cx + r * cos(pi + angle - (pi / 2 + angle) * step / 3),
+          cz + r * sin(pi + angle - (pi / 2 + angle) * step / 3))
+        for step in range(4)
+    ]
+    left_crown = [_line(a, b) for a, b in zip(crown_points, crown_points[1:])]
+    right_points = [(-point[0], point[1], point[2]) for point in reversed(crown_points)]
+    right_crown = [_line(a, b) for a, b in zip(right_points, right_points[1:])]
     section = Face(
         Wire(
             [
                 _line(a, b),
                 _line(b, c),
-                _arc(c, p(-cx - r, cz), e),
+                *left_crown,
                 _line(e, f),
-                _arc(f, p(cx + r, cz), g),
+                *right_crown,
                 _line(g, h),
                 _line(h, i),
                 _line(i, a),
