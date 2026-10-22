@@ -55,3 +55,19 @@ def _tessellate(module, mesh_path):
     if not mesh.is_watertight or not mesh.is_winding_consistent or mesh.volume <= 0:
         raise ValueError('Review tessellation is not a closed, consistently oriented positive-volume mesh')
     return mesh
+
+
+def export_print_mesh(shape, path):
+    """Persist the validated, cleaned mesh in the supplied print orientation."""
+    import trimesh
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mesh = _tessellate(shape, path)
+    # _tessellate cleans OCC triangles in memory; persist that checked mesh.
+    mesh.export(path, file_type='stl')
+    restored = trimesh.load_mesh(path)
+    if not restored.is_watertight or not restored.is_winding_consistent or restored.volume <= 0:
+        raise ValueError('Print STL round-trip failed')
+    if abs(restored.volume - mesh.volume) / max(abs(mesh.volume), 1.) > 1e-5:
+        raise ValueError('Print STL volume changed during export')
+    return restored

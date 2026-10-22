@@ -75,6 +75,9 @@ features instead of stretching their cross-sections:
 - Front connectors/catches follow the opening; rear features follow the back.
   The side stopper follows `depth / 2 + 28.50005`.
 
+The closed rear wall is 0.6 mm thick for two 0.3 mm layers when printed with
+the back on the bed. This intentionally differs from the 2 mm reference wall.
+
 Supplied drawer references cover depth units 3–7 and heights 1F, 2F, 4F
 (XL: 1F only). Other generated depths/tier counts are extensions. This
 constructor does not reproduce the separate sustainer, lid, or divider
@@ -127,7 +130,10 @@ looking into the opening. Evidence is in `research/symmetry_audit.json`.
 Each build publishes `<size>.step` in model coordinates and
 `<size>_print.step` with the closed back on the bed, plus native BREP,
 `build.json`, the shared `manifest.json`, cyclone-style `viewer.json`, and
-rendered `review/` images. STL meshes are no longer published.
+rendered `review/` images, and `stl/<module>.stl` for printing. The STL uses
+the recorded print orientation and is validated as a closed, consistently oriented
+mesh with positive volume. Its checksum is recorded in the immutable build manifest
+and the viewer offers it under **Download STL**.
 
 Both STEP exports are imported again before publishing. Like cyclone, the
 round-trip checks require a valid solid and bounding-box error below 1e-4 mm.

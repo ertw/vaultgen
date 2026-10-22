@@ -9,7 +9,7 @@ import time
 
 from .reference import PROJECT_ROOT
 from .spec import DEFAULT_SPEC, FAMILIES, ModuleSpec
-from ._build import Build, set_latest, source_hashes, verify_files, write_json
+from ._build import run_build, source_hashes, verify_files, write_json
 
 
 def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
@@ -46,6 +46,10 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         raise ValueError('BREP export failed')
     from .tessellation import review_mesh
     mesh = review_mesh(restored)
+    print('Exporting print-oriented STL…', flush=True)
+    from .tessellation import export_print_mesh
+    print_stl = output / 'stl' / f'{stem}.stl'
+    export_print_mesh(printable, print_stl)
     print('Rendering exported geometry…', flush=True)
     render_review(mesh, output / 'review')
     bbox = module.bounding_box()
@@ -88,27 +92,29 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     from dataclasses import asdict
     configuration = asdict(spec)
     configuration_hash = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
-    with Build(PROJECT_ROOT, configuration_hash, output=output) as state:
+    def generate(state):
         manifest = _build_into(state.stage, spec)
         if not (manifest.get('cad_valid') is True and manifest.get('solids') == 1
                 and manifest.get('boundary_shells') == 1
                 and manifest.get('step_roundtrip', {}).get('passed') is True
                 and manifest.get('print_step_roundtrip', {}).get('passed') is True):
             raise ValueError('CAD and STEP validation must pass before publishing')
-        write_json(state.stage / 'resolved-parameters.json', configuration)
-        write_json(state.stage / 'viewer.json', {
+        viewer = {
             'build_id': state.id, 'assembly': f'{spec.slug}.step',
             'components': [{'name': spec.slug, 'step': f'{spec.slug}.step', 'kind': 'module'}],
-        })
+        }
         manifest.update(viewer='viewer.json', status='Completed CAD build', parts={spec.slug: {
             'kind': 'module', 'print_note': manifest.get('print_orientation', ''),
             'print_bbox_mm': manifest.get('print_bbox_mm', []),
         }})
-        destination = state.complete({**manifest, 'passed': True, 'project': 'vault'})
-        set_latest(destination, state.output / 'latest' / spec.slug)
-    print(f"Built {spec.name}: one valid STEP solid, "
-          f"{manifest['step_bytes'] / 1000:,.1f} KB STEP. Files: {destination}", flush=True)
-    return destination
+        return {**manifest, 'passed': True, 'project': 'vault'}, viewer
+    return run_build(PROJECT_ROOT, configuration_hash, generate, parameters=configuration,
+                     output=output, aliases=[f'latest/{spec.slug}'])
+
+
+def build_preview(configuration):
+    family, depth, height = configuration.split('-')
+    return build(PROJECT_ROOT / 'out', ModuleSpec(family, int(depth), int(height)))
 
 
 def selected_build(output, spec):

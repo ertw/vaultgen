@@ -8,5 +8,5 @@ if not (source / 'cad_build').is_dir():
 if str(source) not in sys.path:
     sys.path.insert(0, str(source))
 
-from cad_build import (Build, source_hashes, source_digest, write_json,
+from cad_build import (Build, run_build, source_hashes, source_digest, write_json,
                        verify_files, set_latest, git_provenance)
