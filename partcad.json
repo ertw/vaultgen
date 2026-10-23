@@ -1,0 +1,30 @@
+{
+  "desc": "Vault",
+  "private": true,
+  "parts": {
+    "s4_module_1f": {
+      "type": "build123d",
+      "desc": "S4 Module 1F",
+      "path": "catalog/module.py",
+      "parameters": {
+        "family": {
+          "type": "string",
+          "default": "S"
+        },
+        "depth_units": {
+          "type": "int",
+          "default": 4
+        },
+        "height_units": {
+          "type": "int",
+          "default": 1
+        }
+      }
+    },
+    "s1f_facade": {
+      "type": "build123d",
+      "desc": "S1F Facade",
+      "path": "catalog/facade.py"
+    }
+  }
+}

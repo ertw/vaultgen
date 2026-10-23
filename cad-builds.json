@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "default": "s4_module_1f",
+  "targets": {
+    "s4_module_1f": {
+      "object": "parts/s4_module_1f",
+      "adapter": "vault-module"
+    },
+    "s1f_facade": {
+      "object": "parts/s1f_facade",
+      "adapter": "vault-facade"
+    }
+  }
+}

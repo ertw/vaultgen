@@ -1,5 +1,9 @@
 # Vault CAD
 
+The viewer catalog is declared in `partcad.json`, with explicit build bindings in
+`cad-builds.json`. Generated files under `out/` are optional previews and history;
+they do not define catalog membership. See [the catalog format](../../cad-tooling/docs/catalogs.md).
+
 Editable build123d drawer modules reconstructed from purchased Vault STLs.
 S4 Module 1F is the primary reference. Branding, decorative bottom ovals,
 “align to connect” text and arrow, the large S4 marking, and the transverse
