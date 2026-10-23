@@ -5,7 +5,7 @@ features move with the front/back/side anchors and repeat on the 48 mm tier
 pitch. No source mesh or measured profile table is needed for construction.
 """
 from dataclasses import dataclass
-from math import sqrt, atan2, cos, sin, pi
+from math import sqrt, atan2, cos, sin, pi, isfinite
 from build123d import Edge, Wire, Face, Solid, Plane, Axis
 from .spec import ModuleSpec, DEFAULT_SPEC, TIER_PITCH
 from .envelope import EnvelopeDimensions, build_envelope
@@ -53,6 +53,11 @@ class ShellDimensions:
     # is fixed; the top of the cutter overlaps the existing runner void.
     pocket_floor: float = 6.4914
     pocket_roll: float = 1.0
+    # Sacrificial ledge support for closed-back-down printing (+Y growth).
+    # Set thickness to zero to inspect the finished mechanical interface.
+    pocket_support_thickness: float = 0.6
+    pocket_support_gap: float = 0.3
+    pocket_support_tooth: float = 0.7
     catch_front_offset: float = 9.2
     catch_length: float = 3.7
     catch_depth: float = 2.0
@@ -60,11 +65,23 @@ class ShellDimensions:
     catch_return_radius: float = 10.0
     catch_exit_rise: float = 1.0
 
+    def __post_init__(self):
+        if not isfinite(self.pocket_support_thickness) or self.pocket_support_thickness < 0:
+            raise ValueError('pocket_support_thickness must be finite and nonnegative')
+        for name in ('pocket_support_gap', 'pocket_support_tooth'):
+            value = getattr(self, name)
+            if not isfinite(value) or value <= 0:
+                raise ValueError(f'{name} must be finite and positive')
+        if self.pocket_support_gap >= self.pocket_length:
+            raise ValueError('pocket_support_gap must be shorter than the pocket')
+        if self.pocket_support_thickness >= POCKET_LEDGE_HEIGHT - .15:
+            raise ValueError('pocket_support_thickness must leave clearance above the pocket floor')
 
-DEFAULT_DIMENSIONS = ShellDimensions()
+
 POCKET_SECTION_HEIGHT = 5.2
 POCKET_LEDGE_HEIGHT = 2.1564
 POCKET_HOOK_TOP = 5.2186
+DEFAULT_DIMENSIONS = ShellDimensions()
 
 
 def _face(points, mapping):
@@ -295,8 +312,19 @@ def _mouth_hook(spec, dimensions):
     return Solid.extrude(Face(Wire(edges)), (0, spec.depth + .1 - back, 0))
 
 
+def _place_mouth_feature(part, upper, tier_z):
+    """Place the lower mate at -X and the upper mate at +X.
+
+    The source STL's height/travel permutation reflected X. The assembled
+    interface requires a proper rotation, so exchange the two pocket sides.
+    """
+    if upper:
+        part = part.rotate(Axis((0, 0, (TIER_PITCH - 1) / 2), (0, 1, 0)), 180)
+    return part.mirror(Plane.YZ).translate((0, 0, tier_z))
+
+
 def _mouth_pockets(spec, dimensions, tier_z):
-    """Opposed reliefs: left-upper constant roll, right-lower tapered roll."""
+    """Opposed reliefs: +X upper constant roll, -X lower tapered roll."""
     hook = _mouth_hook(spec, dimensions)
     inner = spec.half_width - dimensions.side_wall - .02
     outer = spec.half_width - 6.3004
@@ -308,8 +336,8 @@ def _mouth_pockets(spec, dimensions, tier_z):
                            Plane(origin=(channel_inner, ledge_start,
                                          dimensions.pocket_floor + POCKET_LEDGE_HEIGHT)))
     parts = []
-    for left in (False, True):
-        if left:
+    for upper in (False, True):
+        if upper:
             profile = Face(_pocket_wire(inner, dimensions.pocket_roll, spec, dimensions))
             blend = Solid.extrude(profile, (outer-inner, 0, 0))
         else:
@@ -322,10 +350,39 @@ def _mouth_pockets(spec, dimensions, tier_z):
             tip = Solid.extrude(Face(_pocket_wire(end, minimum_radius, spec, dimensions)), (outer-end, 0, 0))
             blend = tapered.fuse(tip).clean()
         bounded = [*hook.intersect(blend), *hook.intersect(ledge)]
-        if left:
-            bounded = [part.rotate(Axis((0, 0, (TIER_PITCH - 1) / 2), (0, 1, 0)), 180) for part in bounded]
-        parts.extend(part.translate((0, 0, tier_z)) for part in bounded)
+        parts.extend(_place_mouth_feature(part, upper, tier_z) for part in bounded)
     return parts
+
+
+def _mouth_supports(spec, dimensions, tier_z):
+    """Removable webs under both mouth ledges, rooted in the pocket rear wall.
+
+    Print growth is +Y. The web ends short of the overhanging ledge; two
+    narrow teeth cross the final gap. The inner tooth straddles the runner
+    wall junction, supporting the small bridge that previously started on
+    another bridge. Both webs can be reached through the open runner mouth.
+    """
+    thickness = dimensions.pocket_support_thickness
+    if thickness == 0:
+        return []
+    ledge_start = spec.depth - dimensions.pocket_front_offset
+    back = ledge_start - dimensions.pocket_length
+    inner = spec.half_width - dimensions.channel_inner_inset
+    tooth = dimensions.pocket_support_tooth
+    x0 = inner - tooth / 2
+    # Keep the full web clear of the rolled hook wall for easy removal.
+    x1 = spec.half_width - 7.1162 - .6
+    if 2 * tooth >= x1 - x0:
+        raise ValueError('pocket_support_tooth must leave a gap between the contacts')
+    top = dimensions.pocket_floor + POCKET_LEDGE_HEIGHT - .15
+    sheet_end = ledge_start - dimensions.pocket_support_gap
+    sheet = Solid.make_box(x1 - x0, sheet_end - back + .02, thickness,
+                           Plane(origin=(x0, back - .02, top - thickness)))
+    teeth = [Solid.make_box(tooth, dimensions.pocket_support_gap + .04, thickness,
+                            Plane(origin=(x, sheet_end - .02, top - thickness)))
+             for x in (x0, x1 - tooth)]
+    support = sheet.fuse(*teeth).clean()
+    return [_place_mouth_feature(support, upper, tier_z) for upper in (False, True)]
 
 
 def _tier_cutters(spec, dimensions, tier_z):
@@ -388,4 +445,7 @@ def build_shell(spec: ModuleSpec = DEFAULT_SPEC,
     for bank_x in spec.bank_centers:
         cutters.extend(_rear_notches(spec, dimensions, bank_x))
         cutters.extend(_central_recesses(spec, dimensions, bank_x))
-    return shell.cut(*cutters).clean()
+    shell = shell.cut(*cutters).clean()
+    supports = [support for tier_z in spec.tier_offsets
+                for support in _mouth_supports(spec, dimensions, tier_z)]
+    return shell.fuse(*supports).clean() if supports else shell

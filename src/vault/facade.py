@@ -43,7 +43,7 @@ def opening_wire(y):
         Edge.make_three_point_arc(p(pts[7]),p((18.125,0)),p(pts[0]))]
     return Wire(es)
 
-def build_facade(gap=DEFAULT_GAP):
+def build_facade(gap=DEFAULT_GAP, *, screw_bosses=True):
     base=_smooth_sleeve(DEFAULT_SPEC,EnvelopeDimensions())
     face=min(base.faces(),key=lambda f:f.center().Y)
     wire=face.outer_wire()
@@ -72,7 +72,7 @@ def build_facade(gap=DEFAULT_GAP):
         wedge=Solid.extrude(Face(Wire.make_polygon(pts,close=True)),(0,0,49))
         part=part.cut(*pocket.intersect(wedge))
     # Flat-sided bosses keep the source's screw-center and clearance diameters.
-    for side in [-1,1]:
+    for side in ([-1,1] if screw_bosses else []):
         x=side*51.45
         boss=cylinder(6.8,.5,5.25,x)
         clip=Solid.make_box(20,6,20,Plane(origin=((47.67 if side>0 else -67.67),0,13.5)))

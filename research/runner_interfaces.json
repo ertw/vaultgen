@@ -1,0 +1,240 @@
+{
+  "schema": "vault-runner-interface-audit/v1",
+  "units": "mm",
+  "method": "Exact original-STL plane intersections and analytic native-CAD occupancy. Eight probes check intended clearances and retained opposite-side material. Module sacrificial supports are disabled for mating checks.",
+  "source_files": {
+    "module": {
+      "path": "original_files/01. DRAWERS/01. S Families/S4/Modules/S4 Module 1f.stl",
+      "sha256": "70e689ceb22a620764bd98eb776c7c143292c52dedabe13c9d3ecafe5a4b9e03"
+    },
+    "box": {
+      "path": "original_files/01. DRAWERS/01. S Families/S4/Boxes/S4 Box 1F.stl",
+      "sha256": "6be3710c7c3df589cceb2dc2cbd8044e1d83e86759d5b6623ee13f3bcdc8a311"
+    }
+  },
+  "construction_files": {
+    "src/vault/shell.py": "ac30f1b1f23a629d5d13b084c52cbae42197f2f8156f54ff07f9153a6956b84d",
+    "src/vault/box.py": "6d423dc6d1aab6e6bfb1ffcc7f7ac2fa343dbab9690cf1daeb5fdfebbec672ab"
+  },
+  "module_registration": {
+    "original_axis_origin_mm": [
+      9001.650390625,
+      727.5916137695312,
+      583.0028686523438
+    ],
+    "rotation_matrix": [
+      [
+        -1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        0
+      ]
+    ],
+    "determinant": 1.0,
+    "formula": "model = rotation_matrix @ (original - original_axis_origin_mm)",
+    "historical_comparison_axis_map": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        0
+      ]
+    ],
+    "historical_comparison_determinant": -1.0,
+    "explanation": "The historical (X,Z,Y) map reflects handed features. A proper rotation preserving travel and height is (-X,Z,Y), placing the lower female pocket at -X and the upper at +X."
+  },
+  "box_registration": {
+    "subtract_origin_mm": [
+      9001.5546875,
+      1167.24138,
+      1.0
+    ],
+    "rotation_matrix": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ],
+    "determinant": 1.0
+  },
+  "section_y_mm": 185.5,
+  "native_module_support_thickness_mm": 0,
+  "probes": [
+    {
+      "component": "module",
+      "point_mm": [
+        -70.3344,
+        185.5,
+        8.0
+      ],
+      "expected_material": false,
+      "source_material": false,
+      "native_material": false,
+      "source_vertical_crossings_z_mm": [
+        0.031585,
+        6.491394,
+        37.501404,
+        46.970725
+      ],
+      "passed": true
+    },
+    {
+      "component": "module",
+      "point_mm": [
+        -70.3344,
+        185.5,
+        39.0
+      ],
+      "expected_material": true,
+      "source_material": true,
+      "native_material": true,
+      "source_vertical_crossings_z_mm": [
+        0.031585,
+        6.491394,
+        37.501404,
+        46.970725
+      ],
+      "passed": true
+    },
+    {
+      "component": "module",
+      "point_mm": [
+        70.3344,
+        185.5,
+        8.0
+      ],
+      "expected_material": true,
+      "source_material": true,
+      "native_material": true,
+      "source_vertical_crossings_z_mm": [
+        0.031604,
+        9.501404,
+        40.511353,
+        46.97075
+      ],
+      "passed": true
+    },
+    {
+      "component": "module",
+      "point_mm": [
+        70.3344,
+        185.5,
+        39.0
+      ],
+      "expected_material": false,
+      "source_material": false,
+      "native_material": false,
+      "source_vertical_crossings_z_mm": [
+        0.031604,
+        9.501404,
+        40.511353,
+        46.97075
+      ],
+      "passed": true
+    },
+    {
+      "component": "box",
+      "point_mm": [
+        -66.8,
+        185.5,
+        8.0
+      ],
+      "expected_material": false,
+      "source_material": false,
+      "native_material": false,
+      "source_vertical_crossings_z_mm": [
+        12.09419,
+        18.145357,
+        28.852981,
+        40.797805
+      ],
+      "passed": true
+    },
+    {
+      "component": "box",
+      "point_mm": [
+        -66.8,
+        185.5,
+        39.0
+      ],
+      "expected_material": true,
+      "source_material": true,
+      "native_material": true,
+      "source_vertical_crossings_z_mm": [
+        12.09419,
+        18.145357,
+        28.852981,
+        40.797805
+      ],
+      "passed": true
+    },
+    {
+      "component": "box",
+      "point_mm": [
+        66.8,
+        185.5,
+        8.0
+      ],
+      "expected_material": true,
+      "source_material": true,
+      "native_material": true,
+      "source_vertical_crossings_z_mm": [
+        6.70083,
+        18.145358,
+        28.853075,
+        34.904425
+      ],
+      "passed": true
+    },
+    {
+      "component": "box",
+      "point_mm": [
+        66.8,
+        185.5,
+        39.0
+      ],
+      "expected_material": false,
+      "source_material": false,
+      "native_material": false,
+      "source_vertical_crossings_z_mm": [
+        6.70083,
+        18.145358,
+        28.853075,
+        34.904425
+      ],
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "figure": "out/reviews/runner-interfaces/sections.png",
+  "limitations": "Local interface and handedness checks only; no simulated rail motion or physical printer-fit qualification. Native box attachment recesses retain their documented simplified contours."
+}

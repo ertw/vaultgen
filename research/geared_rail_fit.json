@@ -1,0 +1,380 @@
+{
+  "schema": "vault-geared-rail-clearance/v1",
+  "units": "mm",
+  "source": {
+    "path": "original_files/01. DRAWERS/07. Universal/Geared Rails/S Rails.stl",
+    "sha256": "d7c8651e0f9d822797d17f1811f6af1df447e40fd232c30258756341acbc759b",
+    "assembly_reference": "original_files/02_Drawer Assembly.pdf, page 4"
+  },
+  "construction_sha256": {
+    "src/vault/geared_rails.py": "4275fb68c02abbdd15c2e559007323315c51ad42177ab86116abc0dd7aebc06b",
+    "src/vault/box.py": "6d423dc6d1aab6e6bfb1ffcc7f7ac2fa343dbab9690cf1daeb5fdfebbec672ab",
+    "src/vault/shell.py": "ac30f1b1f23a629d5d13b084c52cbae42197f2f8156f54ff07f9153a6956b84d",
+    "src/vault/printed_joint.py": "551cd5aa439bc5fcba94446008f5f6745cd4fd1dde279f99723af318c9da8b78",
+    "tools/check_geared_rails.py": "c55ef9b700be981af6ec064a65d6105e2f97c8a5ff82825c49138f5912cd02ba"
+  },
+  "placement": {
+    "upper": {
+      "rotation_matrix": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          -1,
+          0
+        ]
+      ],
+      "translation_at_zero_mm": [
+        -66.1,
+        183.1,
+        40.193
+      ],
+      "travel_axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "lower": {
+      "rotation_matrix": [
+        [
+          -1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "translation_at_zero_mm": [
+        66.1,
+        183.1,
+        6.807
+      ],
+      "travel_axis": [
+        -1,
+        0,
+        0
+      ]
+    },
+    "explanation": "Both rotations have determinant +1. Retaining rib is above the upper rail. The retracted rounded ends have 0.2 mm axial clearance to closed box pockets."
+  },
+  "module_pocket_support_thickness_mm": 0,
+  "swept_envelope_end_allowance_mm": 0.0001,
+  "continuous_sweeps": [
+    {
+      "rail": "upper_retained",
+      "target": "standard_box",
+      "path": "lateral_insertion",
+      "travel_mm": [
+        0,
+        134.0
+      ],
+      "continuous": true,
+      "minimum_distance_mm": 0.20000000000000284,
+      "moving_point_mm": [
+        -66.1,
+        186.9,
+        39.393
+      ],
+      "fixed_point_mm": [
+        -66.3,
+        186.9,
+        39.393
+      ]
+    },
+    {
+      "rail": "upper_retained",
+      "target": "printed_screw_box",
+      "path": "lateral_insertion",
+      "travel_mm": [
+        0,
+        134.0
+      ],
+      "continuous": true,
+      "minimum_distance_mm": 0.20000000000000284,
+      "moving_point_mm": [
+        -66.1,
+        186.9,
+        39.393
+      ],
+      "fixed_point_mm": [
+        -66.3,
+        186.9,
+        39.393
+      ]
+    },
+    {
+      "rail": "upper_retained",
+      "target": "finished_module",
+      "path": "locking",
+      "travel_mm": [
+        0,
+        20.0
+      ],
+      "continuous": true,
+      "minimum_distance_mm": 0.18359492839493896,
+      "moving_point_mm": [
+        74.95380000000003,
+        183.1,
+        38.00066233567991
+      ],
+      "fixed_point_mm": [
+        75.13739492839497,
+        183.1,
+        38.00066233567991
+      ]
+    },
+    {
+      "rail": "lower_plain",
+      "target": "standard_box",
+      "path": "lateral_insertion",
+      "travel_mm": [
+        0,
+        134.0
+      ],
+      "continuous": true,
+      "minimum_distance_mm": 0.19699999999999473,
+      "moving_point_mm": [
+        66.1,
+        186.1,
+        6.807
+      ],
+      "fixed_point_mm": [
+        66.1,
+        186.1,
+        6.61
+      ]
+    },
+    {
+      "rail": "lower_plain",
+      "target": "printed_screw_box",
+      "path": "lateral_insertion",
+      "travel_mm": [
+        0,
+        134.0
+      ],
+      "continuous": true,
+      "minimum_distance_mm": 0.19699999999999473,
+      "moving_point_mm": [
+        66.1,
+        186.1,
+        6.807
+      ],
+      "fixed_point_mm": [
+        66.1,
+        186.1,
+        6.61
+      ]
+    },
+    {
+      "rail": "lower_plain",
+      "target": "finished_module",
+      "path": "locking",
+      "travel_mm": [
+        0,
+        20.0
+      ],
+      "continuous": true,
+      "minimum_distance_mm": 0.18359492839493896,
+      "moving_point_mm": [
+        -74.95380000000003,
+        186.9,
+        8.999337664320077
+      ],
+      "fixed_point_mm": [
+        -75.13739492839497,
+        186.9,
+        8.999337664320077
+      ]
+    }
+  ],
+  "actual_rail_poses": [
+    {
+      "rail": "upper_retained",
+      "target": "standard_box",
+      "travel_mm": 0,
+      "minimum_distance_mm": 0.20000000000000284,
+      "moving_point_mm": [
+        41.68108000000001,
+        183.9,
+        35.393
+      ],
+      "fixed_point_mm": [
+        41.68108000000001,
+        183.9,
+        35.193
+      ]
+    },
+    {
+      "rail": "upper_retained",
+      "target": "finished_module",
+      "travel_mm": 0,
+      "minimum_distance_mm": 1.5390000000000157,
+      "moving_point_mm": [
+        -66.1,
+        183.1,
+        37.793
+      ],
+      "fixed_point_mm": [
+        -67.63900000000001,
+        183.1,
+        37.793
+      ]
+    },
+    {
+      "rail": "upper_retained",
+      "target": "standard_box",
+      "travel_mm": 20.0,
+      "minimum_distance_mm": 0.20000000000000284,
+      "moving_point_mm": [
+        57.65984,
+        183.9,
+        35.393
+      ],
+      "fixed_point_mm": [
+        57.65984,
+        183.9,
+        35.193
+      ]
+    },
+    {
+      "rail": "upper_retained",
+      "target": "finished_module",
+      "travel_mm": 20.0,
+      "minimum_distance_mm": 0.31559999999999633,
+      "moving_point_mm": [
+        71.79070720630801,
+        186.1,
+        40.193
+      ],
+      "fixed_point_mm": [
+        71.79070720630801,
+        186.1,
+        40.508599999999994
+      ]
+    },
+    {
+      "rail": "lower_plain",
+      "target": "standard_box",
+      "travel_mm": 0,
+      "minimum_distance_mm": 0.19699999999999385,
+      "moving_point_mm": [
+        63.699999999999996,
+        183.9,
+        6.807
+      ],
+      "fixed_point_mm": [
+        63.699999999999996,
+        183.9,
+        6.61
+      ]
+    },
+    {
+      "rail": "lower_plain",
+      "target": "finished_module",
+      "travel_mm": 0,
+      "minimum_distance_mm": 1.5390000000000157,
+      "moving_point_mm": [
+        66.1,
+        183.1,
+        9.207
+      ],
+      "fixed_point_mm": [
+        67.63900000000001,
+        183.1,
+        9.207
+      ]
+    },
+    {
+      "rail": "lower_plain",
+      "target": "standard_box",
+      "travel_mm": 20.0,
+      "minimum_distance_mm": 0.1969999999999965,
+      "moving_point_mm": [
+        43.699999999999996,
+        186.1,
+        6.8069999999999995
+      ],
+      "fixed_point_mm": [
+        43.699999999999996,
+        186.1,
+        6.61
+      ]
+    },
+    {
+      "rail": "lower_plain",
+      "target": "finished_module",
+      "travel_mm": 20.0,
+      "minimum_distance_mm": 0.31559999999998567,
+      "moving_point_mm": [
+        -71.79070720630801,
+        186.1,
+        6.806999999999985
+      ],
+      "fixed_point_mm": [
+        -71.79070720630801,
+        186.1,
+        6.4914
+      ]
+    }
+  ],
+  "envelope_containment_checks": [
+    {
+      "rail": "upper_retained",
+      "travel_mm": 0,
+      "rail_volume_outside_envelope_mm3": 0
+    },
+    {
+      "rail": "upper_retained",
+      "travel_mm": 20.0,
+      "rail_volume_outside_envelope_mm3": 0
+    },
+    {
+      "rail": "lower_plain",
+      "travel_mm": 0,
+      "rail_volume_outside_envelope_mm3": 0
+    },
+    {
+      "rail": "lower_plain",
+      "travel_mm": 20.0,
+      "rail_volume_outside_envelope_mm3": 0
+    }
+  ],
+  "overtravel_positive_controls": [
+    {
+      "rail": "upper_retained",
+      "travel_mm": 21,
+      "overlap_volume_mm3": 0.9725851827608869,
+      "meaning": "Beyond qualified locking travel; module stop interference is intentional."
+    },
+    {
+      "rail": "lower_plain",
+      "travel_mm": 21,
+      "overlap_volume_mm3": 0.972585182399966,
+      "meaning": "Beyond qualified locking travel; module stop interference is intentional."
+    }
+  ],
+  "method": "Native B-rep minimum distance against conservative swept solids. Full body octagon fills tooth valleys; maximum rib section fills its ramps. For locking, the full-width section ends after the final flank crosses tail_width; a constant tail fills the root, tip round and thickness ramp. Therefore every intermediate translated rail is contained, and positive envelope distances certify continuous clearance.",
+  "review_step": [
+    "out/reviews/geared-rail-fit/box_with_locked_rails.step",
+    "out/reviews/geared-rail-fit/module_with_locked_rails.step"
+  ],
+  "limitations": "Rigid CAD fit only; no physical print qualification, deformation, or drive-pinion meshing test. Remove module pocket supports before operation. Rails install laterally into the box before the drawer enters the sleeve. 21 mm travel intentionally reaches the module stop; qualified locking travel is 0..20 mm.",
+  "passed": true
+}

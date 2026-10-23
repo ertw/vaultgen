@@ -1,0 +1,142 @@
+{
+  "schema": "vault-box-support-measurements/v1",
+  "units": "mm",
+  "source": "original_files/01. DRAWERS/01. S Families/S4/Boxes/S4 Box 1F.stl",
+  "source_sha256": "6be3710c7c3df589cceb2dc2cbd8044e1d83e86759d5b6623ee13f3bcdc8a311",
+  "registration": {
+    "axis_order": [0, 1, 2],
+    "subtract_origin_mm": [9001.5546875, 1167.24138, 1.0],
+    "model_axes": {
+      "x": "drawer width",
+      "y": "drawer travel, rear toward front",
+      "z": "height; bottom-down printing grows in +Z"
+    }
+  },
+  "measurement_method": "Registered original binary STL vertices and plane intersections. X=66.15 exposes runner support teeth; Y=169 cuts between teeth and Y=170 cuts through a tooth. Rear sections use Y=3.8 and X=0 / X=10.4. All dimensions below are in registered model coordinates, not the construction datum.",
+  "original_model_bounds_mm": [
+    [-67.099609375, 2.3000018359375645, 4.999316692352295],
+    [67.099609375, 188.10017273437506, 42.49931716918945]
+  ],
+  "original_runner_support": {
+    "symmetry": "Opposed sheets at positive and negative X; listed X dimensions describe the positive side.",
+    "sheet_x_mm": [65.8984375, 66.3984375],
+    "sheet_thickness_mm": 0.5,
+    "sheet_z_mm": [19.10479164123535, 28.482698440551758],
+    "sheet_bottom_face_y_mm": [31.043410039062564, 186.22895691406256],
+    "sheet_top_face_y_mm": [31.028273320312564, 186.24421570312506],
+    "sheet_combined_min_max_y_mm": [31.028273320312564, 186.24421570312506],
+    "lower_clearance_at_x_66_15_mm": {
+      "channel_lip_z": 18.3076,
+      "sheet_z": 19.1048,
+      "gap": 0.7972
+    },
+    "upper_clearance_at_x_66_15_mm": {
+      "sheet_z": 28.4827,
+      "channel_lip_z": 28.6910,
+      "gap": 0.2083
+    },
+    "teeth": {
+      "description": "Narrow repeated connections cross the lower and upper gaps, carrying the thin sheet from the lower lip and supporting the upper lip. These were omitted by the earlier native reconstruction.",
+      "width_approx_mm": 0.7,
+      "spacing_approx_mm": [8.0, 10.7],
+      "lower_tooth_intervals_y_mm": [
+        [37.79878, 38.42927],
+        [46.80928, 47.50484],
+        [57.32197, 58.01753],
+        [67.85091, 68.54646],
+        [78.29085, 78.98640],
+        [88.63606, 89.34675],
+        [98.45344, 99.16414],
+        [106.44795, 107.15864],
+        [115.63399, 116.34468],
+        [126.31319, 127.02400],
+        [134.30781, 135.01851],
+        [143.90059, 144.61140],
+        [152.27376, 152.98457],
+        [160.26839, 160.97908],
+        [169.57075, 170.28157],
+        [178.23445, 178.94514]
+      ],
+      "note": "Original upper/lower intervals differ slightly and original tooth spacing is irregular. End connections are separate from the listed interior lower-tooth intervals."
+    },
+    "channel_behind_sheet": {
+      "inboard_x_mm": 64.8984375,
+      "sheet_inner_x_mm": 65.8984375,
+      "extreme_z_mm": [17.2536, 29.7451],
+      "description": "A void remains behind the sacrificial sheet; it is not a solid runner filling."
+    }
+  },
+  "original_rear_support": {
+    "sheet_y_mm": [3.3502, 4.2501],
+    "sheet_thickness_approx_mm": 0.9,
+    "overall_x_mm": [-11.130859375, 11.130859375],
+    "central_panel_x_mm": [-9.6484375, 9.6484375],
+    "central_panel_z_mm": [18.6470, 28.3689],
+    "opening_floor_z_mm": 17.9993,
+    "opening_roof_z_mm": 28.9993,
+    "central_bottom_gap_mm": 0.6477,
+    "central_top_gap_mm": 0.6304,
+    "pillar_abs_x_mm": [9.6484375, 11.130859375],
+    "pillar_width_mm": 1.482421875,
+    "pillar_lower_y_mm": [3.3502, 4.2501],
+    "pillar_flare_start_z_mm": 26.9236,
+    "pillar_roof_y_mm": [2.3001, 5.3001],
+    "description": "A thin central sheet joins two narrow vertical pillars. Pillars contact the slot floor and flare in Y to carry the full depth of its roof. The central sheet has clearance from the floor and roof between pillars."
+  },
+  "native_implementation": {
+    "source": "src/vault/box.py",
+    "source_sha256_at_review": "464589c107230221e2fa058005e04f587f05938a8a6495d3e870d58af2d6a3d9",
+    "construction_to_model_translation_mm": [0, 2.3, -1],
+    "runner": {
+      "sheet_abs_x_mm": [65.9, 66.4],
+      "sheet_y_mm": [31.0, 186.25],
+      "sheet_z_mm": [19.105, 28.483],
+      "tooth_count_per_side": 18,
+      "tooth_y_width_mm": 0.7,
+      "tooth_y_pitch_mm": 9.091176470588236,
+      "maximum_clear_sheet_bridge_span_mm": 8.391176470588237,
+      "tooth_z_mm": [17.9, 29.1],
+      "tooth_abs_x_mm": [65.9, 66.4]
+    },
+    "rear": {
+      "overall_x_mm": [-11.13, 11.13],
+      "sheet_y_mm": [3.35, 4.25],
+      "sheet_z_mm": [18.65, 28.37],
+      "pillar_abs_x_mm": [9.65, 11.13],
+      "pillar_width_mm": 1.48,
+      "pillar_lowest_z_mm": 17.9,
+      "pillar_flare_start_z_mm": 26.92,
+      "pillar_flare_reaches_wall_depth_z_mm": 29.0,
+      "pillar_roof_contact_y_mm": [2.3, 5.3],
+      "pillar_highest_z_mm": 29.1
+    },
+    "deliberate_regularization": [
+      "Runner teeth use equal 9.091176 mm pitch and 0.7 mm width rather than the source irregular intervals.",
+      "Runner sheet horizontal dimensions round the measured body limits to Y31.0..186.25 and X65.9..66.4; no long end anchor blocks remain.",
+      "Runner teeth span Z17.9..29.1 so they overlap both existing simplified planar channel lips. Existing source lip blends remain simplified.",
+      "Rear panel and pillar dimensions round source measurements to 0.01 mm and omit tiny edge transitions.",
+      "Rear pillars overlap the slot floor and roof by 0.1 mm to ensure volumetric union with the tray."
+    ],
+    "independent_review": {
+      "native_valid": true,
+      "native_solids": 1,
+      "native_shells": 1,
+      "native_volume_mm3": 144587.76975292902,
+      "native_bounds_mm": [[-67.1, 2.3, 5.0], [67.1, 188.1, 42.5]],
+      "section_overlay_inspected": true,
+      "overlay_sections_mm": [
+        {"axis": "X", "position": 66.15},
+        {"axis": "Y", "position": 169},
+        {"axis": "Y", "position": 3.8},
+        {"axis": "X", "position": 10.4}
+      ],
+      "result": "Section overlay confirms original support strategy, matching sheet locations and rear pillar flare. Runner tooth positions differ deliberately; original lip blends remain simplified. No additional geometry issue identified."
+    }
+  },
+  "removal_intent": "Sacrificial print-in-place sheets and their teeth/pillars are intended to be removed after printing to clear the two runner channels and rear opening. They are not functional springs.",
+  "validation_limits": [
+    "Geometry and topology were checked digitally. Physical printing, bridging, support removal, material selection and slicer settings have not been tested.",
+    "The source STL has float32 coordinate quantization; measurements are not manufacturing tolerances.",
+    "Comparison is scoped to these supports. It does not claim complete geometric identity to the purchased source."
+  ]
+}

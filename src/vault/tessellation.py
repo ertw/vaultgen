@@ -60,6 +60,10 @@ def _tessellate(module, mesh_path, deflection=.05):
     if error > .001:
         if deflection > .01:
             return _tessellate(module, mesh_path, deflection=.01)
+        # Small spring pads and thread crests can dominate a compact fastener's
+        # volume error even at 0.01 mm. Preserve the same 0.1% acceptance limit.
+        if deflection > .0025:
+            return _tessellate(module, mesh_path, deflection=.0025)
         raise ValueError(f'CAD and tessellated volume disagree by {error:.2%}')
     return mesh
 

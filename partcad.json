@@ -30,6 +30,44 @@
       "type": "build123d",
       "desc": "S4 Box 1F",
       "path": "catalog/box.py"
+    },
+    "s4_box_1f_printed_screw": {
+      "type": "build123d",
+      "desc": "S4 Box 1F — printed screw joint",
+      "path": "catalog/box_printed_screw.py"
+    },
+    "s1f_facade_printed_screw": {
+      "type": "build123d",
+      "desc": "S1F Facade — printed screw joint",
+      "path": "catalog/facade_printed_screw.py"
+    },
+    "s4_facade_screw": {
+      "type": "build123d",
+      "desc": "S4 Facade printed screw",
+      "path": "catalog/facade_screw.py"
+    },
+    "s_geared_rail_plain": {
+      "type": "build123d",
+      "desc": "S Geared Rail — plain",
+      "path": "catalog/geared_rail.py",
+      "parameters": {
+        "retained": {"type": "bool", "default": false}
+      }
+    },
+    "s_geared_rail_retained": {
+      "type": "build123d",
+      "desc": "S Geared Rail — retention flange",
+      "path": "catalog/geared_rail.py",
+      "parameters": {
+        "retained": {"type": "bool", "default": true}
+      }
+    }
+  },
+  "assemblies": {
+    "s_geared_rails": {
+      "type": "assy",
+      "desc": "S Geared Rails",
+      "path": "catalog/geared_rails.assy.json"
     }
   }
 }

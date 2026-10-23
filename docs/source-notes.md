@@ -64,6 +64,15 @@ The source uses large absolute coordinates. Its original-coordinate bounds are
 extents are approximately 164.995117 × 57.009094 × 188.101013 mm; these axes are
 reordered for the model's width, drawer travel, and height coordinates.
 
+The historical module comparison registration swaps source Y and Z and retains
+X, producing a reflection (determinant −1). Assembling the original module with
+the bottom-down box instead requires a proper rotation: negate centered X as
+well as exchanging Y and Z (determinant +1). This places the module's lower mouth
+pocket at negative X and its upper pocket at positive X, matching the box's gear
+exits. The mouth constructors now use that assembly handedness. Historical
+whole-model comparisons keep their original registration for reproducibility;
+`tools/check_runner_interfaces.py` records the corrected interface checks.
+
 Binary STL stores coordinates as 32-bit floats. At this source location,
 adjacent representable coordinates are approximately 0.000976563 mm apart
 along original X and 0.000061035 mm apart along original Y and Z. Smooth CAD

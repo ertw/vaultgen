@@ -24,16 +24,16 @@ class FeatureParameterTests(unittest.TestCase):
 
     def test_pocket_floor_moves_relief_and_entry_lip_in_solid_wall(self):
         dimensions = ShellDimensions()
-        block = Solid.make_box(14, 8, 47, Plane(origin=(66, 181, 0)))
+        block = Solid.make_box(14, 8, 47, Plane(origin=(-80, 181, 0)))
         inner = DEFAULT_SPEC.half_width - dimensions.channel_inner_inset
         runner = _runner_profile(
             dimensions.back_wall, dimensions.channel_floor,
             dimensions.channel_ceiling, dimensions.channel_back_radius,
             DEFAULT_SPEC.depth, dimensions.channel_mouth_radius,
-            lambda y, z: (inner, y, z),
+            lambda y, z: (-inner, y, z),
         )
         width = dimensions.channel_inner_inset - dimensions.channel_outer_inset
-        wall = block.cut(Solid.extrude(runner, (width, 0, 0)))
+        wall = block.cut(Solid.extrude(runner, (-width, 0, 0)))
 
         def section_heights(floor, y):
             cutters = _mouth_pockets(
@@ -42,7 +42,7 @@ class FeatureParameterTests(unittest.TestCase):
             result = wall.cut(*cutters[:2]).clean()
             self.assertTrue(result.is_valid)
             intersections = result.find_intersection_points(
-                Axis((70.3344, y, -1), (0, 0, 1)),
+                Axis((-70.3344, y, -1), (0, 0, 1)),
             )
             return sorted({round(point.Z, 8) for point, _ in intersections})
 

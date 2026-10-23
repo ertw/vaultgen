@@ -36,13 +36,13 @@ class ParametricSleeveTests(unittest.TestCase):
         self.assertTrue(wider.is_valid)
         self.assertLess(wider.volume, self.nominal.volume)
 
-    def test_diagonal_mouth_relief_is_preserved(self):
-        # Source plateaus at Y=185: right floor6.4914/left floor9.5014;
-        # right ceiling37.5014/left ceiling40.5114. These are not X mirrors.
-        self.assertFalse(self.nominal.is_inside((70.3344, 185, 8)))
-        self.assertTrue(self.nominal.is_inside((-70.3344, 185, 8)))
-        self.assertTrue(self.nominal.is_inside((70.3344, 185, 39)))
-        self.assertFalse(self.nominal.is_inside((-70.3344, 185, 39)))
+    def test_diagonal_mouth_relief_matches_assembled_geared_rails(self):
+        # A proper source rotation places the lower mate at -X and upper at
+        # +X, matching the box exits. Probe clear of the sacrificial webs.
+        self.assertTrue(self.nominal.is_inside((70.3344, 185, 7.2)))
+        self.assertFalse(self.nominal.is_inside((-70.3344, 185, 7.2)))
+        self.assertFalse(self.nominal.is_inside((70.3344, 185, 39.8)))
+        self.assertTrue(self.nominal.is_inside((-70.3344, 185, 39.8)))
 
 
 if __name__ == "__main__":

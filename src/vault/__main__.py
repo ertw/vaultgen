@@ -12,6 +12,13 @@ from .spec import DEFAULT_SPEC, FAMILIES, ModuleSpec
 from ._build import run_build, source_hashes, verify_files, write_json
 
 
+PRINTED_PARTS = {
+    's4_box_1f_printed_screw': ('BOX_SPEC', 'build_printed_box'),
+    's1f_facade_printed_screw': ('FACADE_SPEC', 'build_printed_facade'),
+    's4_facade_screw': ('SCREW_SPEC', 'build_printed_screw'),
+}
+
+
 def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     from .model import build_module
 
@@ -24,6 +31,9 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     elif spec.slug == 's4_box_1f':
         from .box import build_box
         module = build_box()
+    elif spec.slug in PRINTED_PARTS:
+        from . import printed_joint
+        module = getattr(printed_joint, PRINTED_PARTS[spec.slug][1])()
     else:
         module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
     return _export_into(module, output, started, spec)
@@ -32,7 +42,6 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
 def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAULT_SPEC):
     """Export and check an already constructed native model."""
     from build123d import export_brep, export_step
-    from .model import print_orientation
     from .render import render_review
     from dataclasses import asdict
 
@@ -45,9 +54,7 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
     if not export_step(module, output / f'{stem}.step'):
         raise ValueError('STEP export failed')
     restored, step_check = check_step(module, output / f'{stem}.step')
-    if spec.slug == 's4_box_1f':
-        from .box import print_orientation
-    printable = print_orientation(module)
+    printable = print_orientation(module, spec)
     if not export_step(printable, output / f'{stem}_print.step'):
         raise ValueError('Print STEP export failed')
     _, print_step_check = check_step(printable, output / f'{stem}_print.step')
@@ -86,7 +93,15 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         'step_bytes': (output / f'{stem}.step').stat().st_size,
         'elapsed_seconds': time.monotonic() - started,
         'print_bbox_mm': list(printable.bounding_box().size),
-        'print_orientation': ('Closed bottom on Z=0.' if spec.slug == 's4_box_1f' else
+        'print_orientation': ('Closed bottom on Z=0.' if part_kind(spec) == 'box' else
+                              'Head flat on Z=0; shaft upward; no supports. PLA, 0.6 mm nozzle; '
+                              'start with 0.2 mm layers.' if part_kind(spec) == 'screw' else
+                              'Rear pilots on Z=0; enable rear supports under the seating rim '
+                              '(1 mm above bed) and rear pockets; '
+                              'block support in blind sockets.' if spec.slug == 's1f_facade_printed_screw' else
+                              'Closed back on Z=0; model rotated +90 degrees about X. '
+                              'Remove the breakaway webs under both runner-mouth lips before assembly.'
+                              if part_kind(spec) == 'module' else
                               'Rear face on Z=0; model rotated +90 degrees about X.'),
         'source_files': source_hashes(PROJECT_ROOT),
         'files': {
@@ -99,13 +114,33 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
 
 
 def part_kind(spec):
-    return {'s1f_facade': 'facade', 's4_box_1f': 'box'}.get(spec.slug, 'module')
+    return {'s1f_facade': 'facade', 's4_box_1f': 'box',
+            's1f_facade_printed_screw': 'facade', 's4_box_1f_printed_screw': 'box',
+            's4_facade_screw': 'screw', 's_geared_rails': 'rail'}.get(spec.slug, 'module')
+
+
+def print_orientation(module, spec):
+    """Place each part's intended print face on the build plate."""
+    if part_kind(spec) == 'box':
+        from .box import print_orientation as orient_box
+        return orient_box(module)
+    if part_kind(spec) == 'screw' or spec.slug == 's1f_facade_printed_screw':
+        from build123d import Axis
+        printable = module.rotate(Axis.X, 90)
+        return printable.translate((0, 0, -printable.bounding_box().min.Z))
+    from .model import print_orientation as orient_module
+    return orient_module(module)
 
 
 def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
+    if spec.slug == 's_geared_rails':
+        return build_rails(output)
     from dataclasses import asdict
     configuration = {**asdict(spec), 'part': spec.slug}
-    if spec.slug in {'s1f_facade', DEFAULT_SPEC.slug}:
+    if spec.slug in PRINTED_PARTS:
+        from .printed_joint import D
+        configuration['printed_joint'] = asdict(D)
+    if spec.slug in {'s1f_facade', 's1f_facade_printed_screw', DEFAULT_SPEC.slug}:
         from .shadow_gap import DEFAULT_GAP
         configuration['shadow_gap'] = asdict(DEFAULT_GAP)
     configuration_hash = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
@@ -129,7 +164,110 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
                      output=output, aliases=[f'latest/{spec.slug}'])
 
 
+def _export_rails(output: Path):
+    """Export both rail variants, retaining the one-solid check for each part."""
+    from build123d import Compound, export_brep, export_step, import_step
+    from .exports import check_step, precise_volume
+    from .geared_rails import SPEC, build_gear_rail
+    from .render import render_review
+    from .tessellation import export_print_mesh, review_mesh
+
+    started = time.monotonic()
+    output.mkdir(parents=True, exist_ok=True)
+    components, reports, display = [], {}, []
+    next_y = 0.
+    for retained in (False, True):
+        variant = 'retained' if retained else 'plain'
+        stem = f's_geared_rail_{variant}'
+        rail = build_gear_rail(retained=retained)
+        if not rail.is_valid or len(rail.solids()) != 1 or len(rail.shells()) != 1:
+            raise ValueError(f'{stem}: expected one valid solid with one boundary shell')
+        bounds = rail.bounding_box()
+        printable = rail.translate((-bounds.min.X, -bounds.min.Y, -bounds.min.Z))
+        shown = printable.translate((0, next_y, 0))
+        shown.label = stem
+        next_y = shown.bounding_box().max.Y + 5.
+        print(f'Exporting {stem} STEP and print STL…', flush=True)
+        for shape, suffix in ((shown, ''), (printable, '_print')):
+            path = output / f'{stem}{suffix}.step'
+            if not export_step(shape, path):
+                raise ValueError(f'{stem}{suffix}: STEP export failed')
+            _, report = check_step(shape, path)
+            if suffix:
+                print_check = report
+            else:
+                step_check = report
+        if not export_brep(shown, output / f'{stem}.brep'):
+            raise ValueError(f'{stem}: BREP export failed')
+        mesh = export_print_mesh(printable, output / 'stl' / f'{stem}.stl')
+        reports[stem] = {
+            'kind': 'rail', 'cad_valid': True, 'solids': 1, 'boundary_shells': 1,
+            'cad_volume_mm3': precise_volume(rail),
+            'step_roundtrip': step_check, 'print_step_roundtrip': print_check,
+            'print_bbox_mm': list(printable.bounding_box().size),
+            'print_note': 'Flat broad face on Z=0; teeth lie in the build plate plane.',
+            'stl_watertight': bool(mesh.is_watertight),
+            'stl_winding_consistent': bool(mesh.is_winding_consistent),
+        }
+        components.append({'name': stem, 'step': f'{stem}.step', 'kind': 'rail'})
+        display.append(shown)
+
+    assembly = Compound(label=SPEC.name, children=display)
+    path = output / f'{SPEC.slug}.step'
+    if not export_step(assembly, path):
+        raise ValueError('Rail assembly STEP export failed')
+    restored = import_step(path)
+    volume = precise_volume(assembly)
+    volume_delta = abs(precise_volume(restored) - volume) / max(volume, 1.)
+    before, after = assembly.bounding_box(), restored.bounding_box()
+    bounds_delta = max(abs(a - b) for a, b in zip(
+        (*before.min, *before.max), (*after.min, *after.max)))
+    component_names = {child.label for child in restored.children}
+    expected_names = {item['name'] for item in components}
+    assembly_check = {
+        'passed': bool(restored.is_valid and len(restored.solids()) == 2
+                       and len(restored.shells()) == 2 and volume > 0
+                       and component_names == expected_names
+                       and volume_delta < 1e-5 and bounds_delta < 1e-4),
+        'solids': len(restored.solids()), 'boundary_shells': len(restored.shells()),
+        'components': sorted(component_names),
+        'volume_relative_error': volume_delta, 'volume_relative_tolerance': 1e-5,
+        'bbox_max_error_mm': bounds_delta,
+    }
+    if not assembly_check['passed']:
+        raise ValueError(f'Rail assembly STEP round-trip failed: {assembly_check}')
+    render_review(review_mesh(restored), output / 'review')
+    manifest = {
+        'passed': True, 'project': 'vault', 'name': SPEC.name, 'units': 'mm',
+        'status': 'Completed CAD build', 'cad_valid': True, 'solids': 2,
+        'boundary_shells': 2, 'cad_volume_mm3': volume,
+        'model_bounds_mm': [list(before.min), list(before.max)],
+        'step_roundtrip': assembly_check, 'parts': reports,
+        'elapsed_seconds': time.monotonic() - started,
+        'source_files': source_hashes(PROJECT_ROOT),
+    }
+    write_json(output / 'build.json', manifest)
+    return manifest, {'assembly': path.name, 'components': components}
+
+
+def build_rails(output: Path):
+    """Publish a two-part rail set only after each export has passed validation."""
+    from dataclasses import asdict
+    from .geared_rails import D, SPEC
+    configuration = {**asdict(SPEC), 'part': SPEC.slug, 'geared_rails': asdict(D)}
+    digest = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
+    return run_build(PROJECT_ROOT, digest, lambda state: _export_rails(state.stage),
+                     parameters=configuration, output=output,
+                     aliases=[f'latest/{SPEC.slug}'])
+
+
 def build_preview(configuration):
+    if configuration == 's_geared_rails':
+        from .geared_rails import SPEC
+        return build(PROJECT_ROOT / 'out', SPEC)
+    if configuration in PRINTED_PARTS:
+        from . import printed_joint
+        return build(PROJECT_ROOT / 'out', getattr(printed_joint, PRINTED_PARTS[configuration][0]))
     if configuration == 's4_box_1f':
         from .box import SPEC
         return build(PROJECT_ROOT / 'out', SPEC)
@@ -160,7 +298,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['build', 'validate', 'render'])
     parser.add_argument('--output', type=Path)
-    parser.add_argument('--part', choices=['module', 'facade', 'box'], default='module')
+    parser.add_argument('--part', choices=['module', 'facade', 'box', 'box-printed-screw',
+                                          'facade-printed-screw', 'screw', 'rails'], default='module')
     parser.add_argument('--family', choices=FAMILIES, default='S')
     parser.add_argument('--depth-units', type=int, default=4)
     parser.add_argument('--height-units', type=int, default=1)
@@ -182,6 +321,18 @@ def main():
             parser.error('The box currently supports S4 1F only; omit size options.')
         from .box import SPEC
         spec = SPEC
+    if args.part == 'rails':
+        if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
+            parser.error('The geared rails currently support the supplied S rail set only; omit size options.')
+        from .geared_rails import SPEC
+        spec = SPEC
+    if args.part in {'box-printed-screw', 'facade-printed-screw', 'screw'}:
+        if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
+            parser.error('The printed screw joint currently supports S4 1F only; omit size options.')
+        from . import printed_joint
+        spec = getattr(printed_joint, {'box-printed-screw': 'BOX_SPEC',
+                                      'facade-printed-screw': 'FACADE_SPEC',
+                                      'screw': 'SCREW_SPEC'}[args.part])
     if args.output is None:
         args.output = PROJECT_ROOT / 'out'
     if args.samples < 1 or args.tolerance <= 0 or args.mating_tolerance <= 0:

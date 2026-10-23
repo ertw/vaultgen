@@ -28,8 +28,9 @@ def main():
         'model_sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
         'registration': {'axis_order': [0, 1, 2], 'subtract_origin_mm': origin},
         'method': 'Deterministic 20000 area samples plus up to 20000 vertices, exact point-to-triangle distance, bidirectional; no exclusions.',
-        'known_changes': ['Branding and rear opening bridge omitted',
-                          'Simplified runner blends and spring strip end connections',
+        'known_changes': ['Branding omitted',
+                          'Simplified runner blends and regularly spaced breakaway support teeth',
+                          'Nominal rear support panel with two flared roof contacts',
                           'Rectangular attachment recesses and simplified front lands'],
         'source_watertight': bool(reference.is_watertight),
     }
