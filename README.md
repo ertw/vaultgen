@@ -211,3 +211,26 @@ screw clearances. Physical fit has not been tested.
 The facade's curved surfaces can require finer mesh resolution: tessellation
 now retries at 0.01 mm if the default 0.05 mm mesh exceeds the existing 0.1%
 CAD-volume tolerance. STEP remains independent of the mesh resolution.
+
+## S4 Box 1F
+
+`python -m vault build --part box` builds the native drawer tray and publishes
+`out/latest/s4_box_1f/`, including STEP, BREP, print STL, and review images.
+The catalog entry is **S4 Box 1F**, bound to the `vault-box` adapter. Like the
+facade, this part currently supports only its measured size; other size options
+are rejected. `python -m vault render --part box` renders its latest build.
+
+`src/vault/box.py` constructs the 134.2 × 185.8 × 37.5 mm tray with a 3 mm
+floor, rounded cavity, side runner channels and strips, rear openings, and
+front attachment lands with 3.6 mm screw holes. The front seating plane is
+Y=188.1; screw centers are X=±51.45, Z=23.5, matching the positioned S1F
+facade. Print exports place the closed bottom on Z=0.
+
+This is a simplified reconstruction: small blends, spring-strip connections,
+and front attachment recesses differ from the purchased mesh. Branding and
+the thin bridge across the rear slot are omitted. These differences are not
+validated as mechanically equivalent, and physical fit remains untested.
+`python tools/measure_box.py` writes a deterministic, bidirectional comparison
+with no exclusions to `research/box_comparison.json`, including source and
+model hashes. Solid/export checks do not establish source equivalence; the
+module's full `validate` command does not apply to this tray.

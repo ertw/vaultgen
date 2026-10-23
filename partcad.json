@@ -25,6 +25,11 @@
       "type": "build123d",
       "desc": "S1F Facade",
       "path": "catalog/facade.py"
+    },
+    "s4_box_1f": {
+      "type": "build123d",
+      "desc": "S4 Box 1F",
+      "path": "catalog/box.py"
     }
   }
 }

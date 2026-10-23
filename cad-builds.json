@@ -9,6 +9,10 @@
     "s1f_facade": {
       "object": "parts/s1f_facade",
       "adapter": "vault-facade"
+    },
+    "s4_box_1f": {
+      "object": "parts/s4_box_1f",
+      "adapter": "vault-box"
     }
   }
 }

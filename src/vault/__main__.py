@@ -21,6 +21,9 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     if spec.slug == 's1f_facade':
         from .facade import build_facade
         module = build_facade()
+    elif spec.slug == 's4_box_1f':
+        from .box import build_box
+        module = build_box()
     else:
         module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
     return _export_into(module, output, started, spec)
@@ -42,6 +45,8 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
     if not export_step(module, output / f'{stem}.step'):
         raise ValueError('STEP export failed')
     restored, step_check = check_step(module, output / f'{stem}.step')
+    if spec.slug == 's4_box_1f':
+        from .box import print_orientation
     printable = print_orientation(module)
     if not export_step(printable, output / f'{stem}_print.step'):
         raise ValueError('Print STEP export failed')
@@ -81,7 +86,8 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         'step_bytes': (output / f'{stem}.step').stat().st_size,
         'elapsed_seconds': time.monotonic() - started,
         'print_bbox_mm': list(printable.bounding_box().size),
-        'print_orientation': 'Rear face on Z=0; model rotated +90 degrees about X.',
+        'print_orientation': ('Closed bottom on Z=0.' if spec.slug == 's4_box_1f' else
+                              'Rear face on Z=0; model rotated +90 degrees about X.'),
         'source_files': source_hashes(PROJECT_ROOT),
         'files': {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
@@ -90,6 +96,10 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
     }
     (output / 'build.json').write_text(json.dumps(manifest, indent=2) + '\n')
     return manifest
+
+
+def part_kind(spec):
+    return {'s1f_facade': 'facade', 's4_box_1f': 'box'}.get(spec.slug, 'module')
 
 
 def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
@@ -108,10 +118,10 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
             raise ValueError('CAD and STEP validation must pass before publishing')
         viewer = {
             'build_id': state.id, 'assembly': f'{spec.slug}.step',
-            'components': [{'name': spec.slug, 'step': f'{spec.slug}.step', 'kind': 'facade' if spec.slug == 's1f_facade' else 'module'}],
+            'components': [{'name': spec.slug, 'step': f'{spec.slug}.step', 'kind': part_kind(spec)}],
         }
         manifest.update(viewer='viewer.json', status='Completed CAD build', parts={spec.slug: {
-            'kind': 'facade' if spec.slug == 's1f_facade' else 'module', 'print_note': manifest.get('print_orientation', ''),
+            'kind': part_kind(spec), 'print_note': manifest.get('print_orientation', ''),
             'print_bbox_mm': manifest.get('print_bbox_mm', []),
         }})
         return {**manifest, 'passed': True, 'project': 'vault'}, viewer
@@ -120,6 +130,9 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
 
 
 def build_preview(configuration):
+    if configuration == 's4_box_1f':
+        from .box import SPEC
+        return build(PROJECT_ROOT / 'out', SPEC)
     if configuration == 's1f_facade':
         from .facade import SPEC
         return build(PROJECT_ROOT / 'out', SPEC)
@@ -147,7 +160,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['build', 'validate', 'render'])
     parser.add_argument('--output', type=Path)
-    parser.add_argument('--part', choices=['module', 'facade'], default='module')
+    parser.add_argument('--part', choices=['module', 'facade', 'box'], default='module')
     parser.add_argument('--family', choices=FAMILIES, default='S')
     parser.add_argument('--depth-units', type=int, default=4)
     parser.add_argument('--height-units', type=int, default=1)
@@ -163,6 +176,11 @@ def main():
         if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
             parser.error('The facade currently supports S1F only; omit size options.')
         from .facade import SPEC
+        spec = SPEC
+    if args.part == 'box':
+        if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
+            parser.error('The box currently supports S4 1F only; omit size options.')
+        from .box import SPEC
         spec = SPEC
     if args.output is None:
         args.output = PROJECT_ROOT / 'out'
