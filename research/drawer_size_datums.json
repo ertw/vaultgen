@@ -1,0 +1,275 @@
+{
+  "method": "Bounds and section loops measured directly from purchased binary STLs with trimesh. Nominal dimensions regularize STL precision. Shapes remain native reconstructions; these measurements do not prove physical fit.",
+  "nominal_contract": {
+    "box_width": "module width - 30.6 mm",
+    "box_depth": "module depth - 2.3 mm",
+    "box_height": "module height - 9.5 mm",
+    "box_floor_z_mm": 5,
+    "box_front_y_mm": "module depth",
+    "runner_pitch_mm": 48,
+    "inner_screw_x_mm": [
+      -51.45,
+      51.45
+    ],
+    "outer_screw_x_mm": {
+      "S": 51.45,
+      "M": 92.45,
+      "L": 130.25
+    },
+    "screw_z_mm": [
+      23.5,
+      71.5
+    ],
+    "lock": "One fixed bottom-tier mechanism. M/L repeat outer screws at each tier; inner lock pair stays on the bottom tier."
+  },
+  "measurements": [
+    {
+      "family": "S",
+      "height_units": 1,
+      "part": "Box",
+      "path": "original_files/01. DRAWERS/01. S Families/S4/Boxes/S4 Box 1F.stl",
+      "source_extents_mm": [
+        134.199219,
+        185.800171,
+        37.5
+      ],
+      "screw_axes_xz_mm": [
+        [
+          -51.452,
+          23.5
+        ],
+        [
+          51.448,
+          23.5
+        ]
+      ]
+    },
+    {
+      "family": "S",
+      "height_units": 1,
+      "part": "Facade",
+      "path": "original_files/01. DRAWERS/01. S Families/Facades/S1F (Turn On Supports).stl",
+      "source_extents_mm": [
+        164.799805,
+        46.998779,
+        10.000168
+      ]
+    },
+    {
+      "family": "S",
+      "height_units": 2,
+      "part": "Box",
+      "path": "original_files/01. DRAWERS/01. S Families/S4/Boxes/S4 Box 2F.stl",
+      "source_extents_mm": [
+        134.199219,
+        185.800171,
+        85.500004
+      ],
+      "screw_axes_xz_mm": [
+        [
+          -51.452,
+          23.5
+        ],
+        [
+          -51.452,
+          71.5
+        ],
+        [
+          51.448,
+          23.5
+        ],
+        [
+          51.448,
+          71.5
+        ]
+      ]
+    },
+    {
+      "family": "S",
+      "height_units": 2,
+      "part": "Facade",
+      "path": "original_files/01. DRAWERS/01. S Families/Facades/S2F (Turn On Supports).stl",
+      "source_extents_mm": [
+        164.799805,
+        94.998779,
+        10.260483
+      ]
+    },
+    {
+      "family": "M",
+      "height_units": 1,
+      "part": "Box",
+      "path": "original_files/01. DRAWERS/02. M Families/M4/Boxes/M4 Box 1F.stl",
+      "source_extents_mm": [
+        223.397949,
+        185.800049,
+        37.5
+      ],
+      "screw_axes_xz_mm": [
+        [
+          -92.452,
+          23.5
+        ],
+        [
+          -51.456,
+          23.5
+        ],
+        [
+          51.456,
+          23.5
+        ],
+        [
+          92.452,
+          23.5
+        ]
+      ]
+    },
+    {
+      "family": "M",
+      "height_units": 1,
+      "part": "Facade",
+      "path": "original_files/01. DRAWERS/02. M Families/Facades/M1F (Turn On Supports).stl",
+      "source_extents_mm": [
+        254.0,
+        46.998779,
+        10.001602
+      ]
+    },
+    {
+      "family": "M",
+      "height_units": 2,
+      "part": "Box",
+      "path": "original_files/01. DRAWERS/02. M Families/M4/Boxes/M4 Box 2F.stl",
+      "source_extents_mm": [
+        223.397949,
+        185.800049,
+        85.5
+      ],
+      "screw_axes_xz_mm": [
+        [
+          -92.452,
+          23.5
+        ],
+        [
+          -92.452,
+          71.5
+        ],
+        [
+          -51.456,
+          23.5
+        ],
+        [
+          51.456,
+          23.5
+        ],
+        [
+          92.452,
+          23.5
+        ],
+        [
+          92.452,
+          71.5
+        ]
+      ]
+    },
+    {
+      "family": "M",
+      "height_units": 2,
+      "part": "Facade",
+      "path": "original_files/01. DRAWERS/02. M Families/Facades/M2F (Turn On Supports).stl",
+      "source_extents_mm": [
+        254.000488,
+        94.998779,
+        10.260437
+      ]
+    },
+    {
+      "family": "L",
+      "height_units": 1,
+      "part": "Box",
+      "path": "original_files/01. DRAWERS/03. L Families/L4/Boxes/L4 Box 1F.stl",
+      "source_extents_mm": [
+        298.996582,
+        185.800049,
+        37.5
+      ],
+      "screw_axes_xz_mm": [
+        [
+          -130.26,
+          23.5
+        ],
+        [
+          -51.456,
+          23.5
+        ],
+        [
+          51.456,
+          23.5
+        ],
+        [
+          130.26,
+          23.5
+        ]
+      ]
+    },
+    {
+      "family": "L",
+      "height_units": 1,
+      "part": "Facade",
+      "path": "original_files/01. DRAWERS/03. L Families/Facades/L1F (Turn On Supports).stl",
+      "source_extents_mm": [
+        329.600098,
+        46.998779,
+        10.000023
+      ]
+    },
+    {
+      "family": "L",
+      "height_units": 2,
+      "part": "Box",
+      "path": "original_files/01. DRAWERS/03. L Families/L4/Boxes/L4 Box 2F.stl",
+      "source_extents_mm": [
+        298.996582,
+        185.800049,
+        85.500004
+      ],
+      "screw_axes_xz_mm": [
+        [
+          -130.26,
+          23.5
+        ],
+        [
+          -130.26,
+          71.5
+        ],
+        [
+          -51.456,
+          23.5
+        ],
+        [
+          51.456,
+          23.5
+        ],
+        [
+          130.26,
+          23.5
+        ],
+        [
+          130.26,
+          71.5
+        ]
+      ]
+    },
+    {
+      "family": "L",
+      "height_units": 2,
+      "part": "Facade",
+      "path": "original_files/01. DRAWERS/03. L Families/Facades/L2F (Turn On Supports).stl",
+      "source_extents_mm": [
+        329.600342,
+        94.998779,
+        10.260437
+      ]
+    }
+  ]
+}

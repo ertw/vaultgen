@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111315">
+  <title>Vault generator</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script type="module" src="/static/app.js"></script>
+</head>
+<body>
+  <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5"/></symbol>
+    <symbol id="i-cube" viewBox="0 0 24 24"><path d="m12 3 9 5v9l-9 5-9-5V8Zm0 10 9-5M3 8l9 5v9M7 5.8l9 5"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 3v7h7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  </defs></svg>
+
+  <header class="site-header">
+    <h1 id="page-title">Vault generator</h1>
+    <a class="catalog-link" href="https://cad.erik.cl/" target="_blank" rel="noreferrer">CAD library <svg class="icon"><use href="#i-arrow"/></svg></a>
+  </header>
+
+  <main>
+    <div class="workspace">
+      <section class="configurator panel" aria-labelledby="configure-title">
+        <div class="panel-heading"><h2 id="configure-title">Configuration</h2></div>
+        <form id="configuration-form">
+          <fieldset><legend><span>Family</span><span class="field-hint">Outside width</span></legend><div class="family-options" id="family-options"></div></fieldset>
+          <div class="size-row">
+            <fieldset><legend>Depth <span class="field-unit">units</span></legend><div class="segmented" id="depth-options"></div><p class="dimension-hint" id="depth-hint"></p></fieldset>
+            <fieldset><legend>Height <span class="field-unit">floors</span></legend><div class="segmented" id="height-options"></div><p class="dimension-hint" id="height-hint"></p></fieldset>
+          </div>
+          <fieldset class="part-field"><legend>Parts</legend><div class="part-options" id="part-options"></div></fieldset>
+          <div class="config-summary"><svg class="icon"><use href="#i-cube"/></svg><div><strong id="configuration-name">S4 · 1F</strong><span id="configuration-dimensions"></span></div><span class="size-limit">S → L · 2F max</span></div>
+          <button id="build-button" class="button button-primary" type="submit" disabled><span id="build-button-text">Generate parts</span><svg class="icon"><use href="#i-arrow"/></svg></button>
+        </form>
+        <p id="connection-error" class="error-message" role="alert" hidden></p>
+      </section>
+
+      <section class="preview panel" aria-labelledby="preview-title">
+        <div class="preview-heading"><div><p class="eyebrow" id="preview-eyebrow">SELECTION</p><h2 id="preview-title">S4 · 1F</h2></div><span id="preview-badge" class="badge">Configuration envelope</span></div>
+        <div class="viewport" id="viewport">
+          <svg id="envelope" class="envelope" viewBox="0 0 680 450" role="img" aria-label="Diagram of the configured module envelope, not generated CAD">
+            <defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#2c3239"/></pattern></defs>
+            <rect width="680" height="450" fill="url(#grid)"/>
+            <g id="envelope-drawing"></g>
+          </svg>
+          <canvas id="model-canvas" aria-label="Interactive 3D preview. Drag to orbit; scroll to zoom." tabindex="0" hidden></canvas>
+          <div id="viewer-message" class="viewer-message" role="status" hidden></div>
+          <div class="viewport-label"><span class="status-dot"></span><span id="viewport-label">Ready to generate</span></div>
+          <button id="reset-view" class="icon-button reset-view" type="button" aria-label="Reset 3D view" title="Reset view" hidden><svg class="icon"><use href="#i-reset"/></svg></button>
+          <div class="viewer-help" id="viewer-help" hidden>Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Arrows to rotate</div>
+        </div>
+        <div class="preview-footer"><div class="metric"><span>WIDTH</span><strong id="metric-width">164.8 <small>mm</small></strong></div><div class="metric"><span>DEPTH</span><strong id="metric-depth">188.1 <small>mm</small></strong></div><div class="metric"><span>HEIGHT</span><strong id="metric-height">47 <small>mm</small></strong></div><div class="preview-kind" id="preview-kind">Module body · stacking connectors excluded</div></div>
+        <div id="artifact-panel" class="artifact-panel" hidden><div class="artifact-top"><div><span class="eyebrow">GENERATED PARTS</span><p id="artifact-description"></p></div><a id="bundle-download" class="text-button" hidden><svg class="icon"><use href="#i-download"/></svg>Complete ZIP</a></div><div id="artifact-tabs" class="artifact-tabs" aria-label="Generated part previews"></div><p id="print-note" class="print-note"></p><div class="download-row"><a id="stl-download" class="button button-dark"><svg class="icon"><use href="#i-download"/></svg>Download STL</a><a id="step-download" class="button button-outline">Download STEP <svg class="icon"><use href="#i-arrow"/></svg></a></div></div>
+      </section>
+    </div>
+
+    <section id="job-panel" class="job-panel panel" aria-labelledby="job-title" hidden><div class="job-heading"><span id="job-indicator" class="job-indicator"></span><div><h2 id="job-title">Generating parts</h2><p id="job-description"></p></div><span id="job-status" class="badge">Running</span></div><p id="job-error" class="error-message" role="alert" hidden></p><div class="job-actions"><button id="job-artifacts-button" class="text-button" type="button" hidden>View generated parts <svg class="icon"><use href="#i-arrow"/></svg></button><a id="job-bundle-download" class="text-button" hidden><svg class="icon"><use href="#i-download"/></svg>Download complete ZIP</a></div><details id="build-log-details"><summary>Build log <span id="log-line-count"></span></summary><pre id="build-log" aria-label="Build output"></pre></details></section>
+
+    <section class="history-section" aria-labelledby="history-title"><div class="section-heading"><h2 id="history-title">Recent builds</h2><button id="refresh-history" class="text-button" type="button"><svg class="icon"><use href="#i-reset"/></svg>Refresh</button></div><div id="history-list" class="history-list"><p class="empty-history">No completed builds.</p></div></section>
+
+  </main>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>

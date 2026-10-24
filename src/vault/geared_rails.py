@@ -1,4 +1,4 @@
-"""Native S geared locking rails, reconstructed from ``S Rails.stl``.
+"""Native S/M/L geared locking rails, reconstructed from the supplied rails.
 
 The two purchased parts share a beveled rack and rounded ends. The retained
 rail adds a rounded longitudinal rib on its back. Construction uses editable
@@ -7,23 +7,29 @@ mesh. Local X follows the rack, +Y points toward the teeth, and Z=0 is the
 flat print bed. The source is a print layout, not an assembly registration.
 """
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, replace
 from math import asin, cos, isfinite, pi, sin, sqrt
 
 from build123d import Compound, Edge, Face, Solid, Wire
+
+from .spec import FAMILIES
 
 
 @dataclass(frozen=True)
 class GearRailSpec:
     family: str = "S"
 
+    def __post_init__(self):
+        if self.family not in ("S", "M", "L"):
+            raise ValueError("Geared rails support S, M, and L families")
+
     @property
     def slug(self):
-        return "s_geared_rails"
+        return f"{self.family.lower()}_geared_rails"
 
     @property
     def name(self):
-        return "S Geared Rails"
+        return f"{self.family} Geared Rails"
 
 
 @dataclass(frozen=True)
@@ -58,16 +64,21 @@ class GearRailDimensions:
     retaining_full_start: float = 15.6543
     retaining_full_end: float = 105.7451
     retaining_end: float = 112.1914
+    extended_tail: bool = False
+    tail_corner_radius: float = 0.4
+    tail_relief_radius: float = 1.7
 
     def __post_init__(self):
         for field in fields(self):
-            if field.name in {"tooth_count", "narrow_valleys"}:
+            if field.name in {"tooth_count", "narrow_valleys", "extended_tail"}:
                 continue
             value = getattr(self, field.name)
             if not isfinite(value) or value <= 0:
                 raise ValueError(f"{field.name} must be finite and positive")
         if type(self.tooth_count) is not int or self.tooth_count < 1:
             raise ValueError("tooth_count must be a positive integer")
+        if type(self.extended_tail) is not bool:
+            raise ValueError("extended_tail must be a boolean")
         if any(type(i) is not int or not 0 <= i < self.tooth_count for i in self.narrow_valleys):
             raise ValueError("narrow_valleys must contain valid tooth indices")
         if len(set(self.narrow_valleys)) != len(self.narrow_valleys):
@@ -90,6 +101,11 @@ class GearRailDimensions:
             raise ValueError("tail taper must leave material at the tip")
         if self.valley_centers[-1] + self.valley_width / 2 >= self.length - self.tail_width / 2:
             raise ValueError("teeth must leave room for the rounded tail")
+        if self.extended_tail:
+            if self.tail_corner_radius + self.tail_relief_radius > self.width - self.tail_width:
+                raise ValueError("tail relief rounds must fit the width transition")
+            if self.tail_taper_start - self.tail_corner_radius - self.tail_relief_radius <= self.valley_centers[-1] + self.valley_width / 2 + .75:
+                raise ValueError("extended tail must start beyond the final tooth")
 
     @property
     def valley_centers(self):
@@ -103,6 +119,23 @@ class GearRailDimensions:
 
 SPEC = GearRailSpec()
 D = GearRailDimensions()
+
+
+def rail_dimensions(family="S"):
+    """Move the tail to match width while retaining the source tooth mechanism.
+
+    Source M/L rails add half the module width difference after the 20th tooth.
+    Their teeth, nose and retaining rib are identical to S. A full-width shank
+    joins the same tapered tip through R0.4/R1.7 rounds. Rail size depends only
+    on family, not drawer depth or tier count.
+    """
+    spec = GearRailSpec(family)
+    extension = (FAMILIES[spec.family].width - FAMILIES["S"].width) / 2
+    if not extension:
+        return D
+    return replace(D, length=D.length + extension,
+                   tail_taper_start=D.tail_taper_start + extension,
+                   extended_tail=True)
 
 
 def _one(shape):
@@ -156,7 +189,7 @@ def _plan(d):
             _arc(root, p(left + d.root_radius * (1 - c), root_y - d.root_radius * c), floor_left),
             _line(floor_left, floor_right),
         ])
-        if index == d.tooth_count - 1:
+        if index == d.tooth_count - 1 and not d.extended_tail:
             # The final root blends directly into the lower tail, without
             # another tooth. Stop the circular quadrant at the tail height.
             delta = d.tail_width - root_y
@@ -180,6 +213,24 @@ def _plan(d):
                                  p(right + .605, d.width), end),
             ])
             last = end
+
+    if d.extended_tail:
+        # The larger source rails retain exactly twenty teeth, then add a
+        # full-width shank. Two tangent rounds lower it to the original tip.
+        outer, inner = d.tail_corner_radius, d.tail_relief_radius
+        start_x = d.tail_taper_start - outer - inner
+        shoulder_y = d.tail_width + inner
+        start = p(start_x, d.width)
+        corner_end = p(start_x + outer, d.width - outer)
+        shoulder = p(start_x + outer, shoulder_y)
+        end = p(d.tail_taper_start, d.tail_width)
+        edges.extend([
+            _line(last, start),
+            _arc(start, p(start_x + outer*c, d.width - outer + outer*c), corner_end),
+            _line(corner_end, shoulder),
+            _arc(shoulder, p(d.tail_taper_start - inner*c, shoulder_y - inner*c), end),
+        ])
+        last = end
 
     # A long R3 roll meets the rounded tip, retaining the measured tail outline.
     tail_shift = d.length - 121.0537
@@ -220,14 +271,14 @@ def _retaining_rib(d):
     return _one(rib.intersect(Solid.extrude(plan, (0, 0, d.thickness + 2))))
 
 
-def build_gear_rail(retained=False, dimensions=D):
+def build_gear_rail(retained=False, dimensions=None, *, spec=SPEC):
     """Build either single rail, lying flat on Z=0 for printing.
 
     ``retained=True`` selects the extra back rib. The cross-section dimensions
     are nominal source dimensions; mating part clearances belong to the box
     and module. The default body is 4.8 mm wide and 3.8 mm thick.
     """
-    d = dimensions
+    d = rail_dimensions(spec.family) if dimensions is None else dimensions
     body = Solid.extrude(_plan(d), (0, 0, d.thickness))
     b, w, h = d.edge_bevel, d.width, d.thickness
     cross = Face(Wire.make_polygon([
@@ -244,12 +295,13 @@ def build_gear_rail(retained=False, dimensions=D):
     body = _one(body.intersect(Solid.extrude(ramp, (0, d.width + 4, 0))))
     if retained:
         body = _one(body.fuse(_retaining_rib(d)))
-    body.label = "S geared rail — retained" if retained else "S geared rail — plain"
+    body.label = f"{spec.family} geared rail — {'retained' if retained else 'plain'}"
     return body
 
 
-def build_geared_rails(dimensions=D):
+def build_geared_rails(dimensions=None, *, spec=SPEC):
     """Both native rails in a print layout with a 5 mm separation."""
-    retained = build_gear_rail(True, dimensions).translate((0, dimensions.retaining_projection, 0))
-    plain = build_gear_rail(False, dimensions).translate((0, dimensions.retaining_projection + dimensions.width + 5, 0))
-    return Compound(label=SPEC.name, children=[retained, plain])
+    dimensions = rail_dimensions(spec.family) if dimensions is None else dimensions
+    retained = build_gear_rail(True, dimensions, spec=spec).translate((0, dimensions.retaining_projection, 0))
+    plain = build_gear_rail(False, dimensions, spec=spec).translate((0, dimensions.retaining_projection + dimensions.width + 5, 0))
+    return Compound(label=spec.name, children=[retained, plain])

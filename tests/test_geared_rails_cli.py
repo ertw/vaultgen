@@ -25,7 +25,7 @@ class GearedRailBuildTests(unittest.TestCase):
 
     def test_rails_reject_unsupported_sizes_before_building(self):
         with patch.object(cli, 'build') as build:
-            with patch('sys.argv', ['vault', 'build', '--part', 'rails', '--family', 'M']):
+            with patch('sys.argv', ['vault', 'build', '--part', 'rails', '--family', 'XL']):
                 with redirect_stderr(StringIO()), self.assertRaises(SystemExit) as error:
                     cli.main()
             self.assertEqual(error.exception.code, 2)

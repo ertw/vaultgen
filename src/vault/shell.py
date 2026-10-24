@@ -18,7 +18,7 @@ class ShellDimensions:
     envelope: EnvelopeDimensions = EnvelopeDimensions()
     skin: float = 3.0
     side_wall: float = 14.761
-    back_wall: float = 0.6  # Two 0.3 mm layers with the closed back on the bed.
+    back_wall: float = 0.9  # Three 0.3 mm layers with the closed back on the bed.
     cavity_corner_radius: float = 1.0
     channel_inner_inset: float = 13.20997
     channel_outer_inset: float = 3.009775

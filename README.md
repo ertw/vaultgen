@@ -1,5 +1,15 @@
 # Vault CAD
 
+The size configurator at **https://vaultgen.erik.cl** generates matching modules,
+boxes, facades and geared rails. Choose S, M or L, depth 3–7, and 1F or 2F;
+XL and taller configurations are excluded from the generator. Build a single
+part or a complete set, inspect the actual print-oriented STL in 3D, and download
+checked STL/STEP files or the whole set as a ZIP. Existing host sign-in protects
+the application.
+
+Run locally with `python -m vault.web` (loopback port 3941). See
+[deployment](deploy/README.md) and [generator behavior](docs/generator.md).
+
 The viewer catalog is declared in `partcad.json`, with explicit build bindings in
 `cad-builds.json`. Generated files under `out/` are optional previews and history;
 they do not define catalog membership. See [the catalog format](../../cad-tooling/docs/catalogs.md).
@@ -33,7 +43,9 @@ Other sizes reuse the same feature definitions:
 python -m vault build --depth-units 3 --height-units 2
 python -m vault build --family M --depth-units 5
 python -m vault build --family L --height-units 2
-python -m vault build --family XL
+python -m vault build --part box --family L --depth-units 7 --height-units 2
+python -m vault build --part facade --family M --height-units 2
+python -m vault build --part rails --family L
 ```
 
 All sizes use the shared [build storage library](../../cad-tooling/docs/builds.md).
@@ -79,7 +91,7 @@ features instead of stretching their cross-sections:
 - Front connectors/catches follow the opening; rear features follow the back.
   The side stopper follows `depth / 2 + 28.50005`.
 
-The closed rear wall is 0.6 mm thick for two 0.3 mm layers when printed with
+The closed rear wall is 0.9 mm thick for three 0.3 mm layers when printed with
 the back on the bed. This intentionally differs from the 2 mm reference wall.
 
 Supplied drawer references cover depth units 3–7 and heights 1F, 2F, 4F
@@ -217,8 +229,7 @@ CAD export establishes solid validity, not exact source equivalence.
 1 mm peripheral width on each mating face**. Together they form a 1 mm axial
 shadow line, while the inner seating lands retain the original face positions.
 The facade's rear seating plane is Y=0 and its front is Y=10. For a closed
-assembly, translate it by (0, 188.1, 0) beside the S4 module. The module rebate
-applies only to S4 1F; other module sizes retain their previous geometry.
+assembly, translate it by (0, 188.1, 0) beside the S4 module. The module and facade rebates follow the selected width and height.
 Passing `shadow_gap=None` to `build_module` or `gap=None` to `build_facade`
 builds an unrecessed part. Gap tests probe both rebates, preserved lands and
 screw clearances. Physical fit has not been tested.
@@ -231,9 +242,10 @@ CAD-volume tolerance. STEP remains independent of the mesh resolution.
 
 `python -m vault build --part box` builds the native drawer tray and publishes
 `out/latest/s4_box_1f/`, including STEP, BREP, print STL, and review images.
-The catalog entry is **S4 Box 1F**, bound to the `vault-box` adapter. Like the
-facade, this part currently supports only its measured size; other size options
-are rejected. `python -m vault render --part box` renders its latest build.
+The existing catalog entry is **S4 Box 1F**, bound to the `vault-box` adapter.
+The CLI and generator also support S/M/L boxes and facades at 1F or 2F.
+Shared dimensions and screw centers live in `src/vault/drawer.py`; runner
+profiles repeat by tier, while the lock stays on the bottom tier. `python -m vault render --part box` renders its latest build.
 
 `src/vault/box.py` constructs the 134.2 × 185.8 × 37.5 mm tray with a 0.8 mm
 floor, a 1 mm reinforcing fillet at the interior floor-to-wall junction, a
@@ -313,3 +325,7 @@ the separate pinion/locking mechanism.
 
 The experimental printed screw joint, matching box and facade, and spring-tooth
 fit coupons are preserved on branch `codex/printed-screw-joint`.
+
+M and L rails are also available through `--family M` / `--family L`. Their
+measured lengths are 165.654 and 203.454 mm; they retain the original 20 teeth
+and add a straight shank before the tail instead of stretching the mechanism.

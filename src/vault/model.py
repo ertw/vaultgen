@@ -34,7 +34,7 @@ def build_module(
         progress('Building sleeve, drawer runners, and retention details')
     shell = build_shell(spec=spec, dimensions=shell_dimensions)
     part = add_connectors(shell, spec=spec, parameters=connector_parameters, progress=progress)
-    if shadow_gap is not None and spec == DEFAULT_SPEC:
+    if shadow_gap is not None:
         part = perimeter_rebate(part, spec.depth, -1, spec, shadow_gap)
     part.label = f'{spec.name} — unbranded'
     if not part.is_valid:

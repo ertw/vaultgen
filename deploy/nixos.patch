@@ -1,0 +1,35 @@
+--- a/hosts/nixos01/modules/services/default.nix
++++ b/hosts/nixos01/modules/services/default.nix
+@@ -8,6 +8,7 @@
+   imports = [
+     ./barcode-capture.nix
+     ./cad-viewer.nix
++    ./vaultgen.nix
+     ./grocy.nix
+     ./grocy-recipes.nix
+     ./jellyfin-sso.nix
+--- a/hosts/nixos01/modules/services/nginx.nix
++++ b/hosts/nixos01/modules/services/nginx.nix
+@@ -98,6 +98,22 @@
+       locations = protectedProxyLocations "http://127.0.0.1:3939";
+     };
+ 
++    "vaultgen.erik.cl" = {
++      useACMEHost = "erik.cl";
++      forceSSL = true;
++      locations =
++        let
++          protected = protectedProxyLocations "http://127.0.0.1:3941";
++        in
++        protected
++        // {
++          "^~ /api/" = protectedProxyLocation {
++            proxyPass = "http://127.0.0.1:3941";
++            redirectToLogin = false;
++          };
++        };
++    };
++
+     "barcodes.erik.cl" = {
+       useACMEHost = "erik.cl";
+       forceSSL = true;

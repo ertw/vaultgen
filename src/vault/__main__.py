@@ -18,12 +18,12 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     started = time.monotonic()
     output.mkdir(parents=True, exist_ok=True)
     print('Building native shell and mechanical connectors…', flush=True)
-    if spec.slug == 's1f_facade':
+    if part_kind(spec) == 'facade':
         from .facade import build_facade
-        module = build_facade()
-    elif spec.slug == 's4_box_1f':
+        module = build_facade(spec=spec)
+    elif part_kind(spec) == 'box':
         from .box import build_box
-        module = build_box()
+        module = build_box(spec=spec)
     else:
         module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
     return _export_into(module, output, started, spec)
@@ -83,11 +83,11 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         'step_bytes': (output / f'{stem}.step').stat().st_size,
         'elapsed_seconds': time.monotonic() - started,
         'print_bbox_mm': list(printable.bounding_box().size),
-        'print_orientation': ('Closed bottom on Z=0.' if part_kind(spec) == 'box' else
+        'print_orientation': ('Closed bottom on Z=0. Remove the breakaway runner sheets before assembly.' if part_kind(spec) == 'box' else
                               'Closed back on Z=0; model rotated +90 degrees about X. '
                               'Remove the breakaway webs under both runner-mouth lips before assembly.'
                               if part_kind(spec) == 'module' else
-                              'Rear face on Z=0; model rotated +90 degrees about X.'),
+                              'Rear face on Z=0; model rotated +90 degrees about X. Use supports beneath recessed faces.'),
         'source_files': source_hashes(PROJECT_ROOT),
         'files': {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
@@ -99,8 +99,13 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
 
 
 def part_kind(spec):
-    return {'s1f_facade': 'facade', 's4_box_1f': 'box',
-            's_geared_rails': 'rail'}.get(spec.slug, 'module')
+    if spec.slug.endswith('_facade'):
+        return 'facade'
+    if '_box_' in spec.slug:
+        return 'box'
+    if spec.slug.endswith('_geared_rails'):
+        return 'rail'
+    return 'module'
 
 
 def print_orientation(module, spec):
@@ -113,11 +118,11 @@ def print_orientation(module, spec):
 
 
 def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
-    if spec.slug == 's_geared_rails':
-        return build_rails(output)
+    if part_kind(spec) == 'rail':
+        return build_rails(output, spec)
     from dataclasses import asdict
     configuration = {**asdict(spec), 'part': spec.slug}
-    if spec.slug in {'s1f_facade', DEFAULT_SPEC.slug}:
+    if part_kind(spec) in {'facade', 'module'}:
         from .shadow_gap import DEFAULT_GAP
         configuration['shadow_gap'] = asdict(DEFAULT_GAP)
     configuration_hash = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
@@ -141,7 +146,7 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
                      output=output, aliases=[f'latest/{spec.slug}'])
 
 
-def _export_rails(output: Path):
+def _export_rails(output: Path, spec=None):
     """Export both rail variants, retaining the one-solid check for each part."""
     from build123d import Compound, export_brep, export_step, import_step
     from .exports import check_step, precise_volume
@@ -149,14 +154,16 @@ def _export_rails(output: Path):
     from .render import render_review
     from .tessellation import export_print_mesh, review_mesh
 
+    spec = spec or SPEC
     started = time.monotonic()
     output.mkdir(parents=True, exist_ok=True)
     components, reports, display = [], {}, []
     next_y = 0.
     for retained in (False, True):
         variant = 'retained' if retained else 'plain'
-        stem = f's_geared_rail_{variant}'
-        rail = build_gear_rail(retained=retained)
+        stem = f'{spec.family.lower()}_geared_rail_{variant}'
+        rail = (build_gear_rail(retained=retained) if spec == SPEC else
+                build_gear_rail(retained=retained, spec=spec))
         if not rail.is_valid or len(rail.solids()) != 1 or len(rail.shells()) != 1:
             raise ValueError(f'{stem}: expected one valid solid with one boundary shell')
         bounds = rail.bounding_box()
@@ -189,8 +196,8 @@ def _export_rails(output: Path):
         components.append({'name': stem, 'step': f'{stem}.step', 'kind': 'rail'})
         display.append(shown)
 
-    assembly = Compound(label=SPEC.name, children=display)
-    path = output / f'{SPEC.slug}.step'
+    assembly = Compound(label=spec.name, children=display)
+    path = output / f'{spec.slug}.step'
     if not export_step(assembly, path):
         raise ValueError('Rail assembly STEP export failed')
     restored = import_step(path)
@@ -215,7 +222,7 @@ def _export_rails(output: Path):
         raise ValueError(f'Rail assembly STEP round-trip failed: {assembly_check}')
     render_review(review_mesh(restored), output / 'review')
     manifest = {
-        'passed': True, 'project': 'vault', 'name': SPEC.name, 'units': 'mm',
+        'passed': True, 'project': 'vault', 'name': spec.name, 'units': 'mm',
         'status': 'Completed CAD build', 'cad_valid': True, 'solids': 2,
         'boundary_shells': 2, 'cad_volume_mm3': volume,
         'model_bounds_mm': [list(before.min), list(before.max)],
@@ -227,15 +234,17 @@ def _export_rails(output: Path):
     return manifest, {'assembly': path.name, 'components': components}
 
 
-def build_rails(output: Path):
+def build_rails(output: Path, spec=None):
     """Publish a two-part rail set only after each export has passed validation."""
     from dataclasses import asdict
-    from .geared_rails import D, SPEC
-    configuration = {**asdict(SPEC), 'part': SPEC.slug, 'geared_rails': asdict(D)}
+    from .geared_rails import SPEC, rail_dimensions
+    spec = spec or SPEC
+    configuration = {**asdict(spec), 'part': spec.slug,
+                     'geared_rails': asdict(rail_dimensions(spec.family))}
     digest = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
-    return run_build(PROJECT_ROOT, digest, lambda state: _export_rails(state.stage),
+    return run_build(PROJECT_ROOT, digest, lambda state: _export_rails(state.stage, spec),
                      parameters=configuration, output=output,
-                     aliases=[f'latest/{SPEC.slug}'])
+                     aliases=[f'latest/{spec.slug}'])
 
 
 def build_preview(configuration):
@@ -268,6 +277,22 @@ def selected_build(output, spec):
     return legacy
 
 
+def select_spec(part, family='S', depth_units=4, height_units=1):
+    """Resolve the same native constructors for the CLI and web generator."""
+    if part == 'module':
+        return ModuleSpec(family, depth_units, height_units)
+    if part == 'box':
+        from .box import BoxSpec
+        return BoxSpec(family, depth_units, height_units)
+    if part == 'facade':
+        from .facade import FacadeSpec
+        return FacadeSpec(family, height_units)
+    if part == 'rails':
+        from .geared_rails import GearRailSpec
+        return GearRailSpec(family)
+    raise ValueError('Unknown part')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['build', 'validate', 'render'])
@@ -284,21 +309,10 @@ def main():
         spec = ModuleSpec(args.family, args.depth_units, args.height_units)
     except ValueError as error:
         parser.error(str(error))
-    if args.part == 'facade':
-        if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
-            parser.error('The facade currently supports S1F only; omit size options.')
-        from .facade import SPEC
-        spec = SPEC
-    if args.part == 'box':
-        if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
-            parser.error('The box currently supports S4 1F only; omit size options.')
-        from .box import SPEC
-        spec = SPEC
-    if args.part == 'rails':
-        if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
-            parser.error('The geared rails currently support the supplied S rail set only; omit size options.')
-        from .geared_rails import SPEC
-        spec = SPEC
+    try:
+        spec = select_spec(args.part, args.family, args.depth_units, args.height_units)
+    except ValueError as error:
+        parser.error(str(error))
     if args.output is None:
         args.output = PROJECT_ROOT / 'out'
     if args.samples < 1 or args.tolerance <= 0 or args.mating_tolerance <= 0:

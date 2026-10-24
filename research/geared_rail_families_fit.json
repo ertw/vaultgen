@@ -1,0 +1,168 @@
+{
+  "method": "Native solid minimum distance and Boolean overlap at sampled positions; not a continuous sweep certificate. Rails share source nose and tooth registration, with family tails extended by half the module width increase. Module sacrificial supports removed.",
+  "poses": [
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "retained": false,
+      "travel": 0,
+      "box_distance": 0.19699999999999385,
+      "module_distance": 3.80699999999998,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "retained": false,
+      "travel": 10,
+      "box_distance": 0.19699999999999562,
+      "module_distance": 2.8019063190050884,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "retained": false,
+      "travel": 20,
+      "box_distance": 0.1969999999999965,
+      "module_distance": 0.08440000000002179,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "retained": false,
+      "travel": 21,
+      "box_distance": 0.1969999999999965,
+      "module_distance": 0.0,
+      "module_overlap_mm3": 0.972585182399983
+    },
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "retained": true,
+      "travel": 0,
+      "box_distance": 0.20000000000000284,
+      "module_distance": 2.388300000000001,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "retained": true,
+      "travel": 10,
+      "box_distance": 0.20000000000000284,
+      "module_distance": 2.388300000000001,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "retained": true,
+      "travel": 20,
+      "box_distance": 0.20000000000000284,
+      "module_distance": 0.08440000000001646,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "retained": true,
+      "travel": 21,
+      "box_distance": 0.20000000000000284,
+      "module_distance": 0.0,
+      "module_overlap_mm3": 0.9725851827618441
+    },
+    {
+      "family": "L",
+      "depth_units": 4,
+      "height_units": 2,
+      "retained": false,
+      "travel": 0,
+      "box_distance": 0.19699999999999385,
+      "module_distance": 3.8069999999999755,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "L",
+      "depth_units": 4,
+      "height_units": 2,
+      "retained": false,
+      "travel": 10,
+      "box_distance": 0.19699999999999562,
+      "module_distance": 2.801906319005099,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "L",
+      "depth_units": 4,
+      "height_units": 2,
+      "retained": false,
+      "travel": 20,
+      "box_distance": 0.1969999999999965,
+      "module_distance": 0.08440000000002534,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "L",
+      "depth_units": 4,
+      "height_units": 2,
+      "retained": false,
+      "travel": 21,
+      "box_distance": 0.1969999999999965,
+      "module_distance": 0.0,
+      "module_overlap_mm3": 0.9725851823999645
+    },
+    {
+      "family": "L",
+      "depth_units": 4,
+      "height_units": 2,
+      "retained": true,
+      "travel": 0,
+      "box_distance": 0.20000000000000284,
+      "module_distance": 12.710471828132471,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "L",
+      "depth_units": 4,
+      "height_units": 2,
+      "retained": true,
+      "travel": 10,
+      "box_distance": 0.20000000000000284,
+      "module_distance": 2.801906319005021,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "L",
+      "depth_units": 4,
+      "height_units": 2,
+      "retained": true,
+      "travel": 20,
+      "box_distance": 0.20000000000000284,
+      "module_distance": 0.08440000000001646,
+      "module_overlap_mm3": 0.0
+    },
+    {
+      "family": "L",
+      "depth_units": 4,
+      "height_units": 2,
+      "retained": true,
+      "travel": 21,
+      "box_distance": 0.20000000000000284,
+      "module_distance": 0.0,
+      "module_overlap_mm3": 0.972585182761313
+    }
+  ],
+  "schema": "vault-geared-rail-families-fit/v1",
+  "units": "mm",
+  "passed": true
+}
