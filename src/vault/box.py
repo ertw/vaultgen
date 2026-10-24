@@ -35,7 +35,7 @@ def profile(points, y, length):
     return Solid.extrude(Face(Wire.make_polygon([(x,y,z) for x,z in points], close=True)), (0,length,0))
 
 
-def _runner_support(sign):
+def _runner_support(sign, clearance=0):
     """Half-mm removable sheet with repeated teeth into both channel lips.
 
     The source has roughly 0.7 mm teeth at irregular 8–10.7 mm intervals.
@@ -47,8 +47,8 @@ def _runner_support(sign):
     sheet = block(x0, y0, 20.105, x1, y1, 29.483)
     tooth_width, tooth_count = .7, 18
     pitch = (y1-y0-tooth_width)/(tooth_count-1)
-    teeth = [block(x0, y0+i*pitch, 18.9,
-                   x1, y0+i*pitch+tooth_width, 30.1)
+    teeth = [block(x0, y0+i*pitch, 18.9-clearance,
+                   x1, y0+i*pitch+tooth_width, 30.1+clearance)
              for i in range(tooth_count)]
     return sheet.fuse(*teeth)
 
@@ -125,9 +125,11 @@ def _linear_gear_exit(lower=False, corner_radius=0.8):
     return passage.fuse(roof)
 
 
-def build_box(*, gear_corner_radius=0.8):
+def build_box(*, gear_corner_radius=0.8, runner_clearance=0.3):
     if not isfinite(gear_corner_radius) or not 0 <= gear_corner_radius <= 1.0:
         raise ValueError('gear_corner_radius must be between 0 and 1 mm')
+    if not isfinite(runner_clearance) or not 0 <= runner_clearance <= 0.5:
+        raise ValueError('runner_clearance must be between 0 and 0.5 mm per flank')
     # Construct at the measurement datum, then register to the sleeve/facade.
     outside = _rounded_rect(-67.1,0,67.1,185.8,3.5,lambda x,y:(x,y,6))
     part = Solid.extrude(outside,(0,0,37.5))
@@ -138,7 +140,10 @@ def build_box(*, gear_corner_radius=0.8):
     # Rounding the cavity cutter leaves a reinforcing inside floor fillet.
     floor_thickness, floor_radius = 0.8, 1.0
     floor_z = 6 + floor_thickness
-    cavity = _rounded_rect(-62.9,3,62.9,179.2,3.5,
+    # Leave 1.3 mm behind the runner channels for two extrusion lines
+    # with a 0.6 mm nozzle. Keep front/rear planes and exterior fixed.
+    cavity_half_width = 64.9 - 1.3
+    cavity = _rounded_rect(-cavity_half_width,3,cavity_half_width,179.2,3.5,
                            lambda x,y:(x,y,floor_z))
     cutter = Solid.extrude(cavity,(0,0,40))
     bottom_rim = [edge for edge in cutter.edges()
@@ -147,6 +152,14 @@ def build_box(*, gear_corner_radius=0.8):
     cutter = cutter.fillet(floor_radius, bottom_rim)
     part = part.cut(cutter)
     part = part.cut(block(-22.877,178.9,5,22.877,187,45))
+    # Original lock opening: underside edge Y177.1, rising at 45 degrees
+    # to Y178.1 at Z6 in registered coordinates. The thinner floor ends
+    # within that bevel, keeping the original lock's rotation envelope clear.
+    lock_profile = [(173.8,5),(174.8,6),(175.8,7),(175.8,45),
+                    (187,45),(187,5)]
+    lock_cut = Face(Wire.make_polygon(
+        [(-22.877,y,z) for y,z in lock_profile], close=True))
+    part = part.cut(Solid.extrude(lock_cut, (45.754,0,0)))
     # Chamfered outside edges and opposed runner channels, with removable
     # outer sheets carried by small teeth along the lower and upper lips.
     for sign in (-1,1):
@@ -155,8 +168,10 @@ def build_box(*, gear_corner_radius=0.8):
             part = part.cut(profile([(sign*x,z) for x,z in pts],-1,188))
         channel=[(64.9,18.254),(66.2,19.32),(67.3,18.7),
                  (67.3,30.3),(66.2,29.68),(64.9,30.746)]
+        channel = [(x,z + (-runner_clearance if z < 24.5 else runner_clearance))
+                   for x,z in channel]
         part = part.cut(profile([(sign*x,z) for x,z in channel],25.8,161))
-        part=part.fuse(_runner_support(sign))
+        part=part.fuse(_runner_support(sign, runner_clearance))
         # Closed attachment ends alternate with the external gear exits.
         # The central land between these passages carries the facade screw.
         a,b=sorted((sign*22.877,sign*66.3))

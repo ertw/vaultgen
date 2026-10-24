@@ -31,10 +31,22 @@ class BoxTests(unittest.TestCase):
         for x, y in ((0, 80), (-52.9, 39.53), (40, 160)):
             self.assertTrue(self.box.is_inside((x, y, 5.79)))
             self.assertFalse(self.box.is_inside((x, y, 5.81)))
-        for x, y in ((62.8, 80), (-62.8, 80), (0, 5.4), (40, 181.4)):
+        for x, y in ((63.5, 80), (-63.5, 80), (0, 5.4), (40, 181.4)):
             self.assertTrue(self.box.is_inside((x, y, 6.2)))
             self.assertFalse(self.box.is_inside((x, y, 6.9)))
-        self.assertFalse(self.box.is_inside((61.8, 80, 5.9)))
+        self.assertFalse(self.box.is_inside((62.5, 80, 5.9)))
+
+    def test_runner_backing_walls_are_1_3_mm(self):
+        for sign in (-1, 1):
+            for y in (40, 100, 170):
+                for z in (20, 23.5, 27):
+                    self.assertFalse(self.box.is_inside((sign*63.59,y,z)))
+                    self.assertTrue(self.box.is_inside((sign*63.61,y,z)))
+                    self.assertTrue(self.box.is_inside((sign*64.89,y,z)))
+                    self.assertFalse(self.box.is_inside((sign*64.91,y,z)))
+            # The original front attachment land still begins at Y181.5.
+            self.assertFalse(self.box.is_inside((sign*51.45,181.49,20)))
+            self.assertTrue(self.box.is_inside((sign*51.45,181.51,20)))
 
     def test_closed_pockets_keep_continuous_walls_at_front_corners(self):
         # The selected defect was at X65.943/Y187.2/Z6.61..11.89:
@@ -105,6 +117,28 @@ class BoxTests(unittest.TestCase):
         printed=print_orientation(self.box)
         self.assertAlmostEqual(printed.bounding_box().min.Z,0,places=6)
         self.assertAlmostEqual(printed.volume,self.box.volume,places=5)
+
+    def test_runner_flank_clearance_preserves_channel_depth(self):
+        nominal = build_box(runner_clearance=0)
+        for sign in (-1, 1):
+            for z in (17.6, 29.4):
+                point = (sign*65.4,80,z)
+                self.assertTrue(nominal.is_inside(point))
+                self.assertFalse(self.box.is_inside(point))
+            self.assertTrue(self.box.is_inside((sign*64.85,80,23.5)))
+            self.assertFalse(self.box.is_inside((sign*64.95,80,23.5)))
+
+    def test_lock_floor_opening_matches_original_lower_bevel(self):
+        # Registered source sections: Y = 177.1 + (Z - 5), across
+        # the central opening. Preserve the adjacent attachment lands.
+        for x in (-22.7, 0, 22.7):
+            for z in (5.1,5.4,5.7):
+                edge_y = 177.1 + z - 5
+                self.assertTrue(self.box.is_inside((x,edge_y-.05,z)))
+                self.assertFalse(self.box.is_inside((x,edge_y+.05,z)))
+            self.assertFalse(self.box.is_inside((x,180,5.4)))
+        for x in (-25,25):
+            self.assertTrue(self.box.is_inside((x,180,5.4)))
 
     def test_runner_teeth_carry_the_sheet_between_both_channel_lips(self):
         # Sample the first and last teeth as well as teeth along the channel.

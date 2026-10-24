@@ -241,6 +241,9 @@ rounded cavity, side runner channels and strips, a solid rear wall, and front
 attachment lands with 3.6 mm screw holes. The front seating plane is
 Y=188.1; screw centers are X=±51.45, Z=23.5, matching the positioned S1F
 facade. Print exports place the closed bottom on Z=0.
+The interior is widened to leave 1.3 mm behind both runner channels for two
+perimeters with a 0.6 mm nozzle. Exterior dimensions and the front screw
+attachment wall are retained.
 
 The front attachment pockets open through the outside wall at negative X/lower
 and positive X/upper, matching the module's handed gear mates. The exits retain
@@ -260,6 +263,11 @@ printing. The raised upper flange clearance keeps its original shape. `build_box
 is available for comparison with the earlier sharp passages.
 
 Both runner channels include 0.5 mm removable support sheets with 0.7 mm teeth
+and 0.3 mm additional clearance on each upper/lower flank, with their original
+depth retained. `build_box(runner_clearance=0)` restores nominal flank spacing.
+The central lock opening extends back to the original beveled floor edge
+(Y=177.1 at the underside), providing clearance for lock rotation.
+The support teeth are
 spaced about 9.1 mm apart along their upper and lower edges. Remove these
 sacrificial supports after printing. The two rear circular holes and central oval opening are omitted,
 along with the oval's support panel, leaving a continuous rear wall. Source measurements and the
