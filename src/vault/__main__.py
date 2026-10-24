@@ -12,13 +12,6 @@ from .spec import DEFAULT_SPEC, FAMILIES, ModuleSpec
 from ._build import run_build, source_hashes, verify_files, write_json
 
 
-PRINTED_PARTS = {
-    's4_box_1f_printed_screw': ('BOX_SPEC', 'build_printed_box'),
-    's1f_facade_printed_screw': ('FACADE_SPEC', 'build_printed_facade'),
-    's4_facade_screw': ('SCREW_SPEC', 'build_printed_screw'),
-}
-
-
 def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     from .model import build_module
 
@@ -31,9 +24,6 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     elif spec.slug == 's4_box_1f':
         from .box import build_box
         module = build_box()
-    elif spec.slug in PRINTED_PARTS:
-        from . import printed_joint
-        module = getattr(printed_joint, PRINTED_PARTS[spec.slug][1])()
     else:
         module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
     return _export_into(module, output, started, spec)
@@ -94,11 +84,6 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         'elapsed_seconds': time.monotonic() - started,
         'print_bbox_mm': list(printable.bounding_box().size),
         'print_orientation': ('Closed bottom on Z=0.' if part_kind(spec) == 'box' else
-                              'Head flat on Z=0; shaft upward; no supports. PLA, 0.6 mm nozzle; '
-                              'start with 0.2 mm layers.' if part_kind(spec) == 'screw' else
-                              'Rear pilots on Z=0; enable rear supports under the seating rim '
-                              '(1 mm above bed) and rear pockets; '
-                              'block support in blind sockets.' if spec.slug == 's1f_facade_printed_screw' else
                               'Closed back on Z=0; model rotated +90 degrees about X. '
                               'Remove the breakaway webs under both runner-mouth lips before assembly.'
                               if part_kind(spec) == 'module' else
@@ -115,8 +100,7 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
 
 def part_kind(spec):
     return {'s1f_facade': 'facade', 's4_box_1f': 'box',
-            's1f_facade_printed_screw': 'facade', 's4_box_1f_printed_screw': 'box',
-            's4_facade_screw': 'screw', 's_geared_rails': 'rail'}.get(spec.slug, 'module')
+            's_geared_rails': 'rail'}.get(spec.slug, 'module')
 
 
 def print_orientation(module, spec):
@@ -124,10 +108,6 @@ def print_orientation(module, spec):
     if part_kind(spec) == 'box':
         from .box import print_orientation as orient_box
         return orient_box(module)
-    if part_kind(spec) == 'screw' or spec.slug == 's1f_facade_printed_screw':
-        from build123d import Axis
-        printable = module.rotate(Axis.X, 90)
-        return printable.translate((0, 0, -printable.bounding_box().min.Z))
     from .model import print_orientation as orient_module
     return orient_module(module)
 
@@ -137,10 +117,7 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
         return build_rails(output)
     from dataclasses import asdict
     configuration = {**asdict(spec), 'part': spec.slug}
-    if spec.slug in PRINTED_PARTS:
-        from .printed_joint import D
-        configuration['printed_joint'] = asdict(D)
-    if spec.slug in {'s1f_facade', 's1f_facade_printed_screw', DEFAULT_SPEC.slug}:
+    if spec.slug in {'s1f_facade', DEFAULT_SPEC.slug}:
         from .shadow_gap import DEFAULT_GAP
         configuration['shadow_gap'] = asdict(DEFAULT_GAP)
     configuration_hash = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
@@ -265,9 +242,6 @@ def build_preview(configuration):
     if configuration == 's_geared_rails':
         from .geared_rails import SPEC
         return build(PROJECT_ROOT / 'out', SPEC)
-    if configuration in PRINTED_PARTS:
-        from . import printed_joint
-        return build(PROJECT_ROOT / 'out', getattr(printed_joint, PRINTED_PARTS[configuration][0]))
     if configuration == 's4_box_1f':
         from .box import SPEC
         return build(PROJECT_ROOT / 'out', SPEC)
@@ -298,8 +272,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['build', 'validate', 'render'])
     parser.add_argument('--output', type=Path)
-    parser.add_argument('--part', choices=['module', 'facade', 'box', 'box-printed-screw',
-                                          'facade-printed-screw', 'screw', 'rails'], default='module')
+    parser.add_argument('--part', choices=['module', 'facade', 'box', 'rails'], default='module')
     parser.add_argument('--family', choices=FAMILIES, default='S')
     parser.add_argument('--depth-units', type=int, default=4)
     parser.add_argument('--height-units', type=int, default=1)
@@ -326,13 +299,6 @@ def main():
             parser.error('The geared rails currently support the supplied S rail set only; omit size options.')
         from .geared_rails import SPEC
         spec = SPEC
-    if args.part in {'box-printed-screw', 'facade-printed-screw', 'screw'}:
-        if (args.family, args.depth_units, args.height_units) != ('S', 4, 1):
-            parser.error('The printed screw joint currently supports S4 1F only; omit size options.')
-        from . import printed_joint
-        spec = getattr(printed_joint, {'box-printed-screw': 'BOX_SPEC',
-                                      'facade-printed-screw': 'FACADE_SPEC',
-                                      'screw': 'SCREW_SPEC'}[args.part])
     if args.output is None:
         args.output = PROJECT_ROOT / 'out'
     if args.samples < 1 or args.tolerance <= 0 or args.mating_tolerance <= 0:

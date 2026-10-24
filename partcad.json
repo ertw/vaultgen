@@ -31,21 +31,6 @@
       "desc": "S4 Box 1F",
       "path": "catalog/box.py"
     },
-    "s4_box_1f_printed_screw": {
-      "type": "build123d",
-      "desc": "S4 Box 1F — printed screw joint",
-      "path": "catalog/box_printed_screw.py"
-    },
-    "s1f_facade_printed_screw": {
-      "type": "build123d",
-      "desc": "S1F Facade — printed screw joint",
-      "path": "catalog/facade_printed_screw.py"
-    },
-    "s4_facade_screw": {
-      "type": "build123d",
-      "desc": "S4 Facade printed screw",
-      "path": "catalog/facade_screw.py"
-    },
     "s_geared_rail_plain": {
       "type": "build123d",
       "desc": "S Geared Rail — plain",

@@ -256,16 +256,13 @@ a 0.71 mm wall beneath the exterior chamfer, closing the small roof breakthrough
 
 All four front gear passages have **R0.8 mm longitudinal inside corners** at
 their floors and roofs. These shorten the bridge span during bottom-down
-printing. The raised upper flange clearance keeps its original shape. The
-rounds also apply to the printed-screw box; `build_box(gear_corner_radius=0)`
+printing. The raised upper flange clearance keeps its original shape. `build_box(gear_corner_radius=0)`
 is available for comparison with the earlier sharp passages.
 
 Both runner channels include 0.5 mm removable support sheets with 0.7 mm teeth
 spaced about 9.1 mm apart along their upper and lower edges. Remove these
-sacrificial supports after printing. They also appear on the printed-screw
-box variant. The two rear circular holes and central oval opening are omitted,
-along with the oval's support panel, leaving a continuous rear wall on both
-variants. Source measurements and the
+sacrificial supports after printing. The two rear circular holes and central oval opening are omitted,
+along with the oval's support panel, leaving a continuous rear wall. Source measurements and the
 regularized native dimensions are recorded in `research/box_supports.json`.
 
 This is a simplified reconstruction: small blends, regularized support teeth,
@@ -306,51 +303,5 @@ STEP review assemblies are under `out/reviews/geared-rail-fit/`.
 These geometry checks do not establish physical printed fit or operation of
 the separate pinion/locking mechanism.
 
-## S4 box and facade with indexed printed screws
-
-Three catalog parts form the PLA attachment: **S4 Box 1F — Printed Screw**,
-**S1F Facade — Printed Screw**, and **S4 Facade Indexed Screw**. Use two identical
-screws per assembly. The original steel-hardware variants remain available.
-The editable joint is in `src/vault/printed_joint.py`.
-
-The screw inserts from inside the box, with its single tapered lug pointing
-down through the bottom keyway. A **120° clockwise turn**, viewed from the head,
-advances it 1.2 mm into the blind facade socket and reaches a closed angular stop.
-There is no detent, spring, arrow, or head scalloping in this revision. Reverse
-to the entry angle to remove it; retention against reverse rotation still needs
-physical evaluation.
-
-The **Ø14 × 3 mm head**, with a **0.5 mm × 45° chamfer on its mating-side outer
-rim**, sits in an inside counterbore, within the existing
-wall even at the full backward axial clearance limit. The opposite locating
-recess is now **1.2 mm deep**, accepting a shortened **1 mm facade pilot**.
-A 1.7 mm web remains between these recesses. The **Ø8.6 mm through-hole** clears
-the Ø8 mm shank by 0.3 mm per side. Its bottom keyway matches the lug's positive
-side draft: the lug narrows toward its outer tip instead of forming an undercut.
-The facade socket remains blind, leaving 1.91 mm beneath the front recess.
-
-The 12 mm coin recess has a 2.00 mm wide opening, with sidewalls drafted down
-to 1.4 mm at its 1.2 mm maximum depth. Its R15.6 curved floor is retained,
-along with the 6 × 1.4 mm flathead slot extending 4.2 mm from the head face.
-
-### Printing and geometric checks
-
-Designed for PLA, a 0.6 mm nozzle, and Arachne, starting with 0.20 mm layers.
-Print the screw head down with the shaft upright and solid infill. Print the
-box bottom down. The facade prints pilot tips down; its rear rim is 1 mm above
-the plate and needs supports, as do rear pockets. Keep supports out of the
-blind sockets and keyways, and inspect their roofs in the slicer.
-
-```bash
-python -m vault build --part box-printed-screw
-python -m vault build --part screw
-python tools/check_printed_joint.py --step-degrees 5
-python -m unittest discover -s tests -p 'test_printed_joint*.py' -v
-```
-
-The checker samples rigid insertion and rotation, rejects incorrect entry
-phases, checks the closed angular stop, facade seating, and head containment
-through axial clearance. No elastic-contact exceptions are used. The report is
-under `out/reviews/printed-joint-recessed/`; no coupons are generated.
-Exports check connected solids, STEP round trips, and watertight STL meshes.
-These checks do not establish printed fit, strength, or resistance to loosening.
+The experimental printed screw joint, matching box and facade, and spring-tooth
+fit coupons are preserved on branch `codex/printed-screw-joint`.

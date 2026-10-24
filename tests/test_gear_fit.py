@@ -4,7 +4,6 @@ import unittest
 
 from vault.box import build_box
 from vault.geared_rails import build_gear_rail
-from vault.printed_joint import build_printed_box
 from vault.shell import ShellDimensions, build_shell
 from tools.check_geared_rails import common_volume, place_gear_rail, swept_rail_envelope
 
@@ -13,19 +12,17 @@ class GearFitTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.standard = build_box()
-        cls.printed = build_printed_box()
         cls.module = build_shell(dimensions=replace(ShellDimensions(), pocket_support_thickness=0))
 
-    def test_full_lateral_insertion_clears_both_box_variants(self):
+    def test_full_lateral_insertion_clears_box(self):
         # Each envelope contains every position of the whole rail along a
         # 134 mm insertion path, including the rib. It conservatively fills
         # the teeth, rounded ends, rib ramps, and tip ramp.
         for upper in (True, False):
             swept = swept_rail_envelope(upper, travel=134, limited_tail=False)
             self.assertTrue(swept.is_valid)
-            for name, box in (("standard", self.standard), ("printed", self.printed)):
-                with self.subTest(upper=upper, box=name):
-                    self.assertGreaterEqual(swept.distance_to(box), .1969)
+            with self.subTest(upper=upper):
+                self.assertGreaterEqual(swept.distance_to(self.standard), .1969)
 
     def test_complete_twenty_mm_locking_sweep_clears_finished_module(self):
         for upper in (True, False):

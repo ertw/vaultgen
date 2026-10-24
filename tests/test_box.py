@@ -141,32 +141,3 @@ class BoxTests(unittest.TestCase):
                         self.assertTrue(self.box.is_inside((x, y, z)))
         for x in (-51.45, 0, 51.45):
             self.assertFalse(self.box.is_inside((x, 6, 23.5)))
-
-    def test_printed_screw_box_inherits_supports_and_keeps_attachment_clearances(self):
-        from vault.printed_joint import D, build_printed_box
-
-        box = build_printed_box()
-        self.assertTrue(box.is_valid)
-        self.assertEqual(len(box.solids()), 1)
-        self.assertEqual(len(box.shells()), 1)
-        for sign, z in ((1, 9), (-1, 38)):
-            self.assertTrue(box.is_inside((sign*66.7, 187.1, z)))
-            self.assertTrue(box.is_inside((sign*66.7, 187.7, z)))
-            self.assertFalse(box.is_inside((sign*65, 187.1, z)))
-        self.assertTrue(box.is_inside((0, 3.8, 23.5)))
-        self.assertTrue(box.is_inside((0, 3.8, 28.7)))
-        self.assertTrue(box.is_inside((10.4, 3.8, 28.7)))
-        for sign in (-1, 1):
-            self.assertTrue(box.is_inside((sign*66.15, 67.7, 18.55)))
-            self.assertFalse(box.is_inside((sign*66.15, 72.3, 18.55)))
-            self.assertTrue(box.is_inside((sign*66.15, 72.3, 23.5)))
-        for x, z in ((-66.8, 8), (66.8, 39)):
-            self.assertFalse(box.is_inside((x, 185.5, z)))
-            self.assertTrue(box.is_inside((-x, 185.5, z)))
-        for x in (-D.axis_x, D.axis_x):
-            self.assertFalse(box.is_inside((x, 186, D.axis_z)))
-            self.assertFalse(box.is_inside((x+7.1, 183, D.axis_z)))
-            self.assertTrue(box.is_inside((x+7.5, 183, D.axis_z)))
-            self.assertFalse(box.is_inside((x+6, 187, D.axis_z)))
-            self.assertTrue(box.is_inside((x+6, 186, D.axis_z)))
-            self.assertTrue(box.is_inside((x, 3.5, D.axis_z)))

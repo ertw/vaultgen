@@ -14,18 +14,6 @@
       "object": "parts/s4_box_1f",
       "adapter": "vault-box"
     },
-    "s4_box_1f_printed_screw": {
-      "object": "parts/s4_box_1f_printed_screw",
-      "adapter": "vault-printed-joint"
-    },
-    "s1f_facade_printed_screw": {
-      "object": "parts/s1f_facade_printed_screw",
-      "adapter": "vault-printed-joint"
-    },
-    "s4_facade_screw": {
-      "object": "parts/s4_facade_screw",
-      "adapter": "vault-printed-joint"
-    },
     "s_geared_rails": {
       "object": "assemblies/s_geared_rails",
       "adapter": "vault-geared-rails"

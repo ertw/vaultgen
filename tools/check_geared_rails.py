@@ -18,7 +18,6 @@ from pathlib import Path
 from build123d import Axis, Compound, Edge, Face, Solid, Wire, export_step
 from vault.box import build_box
 from vault.geared_rails import D, build_gear_rail
-from vault.printed_joint import build_printed_box
 from vault.reference import PROJECT_ROOT
 from vault.shell import ShellDimensions, build_shell
 
@@ -116,7 +115,7 @@ def main():
     out = PROJECT_ROOT / "out/reviews/geared-rail-fit"
     out.mkdir(parents=True, exist_ok=True)
     module = build_shell(dimensions=replace(ShellDimensions(), pocket_support_thickness=0))
-    boxes = {"standard": build_box(), "printed_screw": build_printed_box()}
+    boxes = {"standard": build_box()}
     rails = {"upper_retained": build_gear_rail(True), "lower_plain": build_gear_rail(False)}
     sweeps, poses, stops, containment = [], [], [], []
     for name, rail in rails.items():
@@ -160,7 +159,7 @@ def main():
     export_step(Compound(label="S4 finished sleeve and geared rails at 20 mm travel",
                          children=[module, *locked]), module_path)
     construction = ("src/vault/geared_rails.py", "src/vault/box.py", "src/vault/shell.py",
-                    "src/vault/printed_joint.py", "tools/check_geared_rails.py")
+                    "tools/check_geared_rails.py")
     report = {
         "schema": "vault-geared-rail-clearance/v1", "units": "mm",
         "source": {"path": str(RAIL_SOURCE.relative_to(PROJECT_ROOT)),
