@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111315">
+  <title>Labels · Vault generator</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/labels.css">
+  <script type="module" src="/static/labels.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1><a href="/">Vault generator</a></h1>
+    <nav class="label-navigation" aria-label="Generator"><a href="/">Parts</a><a href="/labels" aria-current="page">Labels</a><a href="https://cad.erik.cl/" target="_blank" rel="noreferrer">CAD library ↗</a></nav>
+  </header>
+  <main>
+    <div class="label-intro"><div><p class="eyebrow">MAKE IT YOURS</p><h2>A place for everything.<br>A label for every drawer.</h2></div><p>Flush lettering. Your colors.<br>Designed to print face down.</p></div>
+    <div class="workspace label-workspace">
+      <section class="configurator panel" aria-labelledby="editor-title">
+        <div class="panel-heading"><h2 id="editor-title">Label editor</h2><span id="font-name" class="field-hint">Loading font…</span></div>
+        <div class="mobile-label-live" aria-hidden="true"><div class="mobile-face-scroll"><svg id="mobile-label-face" viewBox="0 0 1 1"><use href="#label-artwork"/></svg></div><span id="mobile-preview-caption">Live face preview</span></div>
+        <form id="label-form">
+          <fieldset><legend>Facade size <span class="field-hint">Label width</span></legend><div class="family-options" id="label-family-options"></div><p class="dimension-hint">Choose the size of the drawer front.</p></fieldset>
+          <fieldset><legend>Layout</legend><div class="segmented" id="line-count-options"><button type="button" data-lines="1" aria-pressed="true">One line</button><button type="button" data-lines="2" aria-pressed="false">Two lines</button></div></fieldset>
+          <div id="line-editors"></div>
+          <fieldset class="background-field"><legend>Label color</legend><div class="color-control"><input type="color" id="background-color" aria-label="Label background color" value="#30343b"><span id="background-hex" class="color-hex">#30343B</span><div class="color-presets" id="background-presets" aria-label="Suggested label colors"></div></div></fieldset>
+          <fieldset><legend>Construction</legend><label class="construction-choice"><input type="checkbox" id="hollow-label" checked><span><strong>Hollow back</strong><small>A thin face with a raised perimeter saves material.</small></span></label></fieldset>
+          <p id="validation-message" class="label-validation" role="status" aria-live="polite">Loading label geometry…</p>
+          <div class="config-summary"><div><strong id="label-summary">Loading size…</strong><span id="material-summary">2 colors · face down</span></div><span id="label-depth" class="size-limit"></span></div>
+          <button id="generate-label" class="button button-primary" type="submit" disabled><span id="generate-label-text">Generate label</span><span aria-hidden="true">→</span></button>
+          <p class="dimension-hint generation-hint">Creates checked CAD and a multicolor 3MF.</p>
+        </form>
+        <p id="connection-error" class="error-message" role="alert" hidden></p>
+      </section>
+
+      <section class="preview panel label-preview" aria-labelledby="preview-title">
+        <div class="preview-heading"><div><p class="eyebrow" id="preview-eyebrow">LIVE PREVIEW</p><h2 id="preview-title">Your finished label</h2></div><span id="preview-badge" class="badge">Exact font outlines</span></div>
+        <div class="label-view-controls" aria-label="Label view"><button class="artifact-tab" id="face-view" type="button" aria-pressed="true">Finished face</button><button class="artifact-tab" id="model-view" type="button" aria-pressed="false" disabled>Generated 3D</button><button id="reset-label-view" class="text-button" type="button" hidden>Reset view ↺</button></div>
+        <div class="label-stage" id="label-stage">
+          <svg id="label-face" viewBox="-7 -10 61 39.4" role="img" aria-label="Live preview of the finished label face, using the generated part's font outlines"><defs><filter id="label-shadow" x="-20%" y="-40%" width="140%" height="200%"><feDropShadow dx="0" dy=".7" stdDeviation=".8" flood-opacity=".35"/></filter></defs><g id="label-dimensions"></g><g id="label-artwork"></g></svg>
+          <canvas id="label-model" aria-label="Generated label in 3D. Drag to orbit, scroll to zoom, use arrow keys to rotate." tabindex="0" hidden></canvas>
+          <div id="model-message" class="viewer-message" role="status" hidden></div>
+          <div class="label-stage-caption" id="stage-caption"><span class="status-dot"></span>Finished face · enlarged to show detail</div>
+        </div>
+        <div class="label-preview-note" id="preview-note">Letter shapes, spacing, sizes and colors update as you type. Generate to inspect the checked 3D part.</div>
+        <div class="label-print-card"><div><span class="eyebrow">PRINT FACE DOWN</span><p id="section-description">Colored lettering sits flush against the build plate.</p><small id="construction-note">Loading construction…</small></div><svg id="label-section" viewBox="0 0 1 1" role="img" aria-label="Illustrative section showing the label face down on the build plate"></svg></div>
+        <div id="label-downloads" class="artifact-panel" hidden><div class="artifact-top"><div><span class="eyebrow">GENERATED LABEL</span><p id="artifact-name"></p></div><span id="artifact-colors" class="badge"></span></div><p id="artifact-freshness" class="dimension-hint" hidden></p><p class="print-note">Open the 3MF as one object with multiple parts. Assign a filament to each color and keep the supplied face-down orientation.</p><div class="download-row"><a id="download-3mf" class="button button-dark">Download 3MF ↓</a><a id="download-zip" class="button button-outline">STL + STEP ZIP ↓</a></div><details><summary>Individual color parts</summary><div id="color-downloads"></div></details></div>
+      </section>
+    </div>
+    <section id="label-job-panel" class="job-panel panel" aria-labelledby="job-title" hidden><div class="job-heading"><span id="job-indicator" class="job-indicator"></span><div><h2 id="job-title">Generating label</h2><p id="job-description"></p></div><span id="job-status" class="badge">Running</span></div><p id="job-error" class="error-message" role="alert" hidden></p><button id="view-job-result" class="text-button" type="button" hidden>View generated label →</button><details id="job-log-details"><summary>Build log</summary><pre id="job-log" aria-label="Build output"></pre></details></section>
+    <section class="label-guidance"><p><strong>Made for Vault.</strong> <span id="mounting-note">A compact plate for the facade recess. Attach with adhesive; check fit on your first print.</span></p><p>Preview colors describe the design. The printed finish depends on your filament and build plate.</p></section>
+    <section class="history-section" aria-labelledby="history-title"><div class="section-heading"><h2 id="history-title">Recent labels</h2><button id="refresh-labels" class="text-button" type="button">Refresh ↺</button></div><div id="label-history" class="history-list"><p class="empty-history">No labels generated yet.</p></div></section>
+  </main>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>

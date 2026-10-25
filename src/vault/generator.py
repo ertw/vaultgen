@@ -55,3 +55,11 @@ def catalog():
             'parts': [{'id': key, 'name': value} for key, value in PARTS.items()],
             'thicknesses': {'box_floor': [0.8, 3.0], 'module_rear': [0.9, 2.0]},
             'defaults': Configuration().as_dict()}
+
+
+def parse_configuration(value):
+    """Dispatch independent label jobs without changing complete drawer sets."""
+    if isinstance(value, dict) and value.get('part') == 'label':
+        from .label_config import LabelConfiguration
+        return LabelConfiguration.parse(value)
+    return Configuration.parse(value)

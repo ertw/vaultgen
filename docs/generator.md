@@ -22,6 +22,53 @@ one left/right pair of guides and one left/right pair of slides. Use one pair of
 each per populated runner tier, reprinting the files for additional tiers.
 No pinion, lock, lid, sustainer, screw, or divider is generated.
 
+## Labels
+
+Open **Labels** from the generator header and choose the facade family. Labels
+extend along the wider facade recess while retaining their rounded end and
+19.4 mm height × 2 mm thickness:
+
+| Facade | Label length |
+| --- | --- |
+| S | 47 mm |
+| M | 91.6 mm |
+| L | 129.4 mm |
+
+The same label size suits 1F and 2F facades; drawer depth does not affect it.
+Changing size updates the live preview and available text area without stretching
+the lettering. Previous designs without a size selection remain S labels.
+Labels are independent jobs and are not included in a complete drawer set.
+Choose one or two lines, each with its own size and color, plus a
+background color. Two or three distinct colors are supported. The single font,
+DejaVu Sans Bold, is bundled locally as vector outlines; neither the editor nor
+the CAD constructor depends on installed browser or server fonts.
+
+The live face preview uses the same glyph curves, spacing, and millimeter layout
+as the native CAD constructor. A section view explains the optional hollow back.
+It is an artwork preview rather than a running CAD kernel. **Generate label**
+creates checked native solids and enables an interactive 3D preview of the
+actual exported color components. Text that does not fit is rejected rather
+than clipped or silently scaled. Each line allows up to 96 characters, subject
+to the selected label's physical text area. Editing the artwork does not alter previously
+generated files.
+
+Print the supplied orientation with the lettering against the build plate.
+The text is a flush 0.6 mm inlay, backed by the label face; a hollow label keeps
+its perimeter rim. The 3MF preserves a single assembly containing named color
+parts. Assign the corresponding filaments in your slicer: display colors do not
+automatically select a printer's extruders. The ZIP also contains STL and STEP
+files per color, the combined STEP, configuration, and print instructions.
+Import the color STLs together as parts of one object and preserve their shared
+coordinates; do not independently center or arrange them. A single-color STL
+cannot preserve the label's material assignments.
+
+Labels use a nominal envelope suited to the facade's label recess and require
+adhesive attachment. They do not reproduce purchased label geometry or promise
+a snap fit. CAD validity and clearance checks do not establish printed fit;
+check the first label on your intended facade, printer, and material.
+
+## Generator builds
+
 Box floor thickness defaults to the current 0.8 mm, with the original 3 mm
 floor available. Module rear thickness defaults to 0.9 mm, with the original
 2 mm rear available. These thicknesses were checked against the supplied S4

@@ -414,7 +414,8 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? 'recently' : new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
 }
 async function refreshHistory() {
-  const { builds, repository } = await api('/api/builds');
+  const { builds: allBuilds, repository } = await api('/api/builds');
+  const builds = allBuilds.filter(build => build.kind !== 'label');
   state.builds = builds; state.repository = repository;
   if (state.browsingSelection) showSelection(true);
   else if (state.selectedArtifact) renderFreshness(builds.find(b => b.id === state.selectedArtifact.build.id) || state.selectedArtifact.build);
@@ -505,7 +506,8 @@ async function initialize() {
     state.config = await api('/api/config'); state.selection = { ...state.config.defaults };
     createControls(state.config); renderSelection();
     await refreshHistory();
-    const { jobs } = await api('/api/jobs');
+    const { jobs: allJobs } = await api('/api/jobs');
+    const jobs = allJobs.filter(job => job.configuration.part !== 'label');
     const stored = rememberedJob();
     const job = jobs.find(item => item.id === stored) || jobs.find(isActive);
     if (job) { rememberJob(job.id); renderJob(job); if (isActive(job)) pollJob(job.id); }

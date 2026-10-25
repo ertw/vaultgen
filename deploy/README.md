@@ -79,3 +79,16 @@ fixture's ZIP link is checked for availability; it is not a real archive downloa
 Both accept `--base-url http://127.0.0.1:PORT` and `--chromium /path/to/chromium`.
 The screenshot check also accepts `--output PATH`. Run browser checks with access
 to local sockets; restricted execution sandboxes may prevent Chromium startup.
+
+The label editor at `/labels` has a fixture-based browser check that exercises
+live text layout, colors, validation, job recovery, generated downloads, and
+desktop/mobile layout without submitting real CAD work:
+
+```bash
+nix develop path:/home/ertw/src/cad/cad-tooling -c \
+  /home/ertw/src/cad/cad-tooling/.venv/bin/python tools/browser_labels.py
+```
+
+Label API and worker changes require the usual job-drained service restart.
+The shared label-font JSON is cached by the Python configuration module, so
+changing it also requires a restart as well as fresh label builds.

@@ -20,7 +20,7 @@ from urllib.parse import unquote, urlsplit, parse_qs
 import uuid
 import zipfile
 
-from .generator import Configuration, catalog
+from .generator import Configuration, catalog, parse_configuration
 from .reference import PROJECT_ROOT
 from ._build import git_provenance
 
@@ -44,7 +44,7 @@ def freshness(manifest, current):
 STATIC = Path(__file__).with_name('static')
 BUILD_ID = re.compile(r'\d{8}T\d{12}Z-[a-f0-9]{12}')
 JOB_ID = re.compile(r'[a-f0-9]{32}')
-PUBLIC_SUFFIXES = {'.stl', '.step', '.png'}
+PUBLIC_SUFFIXES = {'.stl', '.step', '.png', '.3mf', '.txt'}
 
 
 def now():
@@ -146,7 +146,8 @@ class BuildFiles:
         path, manifest = self.read(build_id)
         parameters = json.loads((path / 'resolved-parameters.json').read_text())
         part = parameters.get('part', '')
-        kind = ('runner_guides' if part.endswith('_runner_guides') else
+        kind = ('label' if part.endswith('_label') else
+                'runner_guides' if part.endswith('_runner_guides') else
                 'runner_slides' if part.endswith('_runner_slides') else
                 'rails' if part.endswith('_geared_rails') else
                 'facade' if part.endswith('_facade') else
@@ -154,6 +155,8 @@ class BuildFiles:
         config = {key: parameters[key] for key in ('family', 'depth_units', 'height_units')
                   if key in parameters}
         config['part'] = kind
+        if kind == 'label':
+            config = parameters['label_configuration']
         if kind == 'box':
             config['box_floor'] = parameters.get('box_floor', 0.8)
         if kind == 'module':
@@ -169,12 +172,17 @@ class BuildFiles:
                           'assembly_url': url(assembly.get('path')) if assembly_ok else None,
                           'name': name, 'print_bbox_mm': details.get('print_bbox_mm', []),
                           'print_note': details.get('print_note', ''),
+                          'color': details.get('color'), 'role': details.get('role'),
                           'stl_url': url(f'stl/{name}.stl'),
                           'step_url': url(f'{name}_print.step')})
         return {'freshness': freshness(manifest, repository if repository is not None else git_provenance(PROJECT_ROOT)),
                 'source_hash': manifest.get('source_hash'),
                 'id': build_id, 'name': manifest.get('name', part), 'kind': kind,
                 'configuration': config, 'parts': parts, 'step_url': url(f'{part}.step'),
+                'label_dimensions': manifest.get('label_dimensions') if kind == 'label' else None,
+                'three_mf_url': url(manifest.get('multicolor_3mf')),
+                'bundle_url': f'/api/builds/{build_id}/bundle.zip',
+                'instructions_url': url(manifest.get('print_instructions')),
                 'preview_url': url('review/isometric.png'),
                 'created_at': datetime.strptime(build_id[:22], '%Y%m%dT%H%M%S%fZ').replace(tzinfo=timezone.utc).isoformat()}
 
@@ -185,10 +193,10 @@ class BuildFiles:
             try:
                 item = self.describe(path.name, repository)
                 config = item['configuration']
-                if ((config.get('family') in ('S', 'M', 'L')
+                if (config['part'] == 'label' or ((config.get('family') in ('S', 'M', 'L')
                      or (config['part'] in ('runner_guides', 'runner_slides') and 'family' not in config))
                         and config.get('height_units', 1) in (1, 2)
-                        and config.get('depth_units', 4) in range(3, 8)):
+                        and config.get('depth_units', 4) in range(3, 8))):
                     result.append(item)
             except (OSError, ValueError, KeyError):
                 continue
@@ -302,7 +310,7 @@ class Jobs:
                 build_ids = json.loads(receipt.read_text())
                 for build_id in build_ids:
                     self.files.describe(build_id)
-                if len(build_ids) != len(Configuration.parse(item['configuration']).parts):
+                if len(build_ids) != len(parse_configuration(item['configuration']).parts):
                     raise RuntimeError('CAD worker did not complete every requested part')
                 terminal = {'status': 'completed', 'error': None, 'build_ids': build_ids}
             except Exception as error:
@@ -366,6 +374,9 @@ def handler(jobs):
                     return self.send(200, {'status': 'ok'})
                 if path == '/api/config':
                     return self.send(200, catalog())
+                if path == '/api/labels/config':
+                    from .label_config import label_catalog
+                    return self.send(200, label_catalog())
                 if path == '/api/assembly':
                     query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
                     if any(len(values) != 1 for values in query.values()):
@@ -388,6 +399,12 @@ def handler(jobs):
                 if path == '/api/builds':
                     repository = git_provenance(PROJECT_ROOT)
                     return self.send(200, {'builds': jobs.files.history(repository), 'repository': repository})
+                if path.startswith('/api/builds/'):
+                    pieces = path.strip('/').split('/')
+                    if len(pieces) != 4 or pieces[3] != 'bundle.zip':
+                        raise FileNotFoundError('Unknown endpoint')
+                    build = jobs.files.describe(pieces[2])
+                    return self.build_bundle([build], build['configuration'], f'vault-{build["id"]}.zip')
                 if path == '/api/jobs':
                     return self.send(200, {'jobs': jobs.history()})
                 if path.startswith('/api/jobs/'):
@@ -403,9 +420,10 @@ def handler(jobs):
                     mime = mimetypes.guess_type(relative)[0] or 'application/octet-stream'
                     return self.send(200, data, mime,
                                      Path(relative).name if not relative.endswith('.png') else None)
-                relative = 'index.html' if path == '/' else path.removeprefix('/static/')
+                relative = ('index.html' if path == '/' else 'labels.html'
+                            if path in ('/labels', '/labels/') else path.removeprefix('/static/'))
                 file = STATIC / relative
-                if (path != '/' and not path.startswith('/static/')) or not file.resolve().is_relative_to(STATIC.resolve()):
+                if (path not in ('/', '/labels', '/labels/') and not path.startswith('/static/')) or not file.resolve().is_relative_to(STATIC.resolve()):
                     raise FileNotFoundError('Unknown page')
                 return self.send(200, file.read_bytes(), mimetypes.guess_type(file.name)[0] or 'application/octet-stream')
             except (OSError, KeyError, IndexError):
@@ -417,22 +435,25 @@ def handler(jobs):
             job = jobs.get(job_id)
             if job['status'] != 'completed':
                 raise ValueError('This set has not completed')
+            return self.build_bundle(job['builds'], job['configuration'], f'vault-{job_id[:8]}.zip')
+
+        def build_bundle(self, builds, configuration, filename):
             with tempfile.TemporaryFile() as archive:
                 with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as bundle:
-                    bundle.writestr('configuration.json', json.dumps(job['configuration'], indent=2))
-                    for build in job['builds']:
+                    bundle.writestr('configuration.json', json.dumps(configuration, indent=2))
+                    for build in builds:
                         _, manifest = jobs.files.read(build['id'])
                         for relative in manifest['checksums']:
-                            if relative.startswith(('source/', 'preview/')) or Path(relative).suffix not in {'.stl', '.step'}:
+                            if relative.startswith(('source/', 'preview/')) or Path(relative).suffix not in {'.stl', '.step', '.3mf', '.txt'}:
                                 continue
                             bundle.writestr(f'{build["kind"]}/{relative}', jobs.files.artifact(build['id'], relative))
-                    bundle.writestr('parts.json', json.dumps(job['builds'], indent=2))
+                    bundle.writestr('parts.json', json.dumps(builds, indent=2))
                 size = archive.tell()
                 archive.seek(0)
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/zip')
                 self.send_header('Content-Length', str(size))
-                self.send_header('Content-Disposition', f'attachment; filename="vault-{job_id[:8]}.zip"')
+                self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
                 self.send_header('X-Content-Type-Options', 'nosniff')
                 self.end_headers()
                 if self.command != 'HEAD':
@@ -453,7 +474,7 @@ def handler(jobs):
                 if not 0 < length <= 4096:
                     return self.send(413, {'error': 'Request must contain at most 4096 bytes'})
                 value = json.loads(self.rfile.read(length))
-                config = Configuration.parse(value)
+                config = parse_configuration(value)
                 return self.send(202, jobs.submit(config))
             except (ValueError, TypeError) as error:
                 self.send(400, {'error': str(error)})

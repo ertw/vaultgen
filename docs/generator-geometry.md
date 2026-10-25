@@ -80,6 +80,44 @@ for valid connected solids, expected bounds, floor thickness, screw
 alignment, runner positions, gear exits and matching facade rebates.
 These CAD checks do not establish physical printed fit.
 
+## Labels
+
+Label requests have their own bounded configuration in `label_config.py` and
+select a drawer family independently of the main parts configurator. Length is
+`47 + (facade_width - 164.8) / 2`: S 47 mm, M 91.6 mm, L 129.4 mm. Height and
+thickness stay 19.4 × 2 mm, independent of depth and tier count. The straight
+section extends while the semicircular end, small opposite corner radii, rim,
+and text profiles keep their dimensions. Requests without a family default to S.
+The native constructor uses shared glyph outlines from
+`static/label-font.json`. These outlines and their font license are local source
+assets included in immutable source snapshots, not purchased reference meshes.
+
+The front is a 0.9 mm face with 0.6 mm flush text inlays. The hollow option
+retains a 0.8 mm perimeter rim; the solid option fills the back. One or two lines
+are centered by visible glyph bounds with a 1.5 mm interline gap. Text is never
+stretched to fit. The editor uses the same curves and layout in millimeters.
+
+Every material shares the same rigid front-to-print transform. Text and
+background therefore meet on Z=0 without independently centering individual
+letters, counters, or color parts. Disconnected solids within a material are
+checked individually, then exported in their shared coordinates. The 3MF stores
+named color components in one assembly. Native topology, STEP round trips,
+watertight print meshes, and material registration are checked before publishing.
+These checks do not certify small-text resolution or adhesive fit on a printer.
+
+`python tools/check_label_interfaces.py` checks the conservative full label
+envelope against the matching native S/M/L facades at both 1F and 2F using the
+family-specific rigid transform in `label.py`. The rounded tip stays at native
+X=32.3 mm while the outside edge follows half the facade width. It checks
+clearance and matching label width, while geometry unit tests check
+that the mounted face points outward and the lettering stays upright. This is
+a geometric seating check, not a snap-fit or physical retention test.
+
+`python -m vault.label_build` builds the default label through the immutable
+export pipeline. Pass `--configuration label.json` for an editor-style request
+and `--output PATH` for separate build storage. `python tools/label_font.py`
+reproduces the shared vector font from the pinned Matplotlib font asset.
+
 ## Runner guides and slides
 
 `runner_guides.py` and `runner_slides.py` reconstruct the universal x3–x7

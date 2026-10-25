@@ -8,6 +8,12 @@ part or a complete set, inspect the actual print-oriented STL in 3D, and downloa
 checked STL/STEP files or the whole set as a ZIP. Existing host sign-in protects
 the application.
 
+The **Labels** editor creates face-down multicolor drawer labels sized for S, M,
+or L facades, with one or two lines, independent text sizes and colors, and an optional hollow back. It shows
+the shared font outlines live and the checked 3D part after generation. Downloads
+include a multicolor 3MF and registered STL/STEP color components; see
+[label behavior and print notes](docs/generator.md#labels).
+
 Run locally with `python -m vault.web` (loopback port 3941). See
 [deployment](deploy/README.md) and [generator behavior](docs/generator.md).
 

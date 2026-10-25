@@ -18,7 +18,7 @@ with sync_playwright() as p:
     errors=[]
     page.on('pageerror',lambda error:errors.append(str(error)))
     fixture={'job':None,'status':'running','count':0,'hold':True,'pending':None}
-    builds=page.request.get(args.base_url.rstrip('/')+'/api/builds').json()['builds']
+    builds=[build for build in page.request.get(args.base_url.rstrip('/')+'/api/builds').json()['builds'] if build['kind']!='label']
     assert len(builds)>=2, 'Create at least two successful builds before running the failure checks.'
     def route_jobs(route):
         request=route.request
@@ -67,6 +67,9 @@ with sync_playwright() as p:
     assert page.locator('#artifact-tabs button').count()==sum(len(b['parts']) for b in builds[:2])
     page.reload()
     expect(page.locator('#job-status')).to_have_text('Completed')
+    expect(page.locator('#job-bundle-download')).to_be_visible()
+    # Reload restores the job while keeping the current configuration preview.
+    page.locator('#job-artifacts-button').click()
     expect(page.locator('#bundle-download')).to_be_visible()
     fixture['status']='running'
     page.locator('#build-button').click()

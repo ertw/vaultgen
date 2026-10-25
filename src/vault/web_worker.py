@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .generator import Configuration
+from .generator import parse_configuration
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--receipt', type=Path, required=True)
     args = parser.parse_args()
-    config = Configuration.parse(json.loads(args.configuration))
+    config = parse_configuration(json.loads(args.configuration))
     from .__main__ import build, select_spec
     from ._build import source_hashes, source_digest, verify_files, git_provenance
     from .reference import PROJECT_ROOT
@@ -21,9 +21,15 @@ def main():
     for part in config.parts:
         if source_digest(source_hashes(PROJECT_ROOT)) != digest:
             raise RuntimeError('Generator source changed during this set. Generate again to use one revision.')
-        spec = select_spec(part, config.family, config.depth_units, config.height_units,
-                           box_floor=config.box_floor, module_rear=config.module_rear)
-        print(f'Preparing {spec.name}', flush=True)
+        if part == 'label':
+            from .label_build import build_label
+            spec = config
+            generate = build_label
+        else:
+            spec = select_spec(part, config.family, config.depth_units, config.height_units,
+                               box_floor=config.box_floor, module_rear=config.module_rear)
+            generate = build
+        print(f'Preparing {"multicolor label" if part == "label" else spec.name}', flush=True)
         previous = args.output / 'latest' / spec.slug
         reused = False
         if previous.is_dir():
@@ -38,7 +44,7 @@ def main():
             destination = previous.resolve()
             print(f'Reusing checked build {destination.name}', flush=True)
         else:
-            destination = build(args.output, spec)
+            destination = generate(args.output, spec)
         builds.append(destination.name)
         # A failed later part never hides earlier, successfully checked exports.
         args.receipt.write_text(json.dumps(builds))
