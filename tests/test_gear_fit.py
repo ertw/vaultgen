@@ -3,7 +3,8 @@ from dataclasses import replace
 import unittest
 
 from vault.box import build_box
-from vault.geared_rails import build_gear_rail
+from vault.geared_rails import GearRailSpec, build_gear_rail
+from vault.spec import ModuleSpec
 from vault.shell import ShellDimensions, build_shell
 from tools.check_geared_rails import common_volume, place_gear_rail, swept_rail_envelope
 
@@ -48,3 +49,34 @@ class GearFitTests(unittest.TestCase):
                     outside = place_gear_rail(rail, upper, travel).cut(swept)
                     volume = 0.0 if outside is None else sum(s.volume for s in outside.solids())
                     self.assertLess(volume, 1e-5)
+
+
+class UnlockedRailStopTests(unittest.TestCase):
+    def test_family_rails_seat_at_the_s4_unlocked_stop(self):
+        # Different depths/heights must preserve the lock's tooth registration.
+        # Include the reported L6 2F failure and both heights of every family.
+        for family in ('S', 'M', 'L'):
+            rails = {upper: build_gear_rail(upper, spec=GearRailSpec(family))
+                     for upper in (False, True)}
+            for depth, height in ((3, 1), (6, 2)):
+                spec = ModuleSpec(family, depth, height)
+                box = build_box(spec=spec)
+                for upper, rail in rails.items():
+                    def placed(travel):
+                        return place_gear_rail(rail, upper, travel).translate(
+                            (0, spec.depth - 188.1, 0))
+
+                    with self.subTest(family=family, height=height, upper=upper):
+                        # The existing clearance pose is 0.2 mm off the stop.
+                        # Seating it must produce contact without penetration;
+                        # another 0.1 mm inward must hit solid material.
+                        seated = placed(-.2)
+                        self.assertLess(seated.distance_to(box), 1e-5)
+                        self.assertLess(common_volume(seated, box), 1e-5)
+                        self.assertGreater(common_volume(placed(-.3), box), .01)
+                        # This also catches prematurely blocking the outgoing
+                        # extended tail or the retained upper rail's rib.
+                        for travel in (0, 10, 20):
+                            moving = placed(travel)
+                            self.assertGreater(moving.distance_to(box), .19)
+                            self.assertLess(common_volume(moving, box), 1e-5)

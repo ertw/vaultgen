@@ -32,6 +32,9 @@ def build_module(
     """
     if progress is not None:
         progress('Building sleeve, drawer runners, and retention details')
+    if shell_dimensions is DEFAULT_DIMENSIONS:
+        from dataclasses import replace
+        shell_dimensions = replace(shell_dimensions, back_wall=spec.module_rear)
     shell = build_shell(spec=spec, dimensions=shell_dimensions)
     part = add_connectors(shell, spec=spec, parameters=connector_parameters, progress=progress)
     if shadow_gap is not None:

@@ -1,7 +1,8 @@
 # Vault CAD
 
 The size configurator at **https://vaultgen.erik.cl** generates matching modules,
-boxes, facades and geared rails. Choose S, M or L, depth 3–7, and 1F or 2F;
+boxes, facades, geared rails, runner guides and runner slides. Choose S, M or L,
+depth 3–7, and 1F or 2F;
 XL and taller configurations are excluded from the generator. Build a single
 part or a complete set, inspect the actual print-oriented STL in 3D, and download
 checked STL/STEP files or the whole set as a ZIP. Existing host sign-in protects
@@ -46,6 +47,8 @@ python -m vault build --family L --height-units 2
 python -m vault build --part box --family L --depth-units 7 --height-units 2
 python -m vault build --part facade --family M --height-units 2
 python -m vault build --part rails --family L
+python -m vault build --part runner_guides --depth-units 4
+python -m vault build --part runner_slides --depth-units 7
 ```
 
 All sizes use the shared [build storage library](../../cad-tooling/docs/builds.md).
@@ -329,3 +332,17 @@ fit coupons are preserved on branch `codex/printed-screw-joint`.
 M and L rails are also available through `--family M` / `--family L`. Their
 measured lengths are 165.654 and 203.454 mm; they retain the original 20 teeth
 and add a straight shank before the tail instead of stretching the mechanism.
+
+## Runner guides and slides
+
+The generator offers **Runner guides** and **Runner slides** individually and
+includes both in a complete set. Their size follows the selected depth, from
+X3 through X7; S/M/L family and 1F/2F height do not change these parts. Use the
+guide and slide files with the same depth as the module and box.
+
+The CLI selectors are `--part runner_guides` and `--part runner_slides`, with
+`--depth-units 3` through `7`. Each build provides its components as separate
+print-oriented STL and STEP files, also available in the web preview and ZIP.
+Each runner build contains a left/right pair. Use one guide pair and one slide
+pair per populated runner tier; reprint these files for additional tiers.
+Check the first printed assembly on the intended printer before making more.

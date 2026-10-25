@@ -1,0 +1,154 @@
+{
+  "schema": "vault-runner-slides-box-fit/v1",
+  "units": "mm",
+  "method": "Native B-rep intersections and minimum surface distances. Only the explicitly removable box channel supports are subtracted.",
+  "registration": "For side +/-1: rotate slide about Y by -side*90 degrees, then translate by (side*(73.9+family_width_delta),28.1,23.5+tier).",
+  "cases": [
+    {
+      "configuration": "S4 1F",
+      "side": -1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.0,
+      "passed": true
+    },
+    {
+      "configuration": "S4 1F",
+      "side": -1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0.1,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.018900000000016348,
+      "passed": true
+    },
+    {
+      "configuration": "S4 1F",
+      "side": 1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.0,
+      "passed": true
+    },
+    {
+      "configuration": "S4 1F",
+      "side": 1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0.1,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.018900000000016348,
+      "passed": true
+    },
+    {
+      "configuration": "M3 1F",
+      "side": -1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.0,
+      "passed": true
+    },
+    {
+      "configuration": "M3 1F",
+      "side": -1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0.1,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.018900000000016348,
+      "passed": true
+    },
+    {
+      "configuration": "M3 1F",
+      "side": 1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.0,
+      "passed": true
+    },
+    {
+      "configuration": "M3 1F",
+      "side": 1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0.1,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.018900000000016348,
+      "passed": true
+    },
+    {
+      "configuration": "L7 2F",
+      "side": -1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.0,
+      "passed": true
+    },
+    {
+      "configuration": "L7 2F",
+      "side": -1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0.1,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.018900000000002137,
+      "passed": true
+    },
+    {
+      "configuration": "L7 2F",
+      "side": -1,
+      "tier_offset_mm": 48.0,
+      "withdrawal_mm": 0,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.0,
+      "passed": true
+    },
+    {
+      "configuration": "L7 2F",
+      "side": -1,
+      "tier_offset_mm": 48.0,
+      "withdrawal_mm": 0.1,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.018900000000002137,
+      "passed": true
+    },
+    {
+      "configuration": "L7 2F",
+      "side": 1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.0,
+      "passed": true
+    },
+    {
+      "configuration": "L7 2F",
+      "side": 1,
+      "tier_offset_mm": 0.0,
+      "withdrawal_mm": 0.1,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.018900000000002137,
+      "passed": true
+    },
+    {
+      "configuration": "L7 2F",
+      "side": 1,
+      "tier_offset_mm": 48.0,
+      "withdrawal_mm": 0,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.0,
+      "passed": true
+    },
+    {
+      "configuration": "L7 2F",
+      "side": 1,
+      "tier_offset_mm": 48.0,
+      "withdrawal_mm": 0.1,
+      "intersection_mm3": 0,
+      "clearance_mm": 0.018900000000002137,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "limitations": "Dry geometric fit only. Zero minimum distance at full insertion is the intended rear stop contact. A 0.1 mm withdrawal checks the small nominal radial seating clearance; printer fit must be checked."
+}

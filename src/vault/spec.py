@@ -41,8 +41,11 @@ class ModuleSpec:
     family: str = "S"
     depth_units: int = 4
     height_units: int = 1
+    module_rear: float = 0.9
 
     def __post_init__(self):
+        if type(self.module_rear) not in (int, float) or self.module_rear not in (0.9, 2.0):
+            raise ValueError('Module rear must be 0.9 or 2.0 mm')
         if self.family not in FAMILIES:
             raise ValueError(f"Unknown Vault family {self.family!r}; choose {', '.join(FAMILIES)}")
         if type(self.depth_units) is not int or self.depth_units < 3:
@@ -81,11 +84,11 @@ class ModuleSpec:
 
     @property
     def name(self) -> str:
-        return f"{self.family}{self.depth_units} Module {self.height_units}F"
+        return f"{self.family}{self.depth_units} Module {self.height_units}F" + (" · 2 mm rear" if self.module_rear == 2 else "")
 
     @property
     def slug(self) -> str:
-        return f"{self.family.lower()}{self.depth_units}_module_{self.height_units}f"
+        return f"{self.family.lower()}{self.depth_units}_module_{self.height_units}f" + ("_rear_2mm" if self.module_rear == 2 else "")
 
 
 DEFAULT_SPEC = ModuleSpec()

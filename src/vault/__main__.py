@@ -9,7 +9,7 @@ import time
 
 from .reference import PROJECT_ROOT
 from .spec import DEFAULT_SPEC, FAMILIES, ModuleSpec
-from ._build import run_build, source_hashes, verify_files, write_json
+from ._build import run_build, source_hashes, verify_files
 
 
 def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
@@ -99,6 +99,9 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
 
 
 def part_kind(spec):
+    for kind in ('runner_guides', 'runner_slides'):
+        if spec.slug.endswith('_' + kind):
+            return kind
     if spec.slug.endswith('_facade'):
         return 'facade'
     if '_box_' in spec.slug:
@@ -118,6 +121,8 @@ def print_orientation(module, spec):
 
 
 def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
+    if part_kind(spec) in {'runner_guides', 'runner_slides'}:
+        return build_runners(output, spec)
     if part_kind(spec) == 'rail':
         return build_rails(output, spec)
     from dataclasses import asdict
@@ -147,91 +152,40 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
 
 
 def _export_rails(output: Path, spec=None):
-    """Export both rail variants, retaining the one-solid check for each part."""
-    from build123d import Compound, export_brep, export_step, import_step
-    from .exports import check_step, precise_volume
+    """Export both rail variants through the shared multipart checks."""
+    from .exports import export_part_set
     from .geared_rails import SPEC, build_gear_rail
-    from .render import render_review
-    from .tessellation import export_print_mesh, review_mesh
-
     spec = spec or SPEC
-    started = time.monotonic()
-    output.mkdir(parents=True, exist_ok=True)
-    components, reports, display = [], {}, []
-    next_y = 0.
-    for retained in (False, True):
-        variant = 'retained' if retained else 'plain'
-        stem = f'{spec.family.lower()}_geared_rail_{variant}'
-        rail = (build_gear_rail(retained=retained) if spec == SPEC else
-                build_gear_rail(retained=retained, spec=spec))
-        if not rail.is_valid or len(rail.solids()) != 1 or len(rail.shells()) != 1:
-            raise ValueError(f'{stem}: expected one valid solid with one boundary shell')
-        bounds = rail.bounding_box()
-        printable = rail.translate((-bounds.min.X, -bounds.min.Y, -bounds.min.Z))
-        shown = printable.translate((0, next_y, 0))
-        shown.label = stem
-        next_y = shown.bounding_box().max.Y + 5.
-        print(f'Exporting {stem} STEP and print STL…', flush=True)
-        for shape, suffix in ((shown, ''), (printable, '_print')):
-            path = output / f'{stem}{suffix}.step'
-            if not export_step(shape, path):
-                raise ValueError(f'{stem}{suffix}: STEP export failed')
-            _, report = check_step(shape, path)
-            if suffix:
-                print_check = report
-            else:
-                step_check = report
-        if not export_brep(shown, output / f'{stem}.brep'):
-            raise ValueError(f'{stem}: BREP export failed')
-        mesh = export_print_mesh(printable, output / 'stl' / f'{stem}.stl')
-        reports[stem] = {
-            'kind': 'rail', 'cad_valid': True, 'solids': 1, 'boundary_shells': 1,
-            'cad_volume_mm3': precise_volume(rail),
-            'step_roundtrip': step_check, 'print_step_roundtrip': print_check,
-            'print_bbox_mm': list(printable.bounding_box().size),
-            'print_note': 'Flat broad face on Z=0; teeth lie in the build plate plane.',
-            'stl_watertight': bool(mesh.is_watertight),
-            'stl_winding_consistent': bool(mesh.is_winding_consistent),
-        }
-        components.append({'name': stem, 'step': f'{stem}.step', 'kind': 'rail'})
-        display.append(shown)
+    parts = {f'{spec.family.lower()}_geared_rail_{variant}':
+             (build_gear_rail(retained=retained) if spec == SPEC else
+              build_gear_rail(retained=retained, spec=spec))
+             for variant, retained in (('plain', False), ('retained', True))}
+    return export_part_set(output, spec, parts, kind='rail',
+                           print_note='Flat broad face on Z=0; teeth lie in the build plate plane.')
 
-    assembly = Compound(label=spec.name, children=display)
-    path = output / f'{spec.slug}.step'
-    if not export_step(assembly, path):
-        raise ValueError('Rail assembly STEP export failed')
-    restored = import_step(path)
-    volume = precise_volume(assembly)
-    volume_delta = abs(precise_volume(restored) - volume) / max(volume, 1.)
-    before, after = assembly.bounding_box(), restored.bounding_box()
-    bounds_delta = max(abs(a - b) for a, b in zip(
-        (*before.min, *before.max), (*after.min, *after.max)))
-    component_names = {child.label for child in restored.children}
-    expected_names = {item['name'] for item in components}
-    assembly_check = {
-        'passed': bool(restored.is_valid and len(restored.solids()) == 2
-                       and len(restored.shells()) == 2 and volume > 0
-                       and component_names == expected_names
-                       and volume_delta < 1e-5 and bounds_delta < 1e-4),
-        'solids': len(restored.solids()), 'boundary_shells': len(restored.shells()),
-        'components': sorted(component_names),
-        'volume_relative_error': volume_delta, 'volume_relative_tolerance': 1e-5,
-        'bbox_max_error_mm': bounds_delta,
-    }
-    if not assembly_check['passed']:
-        raise ValueError(f'Rail assembly STEP round-trip failed: {assembly_check}')
-    render_review(review_mesh(restored), output / 'review')
-    manifest = {
-        'passed': True, 'project': 'vault', 'name': spec.name, 'units': 'mm',
-        'status': 'Completed CAD build', 'cad_valid': True, 'solids': 2,
-        'boundary_shells': 2, 'cad_volume_mm3': volume,
-        'model_bounds_mm': [list(before.min), list(before.max)],
-        'step_roundtrip': assembly_check, 'parts': reports,
-        'elapsed_seconds': time.monotonic() - started,
-        'source_files': source_hashes(PROJECT_ROOT),
-    }
-    write_json(output / 'build.json', manifest)
-    return manifest, {'assembly': path.name, 'components': components}
+
+def _export_runners(output: Path, spec):
+    from .exports import export_part_set
+    kind = part_kind(spec)
+    if kind == 'runner_guides':
+        from .runner_guides import build_runner_guides
+        parts = build_runner_guides(spec=spec)
+    else:
+        from .runner_slides import build_runner_slides
+        parts = build_runner_slides(spec=spec)
+    parts = {f'{spec.slug}_{name}': solid for name, solid in parts.items()}
+    return export_part_set(output, spec, parts, kind=kind,
+                           print_note='Print flat in the supplied orientation. One left/right pair per populated '
+                           'runner tier; repeat the pair for additional tiers. Match the guide and slide depths.')
+
+
+def build_runners(output: Path, spec):
+    from dataclasses import asdict
+    configuration = {**asdict(spec), 'part': spec.slug}
+    digest = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
+    return run_build(PROJECT_ROOT, digest, lambda state: _export_runners(state.stage, spec),
+                     parameters=configuration, output=output,
+                     aliases=[f'latest/{spec.slug}'])
 
 
 def build_rails(output: Path, spec=None):
@@ -248,6 +202,8 @@ def build_rails(output: Path, spec=None):
 
 
 def build_preview(configuration):
+    if configuration in ('x4_runner_guides', 'x4_runner_slides'):
+        return build(PROJECT_ROOT / 'out', select_spec(configuration[3:]))
     if configuration == 's_geared_rails':
         from .geared_rails import SPEC
         return build(PROJECT_ROOT / 'out', SPEC)
@@ -277,19 +233,27 @@ def selected_build(output, spec):
     return legacy
 
 
-def select_spec(part, family='S', depth_units=4, height_units=1):
+def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.8, module_rear=0.9):
     """Resolve the same native constructors for the CLI and web generator."""
     if part == 'module':
-        return ModuleSpec(family, depth_units, height_units)
+        return ModuleSpec(family, depth_units, height_units, module_rear)
     if part == 'box':
         from .box import BoxSpec
-        return BoxSpec(family, depth_units, height_units)
+        return BoxSpec(family, depth_units, height_units, box_floor)
     if part == 'facade':
         from .facade import FacadeSpec
         return FacadeSpec(family, height_units)
     if part == 'rails':
         from .geared_rails import GearRailSpec
         return GearRailSpec(family)
+    if part in ('runner_guides', 'runner_slides'):
+        if family not in ('S', 'M', 'L') or type(height_units) is not int or height_units not in (1, 2):
+            raise ValueError('Runner pairs support S/M/L drawers in 1F or 2F')
+        if part == 'runner_guides':
+            from .runner_guides import RunnerGuideSpec
+            return RunnerGuideSpec(depth_units)
+        from .runner_slides import RunnerSlideSpec
+        return RunnerSlideSpec(depth_units)
     raise ValueError('Unknown part')
 
 
@@ -297,7 +261,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['build', 'validate', 'render'])
     parser.add_argument('--output', type=Path)
-    parser.add_argument('--part', choices=['module', 'facade', 'box', 'rails'], default='module')
+    parser.add_argument('--part', choices=['module', 'facade', 'box', 'rails', 'runner_guides', 'runner_slides'], default='module')
     parser.add_argument('--family', choices=FAMILIES, default='S')
     parser.add_argument('--depth-units', type=int, default=4)
     parser.add_argument('--height-units', type=int, default=1)

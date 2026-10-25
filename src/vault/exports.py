@@ -29,3 +29,93 @@ def check_step(original, path):
     if not passed:
         raise ValueError(f'STEP round-trip failed for {path.name}: {report}')
     return restored, report
+
+
+def export_part_set(output, spec, parts, *, kind, print_note):
+    """Export named printable solids with shared per-part and assembly checks."""
+    from copy import deepcopy
+    from build123d import Compound, export_brep, export_step, import_step
+    from .render import render_review
+    from .tessellation import export_print_mesh, review_mesh
+
+    from ._build import source_hashes, write_json
+    from .reference import PROJECT_ROOT
+    import time
+
+    if not parts:
+        raise ValueError("A part set must contain at least one solid")
+    started = time.monotonic()
+    output.mkdir(parents=True, exist_ok=True)
+    components, reports, display = [], {}, []
+    next_y = 0.
+    for stem, solid in parts.items():
+        if not solid.is_valid or len(solid.solids()) != 1 or len(solid.shells()) != 1:
+            raise ValueError(f'{stem}: expected one valid solid with one boundary shell')
+        bounds = solid.bounding_box()
+        printable = solid.translate((-bounds.min.X, -bounds.min.Y, -bounds.min.Z))
+        # Identical left/right parts may share an OpenCascade shape. Give each
+        # assembly item its own shape so STEP retains both component names.
+        shown = deepcopy(printable).translate((0, next_y, 0))
+        shown.label = stem
+        next_y = shown.bounding_box().max.Y + 5.
+        print(f'Exporting {stem} STEP and print STL…', flush=True)
+        for shape, suffix in ((shown, ''), (printable, '_print')):
+            path = output / f'{stem}{suffix}.step'
+            if not export_step(shape, path):
+                raise ValueError(f'{stem}{suffix}: STEP export failed')
+            _, report = check_step(shape, path)
+            if suffix:
+                print_check = report
+            else:
+                step_check = report
+        if not export_brep(shown, output / f'{stem}.brep'):
+            raise ValueError(f'{stem}: BREP export failed')
+        mesh = export_print_mesh(printable, output / 'stl' / f'{stem}.stl')
+        reports[stem] = {
+            'kind': kind, 'cad_valid': True, 'solids': 1, 'boundary_shells': 1,
+            'cad_volume_mm3': precise_volume(solid),
+            'step_roundtrip': step_check, 'print_step_roundtrip': print_check,
+            'print_bbox_mm': list(printable.bounding_box().size),
+            'print_note': print_note,
+            'stl_watertight': bool(mesh.is_watertight),
+            'stl_winding_consistent': bool(mesh.is_winding_consistent),
+        }
+        components.append({'name': stem, 'step': f'{stem}.step', 'kind': kind})
+        display.append(shown)
+
+    assembly = Compound(label=spec.name, children=display)
+    path = output / f'{spec.slug}.step'
+    if not export_step(assembly, path):
+        raise ValueError('Part assembly STEP export failed')
+    restored = import_step(path)
+    volume = precise_volume(assembly)
+    volume_delta = abs(precise_volume(restored) - volume) / max(volume, 1.)
+    before, after = assembly.bounding_box(), restored.bounding_box()
+    bounds_delta = max(abs(a - b) for a, b in zip(
+        (*before.min, *before.max), (*after.min, *after.max)))
+    component_names = {child.label for child in restored.children}
+    expected_names = {item['name'] for item in components}
+    assembly_check = {
+        'passed': bool(restored.is_valid and len(restored.solids()) == len(parts)
+                       and len(restored.shells()) == len(parts) and volume > 0
+                       and component_names == expected_names
+                       and volume_delta < 1e-5 and bounds_delta < 1e-4),
+        'solids': len(restored.solids()), 'boundary_shells': len(restored.shells()),
+        'components': sorted(component_names),
+        'volume_relative_error': volume_delta, 'volume_relative_tolerance': 1e-5,
+        'bbox_max_error_mm': bounds_delta,
+    }
+    if not assembly_check['passed']:
+        raise ValueError(f'Part assembly STEP round-trip failed: {assembly_check}')
+    render_review(review_mesh(restored), output / 'review')
+    manifest = {
+        'passed': True, 'project': 'vault', 'name': spec.name, 'units': 'mm',
+        'status': 'Completed CAD build', 'cad_valid': True, 'solids': len(parts),
+        'boundary_shells': len(parts), 'cad_volume_mm3': volume,
+        'model_bounds_mm': [list(before.min), list(before.max)],
+        'step_roundtrip': assembly_check, 'parts': reports,
+        'elapsed_seconds': time.monotonic() - started,
+        'source_files': source_hashes(PROJECT_ROOT),
+    }
+    write_json(output / 'build.json', manifest)
+    return manifest, {'assembly': path.name, 'components': components}

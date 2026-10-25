@@ -37,7 +37,16 @@ in the facade, with the original facade counterbores and bosses.
 
 The gear mechanism remains on the bottom tier in both heights; its central
 opening, cross-sections, rounded exit lips, roof clearance and fixed gear
-Z positions do not scale. Its lateral passages extend with family width.
+Z positions do not scale. Its open exit passages extend with family width.
+The two blind rail pockets end at X = ±66.3 mm for every family, preserving
+the working S4/S-rail unlocked installation stop. M/L rails extend their
+outgoing tails only; extending the blind pockets would let the tooth train
+retract past the lock's installation position. Push both rails against their
+blind ends before installing the lock in its open position.
+`research/gear_pocket_stops.json` records measurements of the original S4 1F,
+M3 1F and L6 2F pockets; all terminate near this central datum despite their
+different outside widths. Their rounded end surfaces differ from the native
+flat stops. `python tools/check_gear_pocket_stops.py` reproduces the measurements.
 Runner channels repeat every 48 mm and move out with the side walls. The
 0.8 mm floor, 1 mm interior floor fillet, 1.3 mm runner backing walls, 0.3 mm
 runner flank clearance, and breakaway sheets are preserved. Sheet teeth are
@@ -70,3 +79,40 @@ radii, closed pockets, cavity fillets, supports, screws and rebates.
 for valid connected solids, expected bounds, floor thickness, screw
 alignment, runner positions, gear exits and matching facade rebates.
 These CAD checks do not establish physical printed fit.
+
+## Runner guides and slides
+
+`runner_guides.py` and `runner_slides.py` reconstruct the universal x3–x7
+parts with native arcs, extrusions, fillets and chamfers. Their source files
+contain two identical copies of each part. Exported left/right names identify
+installation sides; they do not imply handed geometry. Use one pair of each
+per populated runner tier, repeating prints for additional tiers.
+
+| Part | Width | Length at depth n | Print height |
+| --- | --- | --- | --- |
+| Guide | 27 mm | `42 × n + 17.5` mm | 9.4 mm |
+| Slide | 18.22 mm | `42 × n − 8` mm | 8.979 mm |
+
+Depth changes the straight lengths and stop positions, preserving the mating
+profiles. The x3 guide retains the source's one-millimeter-shorter travel slot.
+These parts are shared across S/M/L widths and 1F/2F heights. Their constructors
+never load the purchased meshes. Both print with the supplied flat face on Z=0.
+
+Slides add a 1 mm, 45° crown chamfer at the insertion nose to ease entry into
+the mate. The top edge moves from Y=0.048 to Y=1.048 mm; the stop and running
+profile beyond the nose are preserved. This intentional clearance change
+departs from the purchased mesh, so the original-mesh slide audit's 0.08 mm
+deviation limit no longer applies at that chamfer.
+
+`tools/check_runner_guides.py` and `tools/check_runner_slides.py` compare native
+geometry against both original copies at each depth. The guide audit also
+checks module/guide and guide/slide clearance and the head stop.
+`tools/check_runner_slides_fit.py` checks the native box on both sides and every
+tier of S4/1F, M3/1F and L7/2F. The seated slide contacts its rear stop; withdrawing
+it 0.1 mm clears that contact. These are geometric checks, not printer fit tests.
+
+Runner and geared-rail sets share `exports.export_part_set`, which checks each
+solid, each print/model STEP round-trip, watertight STL, and the combined STEP's
+part count and names. Identical parts receive independent STEP shapes so both
+left/right component names survive export. A complete generator set has six
+build groups and nine STL files; repeated tier quantities reuse those files.

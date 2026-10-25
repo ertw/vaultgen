@@ -4,7 +4,8 @@ from dataclasses import dataclass, asdict
 from .spec import FAMILIES
 
 PARTS = {'set': 'Complete set', 'module': 'Module', 'box': 'Box',
-         'facade': 'Facade', 'rails': 'Geared rails'}
+         'facade': 'Facade', 'rails': 'Geared rails',
+         'runner_guides': 'Runner guides', 'runner_slides': 'Runner slides'}
 
 
 @dataclass(frozen=True)
@@ -13,8 +14,14 @@ class Configuration:
     depth_units: int = 4
     height_units: int = 1
     part: str = 'set'
+    box_floor: float = 0.8
+    module_rear: float = 0.9
 
     def __post_init__(self):
+        for key, choices in (('box_floor', (0.8, 3.0)), ('module_rear', (0.9, 2.0))):
+            value = getattr(self, key)
+            if type(value) not in (int, float) or value not in choices:
+                raise ValueError(f'{key} must be one of {choices} mm')
         if self.family not in ('S', 'M', 'L'):
             raise ValueError('Choose family S, M, or L')
         if type(self.depth_units) is not int or self.depth_units not in range(3, 8):
@@ -22,7 +29,7 @@ class Configuration:
         if type(self.height_units) is not int or self.height_units not in (1, 2):
             raise ValueError('Height must be 1F or 2F; L × 2F is the maximum size')
         if self.part not in PARTS:
-            raise ValueError('Choose a module, box, facade, rails, or complete set')
+            raise ValueError('Choose a module, box, facade, geared rails, runner guides, runner slides, or complete set')
 
     @classmethod
     def parse(cls, value):
@@ -38,7 +45,7 @@ class Configuration:
 
     @property
     def parts(self):
-        return ('module', 'box', 'facade', 'rails') if self.part == 'set' else (self.part,)
+        return tuple(key for key in PARTS if key != 'set') if self.part == 'set' else (self.part,)
 
 
 def catalog():
@@ -46,4 +53,5 @@ def catalog():
                          for key in ('S', 'M', 'L')],
             'depths': list(range(3, 8)), 'heights': [1, 2],
             'parts': [{'id': key, 'name': value} for key, value in PARTS.items()],
+            'thicknesses': {'box_floor': [0.8, 3.0], 'module_rear': [0.9, 2.0]},
             'defaults': Configuration().as_dict()}

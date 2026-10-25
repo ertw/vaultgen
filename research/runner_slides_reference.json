@@ -1,0 +1,302 @@
+{
+  "schema": "vault-runner-slides-reference/v1",
+  "units": "mm",
+  "method": "Bidirectional point-to-triangle distances on 5000 deterministic area samples plus up to 5000 sampled vertices per direction, native chord tolerance .0025 mm. Each source component is centered in X and translated to Y=Z=0. Only disconnected zero-volume source triangles are excluded.",
+  "distance_limit_mm": 0.08,
+  "construction_sha256": "a2f6f02693bbf20429b32fa45b09e0c9afa77dfa335bae6d43ce029874f970cf",
+  "source_pair": "Two geometrically identical pieces, within binary-STL quantization.",
+  "parts": [
+    {
+      "depth_units": 3,
+      "side": "left",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x3 Runner Slides.stl",
+      "source_sha256": "fc5486b8a346d1f73dec6fa1e028e1bed4b97bd359db55daeca8a8bb8cf9c9bb",
+      "source_subtract_origin_mm": [
+        9712.61279296875,
+        1823.4263916015625,
+        55.497474670410156
+      ],
+      "source_bounds_mm": [
+        [
+          -9.10986328125,
+          0.0,
+          0.0
+        ],
+        [
+          9.10986328125,
+          118.0,
+          8.978965759277344
+        ]
+      ],
+      "source_volume_mm3": 14916.642123680484,
+      "native_volume_mm3": 14919.266059325171,
+      "relative_volume_difference": 0.00017590658962873817,
+      "source_to_native_max_mm": 0.009194961410662447,
+      "native_to_source_max_mm": 0.008196584426196918,
+      "passed": true
+    },
+    {
+      "depth_units": 3,
+      "side": "right",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x3 Runner Slides.stl",
+      "source_sha256": "fc5486b8a346d1f73dec6fa1e028e1bed4b97bd359db55daeca8a8bb8cf9c9bb",
+      "source_subtract_origin_mm": [
+        9732.99072265625,
+        1823.4263916015625,
+        55.497474670410156
+      ],
+      "source_bounds_mm": [
+        [
+          -9.10986328125,
+          0.0,
+          0.0
+        ],
+        [
+          9.10986328125,
+          118.0,
+          8.978965759277344
+        ]
+      ],
+      "source_volume_mm3": 14916.64670155017,
+      "native_volume_mm3": 14919.266059325171,
+      "relative_volume_difference": 0.00017559963894098196,
+      "source_to_native_max_mm": 0.010586941124141368,
+      "native_to_source_max_mm": 0.008196584426196918,
+      "passed": true
+    },
+    {
+      "depth_units": 4,
+      "side": "left",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x4 Runner Slides.stl",
+      "source_sha256": "6d7bdf3a535ce01a161e40523775cc3793c76b8cc2b499aa8c379cb621b464fe",
+      "source_subtract_origin_mm": [
+        9712.6083984375,
+        1282.1263427734375,
+        55.497474670410156
+      ],
+      "source_bounds_mm": [
+        [
+          -9.1103515625,
+          0.0,
+          0.0
+        ],
+        [
+          9.1103515625,
+          160.0,
+          8.978965759277344
+        ]
+      ],
+      "source_volume_mm3": 20145.134490956443,
+      "native_volume_mm3": 20146.304256174764,
+      "relative_volume_difference": 5.8066885522567446e-05,
+      "source_to_native_max_mm": 0.018456801843198416,
+      "native_to_source_max_mm": 0.018613561434701685,
+      "passed": true
+    },
+    {
+      "depth_units": 4,
+      "side": "right",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x4 Runner Slides.stl",
+      "source_sha256": "6d7bdf3a535ce01a161e40523775cc3793c76b8cc2b499aa8c379cb621b464fe",
+      "source_subtract_origin_mm": [
+        9730.630859375,
+        1282.1263427734375,
+        55.497474670410156
+      ],
+      "source_bounds_mm": [
+        [
+          -9.1103515625,
+          0.0,
+          0.0
+        ],
+        [
+          9.1103515625,
+          160.0,
+          8.978965759277344
+        ]
+      ],
+      "source_volume_mm3": 20145.110983669438,
+      "native_volume_mm3": 20146.304256174764,
+      "relative_volume_difference": 5.923385114603441e-05,
+      "source_to_native_max_mm": 0.019653987045014025,
+      "native_to_source_max_mm": 0.018613561434701685,
+      "passed": true
+    },
+    {
+      "depth_units": 5,
+      "side": "left",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x5 Runner Slides.stl",
+      "source_sha256": "3bb6b4c7dcc7ddd13a1eb5e47f91aabe5828b4f1142712f60c5b9a7db1a54699",
+      "source_subtract_origin_mm": [
+        9691.2734375,
+        740.1264038085938,
+        55.497474670410156
+      ],
+      "source_bounds_mm": [
+        [
+          -9.1103515625,
+          0.0,
+          0.0
+        ],
+        [
+          9.1103515625,
+          202.0,
+          8.978965759277344
+        ]
+      ],
+      "source_volume_mm3": 25372.58550291849,
+      "native_volume_mm3": 25373.342453024525,
+      "relative_volume_difference": 2.9833384774580196e-05,
+      "source_to_native_max_mm": 0.030219373023104595,
+      "native_to_source_max_mm": 0.030577085912159987,
+      "passed": true
+    },
+    {
+      "depth_units": 5,
+      "side": "right",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x5 Runner Slides.stl",
+      "source_sha256": "3bb6b4c7dcc7ddd13a1eb5e47f91aabe5828b4f1142712f60c5b9a7db1a54699",
+      "source_subtract_origin_mm": [
+        9712.6083984375,
+        740.1264038085938,
+        55.497474670410156
+      ],
+      "source_bounds_mm": [
+        [
+          -9.1103515625,
+          0.0,
+          0.0
+        ],
+        [
+          9.1103515625,
+          202.0,
+          8.978965759277344
+        ]
+      ],
+      "source_volume_mm3": 25372.60451607856,
+      "native_volume_mm3": 25373.342453024525,
+      "relative_volume_difference": 2.9084004580459677e-05,
+      "source_to_native_max_mm": 0.03059281308550127,
+      "native_to_source_max_mm": 0.030577085912159987,
+      "passed": true
+    },
+    {
+      "depth_units": 6,
+      "side": "left",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x6 Runner Slides.stl",
+      "source_sha256": "11034a34292246ad58721f3a59a6c6db65bbdf295b0e8387b22f5be925fbb97b",
+      "source_subtract_origin_mm": [
+        9691.2734375,
+        198.12640380859375,
+        55.49739456176758
+      ],
+      "source_bounds_mm": [
+        [
+          -9.1103515625,
+          0.0,
+          0.0
+        ],
+        [
+          9.1103515625,
+          244.0,
+          8.979045867919922
+        ]
+      ],
+      "source_volume_mm3": 30600.714655440883,
+      "native_volume_mm3": 30600.380631422977,
+      "relative_volume_difference": 1.0915562648317056e-05,
+      "source_to_native_max_mm": 0.030202415659798428,
+      "native_to_source_max_mm": 0.030221118885801836,
+      "passed": true
+    },
+    {
+      "depth_units": 6,
+      "side": "right",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x6 Runner Slides.stl",
+      "source_sha256": "11034a34292246ad58721f3a59a6c6db65bbdf295b0e8387b22f5be925fbb97b",
+      "source_subtract_origin_mm": [
+        9712.6083984375,
+        198.12640380859375,
+        55.49739456176758
+      ],
+      "source_bounds_mm": [
+        [
+          -9.1103515625,
+          0.0,
+          0.0
+        ],
+        [
+          9.1103515625,
+          244.0,
+          8.979045867919922
+        ]
+      ],
+      "source_volume_mm3": 30600.777402576885,
+      "native_volume_mm3": 30600.380631422977,
+      "relative_volume_difference": 1.2966048172136091e-05,
+      "source_to_native_max_mm": 0.03045361978701918,
+      "native_to_source_max_mm": 0.030221118885801836,
+      "passed": true
+    },
+    {
+      "depth_units": 7,
+      "side": "left",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x7 Runner Slides.stl",
+      "source_sha256": "e6b786cb252887e6484c819357010f39d9c4a1f411af2135fddf49871a6afb2f",
+      "source_subtract_origin_mm": [
+        9691.2734375,
+        -343.87359619140625,
+        55.495391845703125
+      ],
+      "source_bounds_mm": [
+        [
+          -9.1103515625,
+          0.0,
+          0.0
+        ],
+        [
+          9.1103515625,
+          286.0,
+          8.981048583984375
+        ]
+      ],
+      "source_volume_mm3": 35827.44693954866,
+      "native_volume_mm3": 35827.41882629312,
+      "relative_volume_difference": 7.846848698589426e-07,
+      "source_to_native_max_mm": 0.03149497302000202,
+      "native_to_source_max_mm": 0.03196838403501655,
+      "passed": true
+    },
+    {
+      "depth_units": 7,
+      "side": "right",
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x7 Runner Slides.stl",
+      "source_sha256": "e6b786cb252887e6484c819357010f39d9c4a1f411af2135fddf49871a6afb2f",
+      "source_subtract_origin_mm": [
+        9712.6083984375,
+        -343.87359619140625,
+        55.495391845703125
+      ],
+      "source_bounds_mm": [
+        [
+          -9.1103515625,
+          0.0,
+          0.0
+        ],
+        [
+          9.1103515625,
+          286.0,
+          8.981048583984375
+        ]
+      ],
+      "source_volume_mm3": 35827.40235784795,
+      "native_volume_mm3": 35827.41882629312,
+      "relative_volume_difference": 4.5966059758484334e-07,
+      "source_to_native_max_mm": 0.031513114204495055,
+      "native_to_source_max_mm": 0.03196838403501655,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "limitations": "Digital source reconstruction only; printer and material fit remain unqualified."
+}

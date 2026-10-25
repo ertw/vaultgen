@@ -190,3 +190,10 @@ pre { background: var(--background); color: #cad3dc; border: 1px solid var(--bor
 @media (prefers-reduced-motion: reduce) {
   *, *:before, *:after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+
+.preview-status-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 5px; }
+.preview-status-row .eyebrow { margin-bottom: 0; }
+.revision-status { padding: 2px 8px; font-size: 11px; line-height: 1.5; color: #a8dfba; background: #173126; border: 1px solid #45845a; border-radius: 999px; }
+.revision-status:focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
+.revision-status.warning { color: #ffe0a1; background: #3a2d15; border-color: #bd8730; }
+#selection-note { padding: 0 24px; }

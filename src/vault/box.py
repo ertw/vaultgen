@@ -18,15 +18,18 @@ class BoxSpec:
     family: str = 'S'
     depth_units: int = 4
     height_units: int = 1
+    box_floor: float = 0.8
 
     def __post_init__(self):
         drawer_spec(self)
+        if type(self.box_floor) not in (int, float) or self.box_floor not in (0.8, 3.0):
+            raise ValueError('Box floor must be 0.8 or 3.0 mm')
 
     @property
-    def name(self): return f'{self.family}{self.depth_units} Box {self.height_units}F'
+    def name(self): return f'{self.family}{self.depth_units} Box {self.height_units}F' + (' · 3 mm floor' if self.box_floor == 3 else '')
 
     @property
-    def slug(self): return f'{self.family.lower()}{self.depth_units}_box_{self.height_units}f'
+    def slug(self): return f'{self.family.lower()}{self.depth_units}_box_{self.height_units}f' + ('_floor_3mm' if self.box_floor == 3 else '')
 
 
 SPEC = BoxSpec()
@@ -136,6 +139,7 @@ def _linear_gear_exit(lower=False, corner_radius=0.8, *, layout=None):
 
 
 def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3):
+    floor_thickness = getattr(spec, 'box_floor', 0.8)
     layout = DrawerLayout(spec)
     spec = layout.spec
     dx, dy, dz = layout.width_delta, layout.depth_delta, layout.height_delta
@@ -151,7 +155,7 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
     # creates unintended side openings near Y=187.2 after registration.
     part = part.fuse(block(-67.1-dx,182.3+dy,6,67.1+dx,185.8+dy,43.5+dz)).clean()
     # Rounding the cavity cutter leaves a reinforcing inside floor fillet.
-    floor_thickness, floor_radius = 0.8, 1.0
+    floor_radius = 1.0
     floor_z = 6 + floor_thickness
     # Leave 1.3 mm behind the runner channels for two extrusion lines
     # with a 0.6 mm nozzle. Keep front/rear planes and exterior fixed.
@@ -188,8 +192,11 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
             part = part.cut(profile([(sign*(x+dx),z+tier) for x,z in channel],25.8,161+dy))
             part=part.fuse(_runner_support(sign, runner_clearance, layout=layout, tier=tier))
         # Closed attachment ends alternate with the external gear exits.
-        # The central land between these passages carries the facade screw.
-        a,b=sorted((sign*22.877,sign*(66.3+dx)))
+        # Their blind ends locate the rail noses in the unlocked installation
+        # position. Keep the proven S stop datum for every family: M/L rails
+        # extend only the outgoing tail, not the nose or central tooth train.
+        # Only the opposite, open passages follow the outside wall.
+        a,b=sorted((sign*22.877,sign*66.3))
         z0,z1 = (7.61,12.89) if sign == 1 else (36.11,42.86)
         closed_pocket = block(a,180.5+dy,z0,b,184.9+dy,z1)
         closed_pocket = _round_gear_channel(closed_pocket, gear_corner_radius)

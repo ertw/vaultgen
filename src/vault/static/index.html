@@ -32,7 +32,9 @@
             <fieldset><legend>Depth <span class="field-unit">units</span></legend><div class="segmented" id="depth-options"></div><p class="dimension-hint" id="depth-hint"></p></fieldset>
             <fieldset><legend>Height <span class="field-unit">floors</span></legend><div class="segmented" id="height-options"></div><p class="dimension-hint" id="height-hint"></p></fieldset>
           </div>
-          <fieldset class="part-field"><legend>Parts</legend><div class="part-options" id="part-options"></div></fieldset>
+          <fieldset class="part-field" aria-describedby="part-hint"><legend>Parts</legend><div class="part-options" id="part-options"></div><p class="dimension-hint" id="part-hint" aria-live="polite"></p></fieldset>
+          <fieldset><legend>Box floor</legend><div class="segmented" id="box-floor-options"></div></fieldset>
+          <fieldset><legend>Module rear</legend><div class="segmented" id="module-rear-options"></div></fieldset>
           <div class="config-summary"><svg class="icon"><use href="#i-cube"/></svg><div><strong id="configuration-name">S4 · 1F</strong><span id="configuration-dimensions"></span></div><span class="size-limit">S → L · 2F max</span></div>
           <button id="build-button" class="button button-primary" type="submit" disabled><span id="build-button-text">Generate parts</span><svg class="icon"><use href="#i-arrow"/></svg></button>
         </form>
@@ -40,7 +42,8 @@
       </section>
 
       <section class="preview panel" aria-labelledby="preview-title">
-        <div class="preview-heading"><div><p class="eyebrow" id="preview-eyebrow">SELECTION</p><h2 id="preview-title">S4 · 1F</h2></div><span id="preview-badge" class="badge">Configuration envelope</span></div>
+        <div class="preview-heading"><div><div class="preview-status-row"><p class="eyebrow" id="preview-eyebrow">SELECTION</p><span id="build-freshness" class="revision-status" role="status" tabindex="0" hidden></span></div><h2 id="preview-title">S4 · 1F</h2></div><span id="preview-badge" class="badge">Configuration envelope</span></div>
+        <p id="selection-note" class="dimension-hint" hidden></p>
         <div class="viewport" id="viewport">
           <svg id="envelope" class="envelope" viewBox="0 0 680 450" role="img" aria-label="Diagram of the configured module envelope, not generated CAD">
             <defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#2c3239"/></pattern></defs>

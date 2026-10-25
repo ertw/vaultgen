@@ -1,0 +1,170 @@
+{
+  "schema": "vault-runner-guides-reference/v1",
+  "units": "mm",
+  "method": "Bidirectional point-to-triangle distances on 5000 deterministic area samples plus up to 5000 sampled mesh vertices in each direction, with native chord tolerance 0.005 mm. Every supplied copy is checked; no surfaces are excluded from sampling.",
+  "distance_limit_mm": 0.025,
+  "construction_sha256": "e0602a3ae4ef732a069343406d8781649f99c9238115821bc19b7f640d3cc6cd",
+  "parts": [
+    {
+      "depth_units": 3,
+      "copy": 1,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x3 Runner Guides.stl",
+      "source_sha256": "4234e1189bf4e7044a3992aa37ef269ad12e04cbae9e4c65ffc9549bd7ab797f",
+      "source_subtract_origin_mm": [
+        9602.9306640625,
+        1797.926513671875,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 21068.78295843786,
+      "native_volume_mm3": 21071.68712006052,
+      "source_to_native_max_mm": 0.007436412863306129,
+      "native_to_source_max_mm": 0.01020754544642168,
+      "passed": true
+    },
+    {
+      "depth_units": 3,
+      "copy": 2,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x3 Runner Guides.stl",
+      "source_sha256": "4234e1189bf4e7044a3992aa37ef269ad12e04cbae9e4c65ffc9549bd7ab797f",
+      "source_subtract_origin_mm": [
+        9631.58203125,
+        1797.926513671875,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 21068.79437671454,
+      "native_volume_mm3": 21071.68712006052,
+      "source_to_native_max_mm": 0.006298331581852073,
+      "native_to_source_max_mm": 0.01020754544642168,
+      "passed": true
+    },
+    {
+      "depth_units": 4,
+      "copy": 1,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x4 Runner Guides.stl",
+      "source_sha256": "a12c51f600f13406ee171d73f9a6269e259a0bcaabe737d1b98a0b72e2579431",
+      "source_subtract_origin_mm": [
+        9602.6318359375,
+        1256.62646484375,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 27276.462745199242,
+      "native_volume_mm3": 27279.95704250683,
+      "source_to_native_max_mm": 0.006232389603203648,
+      "native_to_source_max_mm": 0.010202954138416376,
+      "passed": true
+    },
+    {
+      "depth_units": 4,
+      "copy": 2,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x4 Runner Guides.stl",
+      "source_sha256": "a12c51f600f13406ee171d73f9a6269e259a0bcaabe737d1b98a0b72e2579431",
+      "source_subtract_origin_mm": [
+        9631.578125,
+        1256.62646484375,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 27276.587871596803,
+      "native_volume_mm3": 27279.95704250683,
+      "source_to_native_max_mm": 0.006657243309351813,
+      "native_to_source_max_mm": 0.012959940497580421,
+      "passed": true
+    },
+    {
+      "depth_units": 5,
+      "copy": 1,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x5 Runner Guides.stl",
+      "source_sha256": "7216e2670a9e9702ea6cc1a93cf7143099ad529f40d1e6089928d4cb9a218194",
+      "source_subtract_origin_mm": [
+        9601.306640625,
+        714.62646484375,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 33524.59442774421,
+      "native_volume_mm3": 33528.61400897633,
+      "source_to_native_max_mm": 0.006701509686891201,
+      "native_to_source_max_mm": 0.009855824258614249,
+      "passed": true
+    },
+    {
+      "depth_units": 5,
+      "copy": 2,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x5 Runner Guides.stl",
+      "source_sha256": "7216e2670a9e9702ea6cc1a93cf7143099ad529f40d1e6089928d4cb9a218194",
+      "source_subtract_origin_mm": [
+        9631.578125,
+        714.62646484375,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 33524.59860440085,
+      "native_volume_mm3": 33528.61400897633,
+      "source_to_native_max_mm": 0.006701509686891201,
+      "native_to_source_max_mm": 0.012564636378913141,
+      "passed": true
+    },
+    {
+      "depth_units": 6,
+      "copy": 1,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x6 Runner Guides.stl",
+      "source_sha256": "df40e3454d9daaee0febde3890ad733b7820b1c2f1d7ff21260d7ac0b7d0b224",
+      "source_subtract_origin_mm": [
+        9601.306640625,
+        172.62648010253906,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 39772.201102674466,
+      "native_volume_mm3": 39777.27097236853,
+      "source_to_native_max_mm": 0.006411801692318723,
+      "native_to_source_max_mm": 0.012933001921160406,
+      "passed": true
+    },
+    {
+      "depth_units": 6,
+      "copy": 2,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x6 Runner Guides.stl",
+      "source_sha256": "df40e3454d9daaee0febde3890ad733b7820b1c2f1d7ff21260d7ac0b7d0b224",
+      "source_subtract_origin_mm": [
+        9631.578125,
+        172.62648010253906,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 39772.20044483036,
+      "native_volume_mm3": 39777.27097236853,
+      "source_to_native_max_mm": 0.006411801692318723,
+      "native_to_source_max_mm": 0.012933001921160406,
+      "passed": true
+    },
+    {
+      "depth_units": 7,
+      "copy": 1,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x7 Runner Guides.stl",
+      "source_sha256": "a07aa23a7e0468d9c12bade0793bf293644d6dc3fd73a3eaa646afaf754b1697",
+      "source_subtract_origin_mm": [
+        9601.306640625,
+        -369.37353515625,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 46020.096922216304,
+      "native_volume_mm3": 46025.92793576074,
+      "source_to_native_max_mm": 0.00726415327850251,
+      "native_to_source_max_mm": 0.010423816912730952,
+      "passed": true
+    },
+    {
+      "depth_units": 7,
+      "copy": 2,
+      "source": "original_files/01. DRAWERS/07. Universal/Runners/x7 Runner Guides.stl",
+      "source_sha256": "a07aa23a7e0468d9c12bade0793bf293644d6dc3fd73a3eaa646afaf754b1697",
+      "source_subtract_origin_mm": [
+        9631.578125,
+        -369.37353515625,
+        50.64527893066406
+      ],
+      "source_volume_mm3": 46020.095017280626,
+      "native_volume_mm3": 46025.92793576074,
+      "source_to_native_max_mm": 0.00726415327850251,
+      "native_to_source_max_mm": 0.01294732505907376,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

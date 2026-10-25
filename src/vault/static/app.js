@@ -2,11 +2,24 @@ import { STLViewer } from './stl-viewer.js';
 
 const $ = id => document.getElementById(id);
 const state = {
+  builds: [], repository: null, browsingSelection: true,
   config: null, selection: null, job: null, artifacts: [], selectedArtifact: null,
   viewer: null, previewRequest: 0, navigationVersion: 0, jobNavigationVersion: 0, submitting: false,
   shownCompletedJob: null, shownFailedJob: null, pollTimer: null,
 };
-const names = { set: 'Complete set', module: 'Module', box: 'Box', facade: 'Facade', rails: 'Geared rails' };
+const names = {
+  set: 'Complete set', module: 'Module', box: 'Box', facade: 'Facade',
+  rails: 'Geared rails', runner_guides: 'Runner guides', runner_slides: 'Runner slides',
+};
+const partDescriptions = {
+  set: 'Module, box, facade, geared rails, runner guides and runner slides.',
+  module: 'The outside shell, sized by family, depth and height.',
+  box: 'The drawer tray, sized to fit the selected module.',
+  facade: 'The drawer front follows family and height; depth does not change it.',
+  rails: 'The geared locking rails follow family; depth and height do not change them.',
+  runner_guides: 'Guides follow depth; the same guides fit S, M and L at either height.',
+  runner_slides: 'Slides follow depth; the same slides fit S, M and L at either height.',
+};
 const isActive = job => job && ['queued', 'running'].includes(job.status);
 const configurationName = config => `${config.family || 'S'}${config.depth_units || ''} · ${config.height_units || 1}F`;
 const svgIcon = name => {
@@ -46,7 +59,8 @@ function optionButton(value, key, label, className) {
   const button = element('button', className); button.type = 'button'; button.dataset.value = String(value);
   button.setAttribute('aria-label', label); button.setAttribute('aria-pressed', 'false');
   button.addEventListener('click', () => {
-    state.selection[key] = value; renderSelection();
+    state.navigationVersion++; state.browsingSelection = true;
+    state.selection[key] = value; renderSelection(); showSelection();
   });
   return button;
 }
@@ -60,6 +74,12 @@ function createControls(config) {
     for (const value of values) {
       const button = optionButton(value, key, `${value} ${key === 'depth_units' ? 'depth units' : 'floors'}`, '');
       button.textContent = key === 'height_units' ? `${value}F` : value; $(target).append(button);
+    }
+  }
+  for (const [key, target] of [['box_floor', 'box-floor-options'], ['module_rear', 'module-rear-options']]) {
+    for (const [index, value] of config.thicknesses[key].entries()) {
+      const label = `${value} mm · ${index ? 'Original' : 'Current'}`;
+      const button = optionButton(value, key, label, ''); button.textContent = label; $(target).append(button);
     }
   }
   for (const part of config.parts) {
@@ -110,7 +130,7 @@ function renderEnvelope(dimensions) {
   label(width/2,0,-17,`${width} mm`); label(width+25,depth/2,0,`${depth.toFixed(1)} mm`);
 }
 function renderSelection() {
-  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part']]) {
+  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-floor-options','box_floor'], ['module-rear-options','module_rear']]) {
     for (const button of $(target).querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.value === String(state.selection[key])));
   }
   const dimensions = envelopeDimensions(), config = state.selection;
@@ -118,6 +138,7 @@ function renderSelection() {
   $('height-hint').textContent = `${dimensions[2]} mm body height`;
   $('configuration-name').textContent = configurationName(config);
   $('configuration-dimensions').textContent = `${dimensions[0]} × ${dimensions[1].toFixed(1)} × ${dimensions[2]} mm body`;
+  $('part-hint').textContent = partDescriptions[config.part] || '';
   if (!state.selectedArtifact) {
     $('preview-title').textContent = configurationName(config);
     renderEnvelope(dimensions); setMetrics(dimensions);
@@ -128,17 +149,18 @@ function renderSelection() {
 
 async function selectArtifact(index, userAction = false) {
   const artifact = state.artifacts[index]; if (!artifact) return;
-  if (userAction) state.navigationVersion++;
+  if (userAction) { state.navigationVersion++; state.browsingSelection = false; }
   const { build, part } = artifact; state.selectedArtifact = artifact;
   const request = ++state.previewRequest;
   for (const [i, button] of [...$('artifact-tabs').children].entries()) button.setAttribute('aria-pressed', String(i === index));
+  renderFreshness(build);
   $('preview-eyebrow').textContent = 'SAVED BUILD';
   $('preview-title').textContent = build.name;
   $('preview-badge').textContent = 'Actual print STL';
   $('viewport-label').textContent = part.name;
   $('preview-kind').textContent = 'Print orientation · X / Y / Z';
   $('print-note').textContent = part.print_note || 'Shown in its exported print orientation. Dimensions are X × Y × Z.';
-  $('artifact-description').textContent = `Saved ${formatDate(build.created_at)} · independent of the current selection`;
+  $('artifact-description').textContent = `Saved ${formatDate(build.created_at)} · ${state.browsingSelection ? 'matches the current selection' : 'saved build; configuration unchanged'}`;
   if (part.print_bbox_mm?.length === 3) setMetrics(part.print_bbox_mm);
   downloadLink($('stl-download'), part.stl_url);
   downloadLink($('step-download'), part.step_url || build.step_url);
@@ -174,12 +196,67 @@ function showArtifacts(builds, bundleUrl = null, userAction = false) {
   }
   if (state.artifacts.length) selectArtifact(0, userAction);
 }
+function renderFreshness(build = null) {
+  const status = $('build-freshness'), info = build?.freshness, repo = state.repository;
+  const warning = !repo || repo.dirty || (build && (!info || info.warning));
+  const details = [...(info?.reasons || [])];
+  if (!repo) details.unshift('Repository status unavailable.');
+  else if (repo.dirty && !details.some(reason => reason.startsWith('Repository has uncommitted'))) {
+    details.unshift('Repository has uncommitted changes; rebuild to include current code.');
+  }
+  if (build && !info) details.push('Cached build revision unknown; rebuild recommended.');
+  status.hidden = false;
+  status.classList.toggle('warning', Boolean(warning));
+  status.textContent = repo?.dirty ? '⚠ Uncommitted changes' : warning ? '⚠ Check revision' : build ? '✓ Up to date' : '✓ Repository clean';
+  status.title = details.length ? details.join(' ') : build
+    ? 'Cached build matches the current clean commit.' : `Repository clean · ${repo.commit.slice(0, 8)}`;
+  status.setAttribute('aria-label', `${status.textContent}. ${status.title}`);
+}
+
+function matches(build, kind) {
+  if (build.kind !== kind) return false;
+  const c = build.configuration, s = state.selection;
+  const keys = {module: ['family','depth_units','height_units','module_rear'], box: ['family','depth_units','height_units','box_floor'], facade: ['family','height_units'], rails: ['family'], runner_guides: ['depth_units'], runner_slides: ['depth_units']}[kind];
+  return keys.every(key => (c[key] ?? state.config.defaults[key]) === s[key]);
+}
+function showSelection(preservePreview = false) {
+  const kinds = state.selection.part === 'set' ? Object.keys(names).filter(k => k !== 'set') : [state.selection.part];
+  const builds = kinds.map(kind => state.builds.find(build => matches(build, kind))).filter(Boolean);
+  const missing = kinds.filter(kind => !builds.some(build => build.kind === kind));
+  $('selection-note').hidden = !missing.length;
+  $('selection-note').textContent = missing.length ? `Not generated yet for this configuration: ${missing.map(k => names[k]).join(', ')}.` : '';
+  if (preservePreview && state.selectedArtifact &&
+      builds.flatMap(b => b.parts.map(p => `${b.id}/${p.name}`)).join() ===
+      state.artifacts.map(a => `${a.build.id}/${a.part.name}`).join()) {
+    renderFreshness(builds.find(b => b.id === state.selectedArtifact.build.id));
+    return;
+  }
+  state.selectedArtifact = null; ++state.previewRequest;
+  showArtifacts(builds);
+  if (builds.length) return;
+  renderFreshness();
+  $('preview-eyebrow').textContent = 'SELECTION';
+  $('preview-title').textContent = configurationName(state.selection);
+  $('preview-badge').textContent = 'Not generated yet';
+  $('model-canvas').hidden = true; $('model-canvas').dataset.modelReady = 'false';
+  $('envelope').setAttribute('hidden', '');
+  $('viewer-help').hidden = true; $('reset-view').hidden = true;
+  $('viewer-message').hidden = false;
+  $('viewer-message').textContent = 'This part has not been generated yet for this configuration.';
+  $('viewport-label').textContent = names[state.selection.part];
+  $('preview-kind').textContent = 'Selected module body dimensions';
+  setMetrics(envelopeDimensions());
+}
+
 function formatDate(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'recently' : new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
 }
 async function refreshHistory() {
-  const { builds } = await api('/api/builds');
+  const { builds, repository } = await api('/api/builds');
+  state.builds = builds; state.repository = repository;
+  if (state.browsingSelection) showSelection(true);
+  else if (state.selectedArtifact) renderFreshness(builds.find(b => b.id === state.selectedArtifact.build.id) || state.selectedArtifact.build);
   const list = $('history-list'); list.replaceChildren();
   if (!builds.length) { list.append(element('p', 'empty-history', 'No completed builds.')); return; }
   for (const build of builds.slice(0, 12)) {
@@ -187,7 +264,7 @@ async function refreshHistory() {
     const icon = element('span', 'history-icon'); icon.append(svgIcon('cube'));
     const text = element('span'); text.append(element('strong', '', build.name), element('small', '', `${formatDate(build.created_at)} · ${(build.parts || []).length} printable ${(build.parts || []).length === 1 ? 'part' : 'parts'}`));
     button.append(icon, text, svgIcon('arrow')); button.addEventListener('click', () => {
-      showArtifacts([build], null, true); $('preview-title').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      $('selection-note').hidden = true; showArtifacts([build], null, true); $('preview-title').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       announce(`Previewing saved ${build.name}. Configuration unchanged.`);
     }); list.append(button);
   }
@@ -211,7 +288,7 @@ function renderJob(job) {
   renderSelection();
   if (job.status === 'completed' && state.shownCompletedJob !== job.id) {
     state.shownCompletedJob = job.id;
-    if (state.navigationVersion === state.jobNavigationVersion) showArtifacts(job.builds || [], job.bundle_url);
+    if (state.navigationVersion === state.jobNavigationVersion && !state.browsingSelection) showArtifacts(job.builds || [], job.bundle_url);
     refreshHistory().catch(connectionError); announce(`${configurationName(job.configuration)} complete. Downloads available.`);
   }
   if (failed && state.shownFailedJob !== job.id) {
@@ -265,3 +342,4 @@ async function initialize() {
   } catch (error) { connectionError(error); }
 }
 initialize();
+setInterval(() => refreshHistory().catch(connectionError), 15000);

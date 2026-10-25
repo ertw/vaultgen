@@ -1,0 +1,164 @@
+{
+  "schema": "vault-runner-guides-fit/v1",
+  "units": "mm",
+  "method": "Native-solid intersections and exact minimum distances. Guide and slide share print axes; seated slide translation is (13.5,25.8,4.8) mm. S4 guide-to-module uses the source assembly registration, with module sacrificial pocket supports disabled.",
+  "slide_poses": [
+    {
+      "depth_units": 3,
+      "travel_mm": 0,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 3,
+      "travel_mm": 10,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 3,
+      "travel_mm": 40,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 4,
+      "travel_mm": 0,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 4,
+      "travel_mm": 10,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 4,
+      "travel_mm": 40,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 5,
+      "travel_mm": 0,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 5,
+      "travel_mm": 10,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 5,
+      "travel_mm": 40,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 6,
+      "travel_mm": 0,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 6,
+      "travel_mm": 10,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 6,
+      "travel_mm": 40,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 7,
+      "travel_mm": 0,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 7,
+      "travel_mm": 10,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 7,
+      "travel_mm": 40,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    }
+  ],
+  "module_poses": [
+    {
+      "family": "S",
+      "depth_units": 4,
+      "height_units": 1,
+      "side": -1,
+      "rotation_y_degrees": 90,
+      "translation_mm": [
+        -78.7,
+        2.3,
+        37.0
+      ],
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.10996999999998991,
+      "passed": true
+    },
+    {
+      "family": "S",
+      "depth_units": 4,
+      "height_units": 1,
+      "side": 1,
+      "rotation_y_degrees": -90,
+      "translation_mm": [
+        78.7,
+        2.3,
+        10.0
+      ],
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.10996999999998991,
+      "passed": true
+    }
+  ],
+  "limitations": "Preserves the supplied tight 0.0498 mm stem-side clearance. These geometric checks do not qualify physical printer fit. The separately supplied runner stopper is not included in this audit.",
+  "passed": true,
+  "stop_poses": [
+    {
+      "depth_units": 4,
+      "travel_mm": 87,
+      "expected_contact": false,
+      "intersection_volume_mm3": 0.0,
+      "minimum_gap_mm": 0.04980000000000029,
+      "passed": true
+    },
+    {
+      "depth_units": 4,
+      "travel_mm": 88,
+      "expected_contact": true,
+      "intersection_volume_mm3": 1.3266948315812652,
+      "minimum_gap_mm": 0.0,
+      "passed": true
+    }
+  ]
+}

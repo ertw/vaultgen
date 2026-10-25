@@ -22,6 +22,24 @@ import zipfile
 
 from .generator import Configuration, catalog
 from .reference import PROJECT_ROOT
+from ._build import git_provenance
+
+
+def freshness(manifest, current):
+    built = manifest.get("git") or {}
+    reasons = []
+    if current is None:
+        reasons.append("Repository revision unavailable; rebuild to verify this cached part.")
+    else:
+        if current.get("dirty"):
+            reasons.append("Repository has uncommitted changes; rebuild to include current code.")
+        if not built.get("commit"):
+            reasons.append("Cached build revision is unknown; rebuild recommended.")
+        elif built["commit"] != current["commit"]:
+            reasons.append("Cached build is from a different commit; rebuild for the current revision.")
+    if built.get("dirty"):
+        reasons.append("Cached build was generated with uncommitted changes.")
+    return {"warning": bool(reasons), "reasons": reasons, "commit": built.get("commit")}
 
 STATIC = Path(__file__).with_name('static')
 BUILD_ID = re.compile(r'\d{8}T\d{12}Z-[a-f0-9]{12}')
@@ -64,16 +82,22 @@ class BuildFiles:
             raise ValueError('Artifact checksum failed; generate a fresh build')
         return data
 
-    def describe(self, build_id):
+    def describe(self, build_id, repository=None):
         path, manifest = self.read(build_id)
         parameters = json.loads((path / 'resolved-parameters.json').read_text())
         part = parameters.get('part', '')
-        kind = ('rails' if part.endswith('_geared_rails') else
+        kind = ('runner_guides' if part.endswith('_runner_guides') else
+                'runner_slides' if part.endswith('_runner_slides') else
+                'rails' if part.endswith('_geared_rails') else
                 'facade' if part.endswith('_facade') else
                 'box' if '_box_' in part else 'module')
         config = {key: parameters[key] for key in ('family', 'depth_units', 'height_units')
                   if key in parameters}
         config['part'] = kind
+        if kind == 'box':
+            config['box_floor'] = parameters.get('box_floor', 0.8)
+        if kind == 'module':
+            config['module_rear'] = parameters.get('module_rear', 0.9)
         def url(relative):
             return f'/files/{build_id}/{relative}' if relative in manifest['checksums'] else None
         parts = []
@@ -82,25 +106,26 @@ class BuildFiles:
                           'print_note': details.get('print_note', ''),
                           'stl_url': url(f'stl/{name}.stl'),
                           'step_url': url(f'{name}_print.step')})
-        return {'id': build_id, 'name': manifest.get('name', part), 'kind': kind,
+        return {'freshness': freshness(manifest, repository if repository is not None else git_provenance(PROJECT_ROOT)),
+                'id': build_id, 'name': manifest.get('name', part), 'kind': kind,
                 'configuration': config, 'parts': parts, 'step_url': url(f'{part}.step'),
                 'preview_url': url('review/isometric.png'),
                 'created_at': datetime.strptime(build_id[:22], '%Y%m%dT%H%M%S%fZ').replace(tzinfo=timezone.utc).isoformat()}
 
-    def history(self):
+    def history(self, repository=None):
         result = []
+        repository = repository if repository is not None else git_provenance(PROJECT_ROOT)
         for path in sorted(self.root.glob('*'), reverse=True):
             try:
-                item = self.describe(path.name)
+                item = self.describe(path.name, repository)
                 config = item['configuration']
-                if (config.get('family') in ('S', 'M', 'L')
+                if ((config.get('family') in ('S', 'M', 'L')
+                     or (config['part'] in ('runner_guides', 'runner_slides') and 'family' not in config))
                         and config.get('height_units', 1) in (1, 2)
                         and config.get('depth_units', 4) in range(3, 8)):
                     result.append(item)
             except (OSError, ValueError, KeyError):
                 continue
-            if len(result) == 100:
-                break
         return result
 
 
@@ -276,7 +301,8 @@ def handler(jobs):
                 if path == '/api/config':
                     return self.send(200, catalog())
                 if path == '/api/builds':
-                    return self.send(200, {'builds': jobs.files.history()})
+                    repository = git_provenance(PROJECT_ROOT)
+                    return self.send(200, {'builds': jobs.files.history(repository), 'repository': repository})
                 if path == '/api/jobs':
                     return self.send(200, {'jobs': jobs.history()})
                 if path.startswith('/api/jobs/'):

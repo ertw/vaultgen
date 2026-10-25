@@ -1,0 +1,145 @@
+{
+  "schema": "vault-gear-pocket-stops/v1",
+  "units": "mm",
+  "method": "Measure blind rail-pocket ends in the purchased S4/M3/L6 box meshes.\n\nRays run from the central lock opening toward each blind end, at the\nassembled rail nose's center height and thickness. Only triangles crossing\nthe ray's Y/Z coordinates are retained for the intersection; no mesh repair\nor source mutation is performed. Source end blends differ from the native\nflat stop, so this establishes the stop's location, not full equivalence.",
+  "sources": [
+    {
+      "family": "S",
+      "depth_units": 4,
+      "height_units": 1,
+      "source": "original_files/01. DRAWERS/01. S Families/S4/Boxes/S4 Box 1F.stl",
+      "source_sha256": "6be3710c7c3df589cceb2dc2cbd8044e1d83e86759d5b6623ee13f3bcdc8a311",
+      "subtract_origin_mm": [
+        9001.5546875,
+        1167.2413818359375,
+        0.9993166923522949
+      ],
+      "ends": [
+        {
+          "rail": "lower_plain",
+          "ray_origin_mm": [
+            23,
+            185.0,
+            9.207
+          ],
+          "ray_direction": [
+            1,
+            0,
+            0
+          ],
+          "blind_end_x_mm": 65.8710817963267,
+          "outer_wall_x_mm": 67.0986328125
+        },
+        {
+          "rail": "upper_retained",
+          "ray_origin_mm": [
+            -23,
+            185.0,
+            37.793
+          ],
+          "ray_direction": [
+            -1,
+            0,
+            0
+          ],
+          "blind_end_x_mm": -66.20701929637494,
+          "outer_wall_x_mm": -67.0986328125
+        }
+      ]
+    },
+    {
+      "family": "M",
+      "depth_units": 3,
+      "height_units": 1,
+      "source": "original_files/01. DRAWERS/02. M Families/M3/Boxes/M3 Box 1F.stl",
+      "source_sha256": "12f47ec73d5dbb65bb86e49ace03e9cb08e1b814432c4ec84ff8db8a4f366b63",
+      "subtract_origin_mm": [
+        6001.554443359375,
+        1708.241748046875,
+        -0.0006833076477050781
+      ],
+      "ends": [
+        {
+          "rail": "lower_plain",
+          "ray_origin_mm": [
+            23,
+            143.0,
+            9.207
+          ],
+          "ray_direction": [
+            1,
+            0,
+            0
+          ],
+          "blind_end_x_mm": 65.87131994488976,
+          "outer_wall_x_mm": 111.698974609375
+        },
+        {
+          "rail": "upper_retained",
+          "ray_origin_mm": [
+            -23,
+            143.0,
+            37.793
+          ],
+          "ray_direction": [
+            -1,
+            0,
+            0
+          ],
+          "blind_end_x_mm": -66.56956812449995,
+          "outer_wall_x_mm": -111.698974609375
+        }
+      ]
+    },
+    {
+      "family": "L",
+      "depth_units": 6,
+      "height_units": 2,
+      "source": "original_files/01. DRAWERS/03. L Families/L6/Boxes/L6 Box 2F.stl",
+      "source_sha256": "bfa33db1cf7916f764d143405f282ccbb3fab1bbe4cbd1c030257d6c1079b580",
+      "subtract_origin_mm": [
+        2501.554443359375,
+        82.24168701171875,
+        -0.0006833076477050781
+      ],
+      "ends": [
+        {
+          "rail": "lower_plain",
+          "ray_origin_mm": [
+            23,
+            269.0,
+            9.207
+          ],
+          "ray_direction": [
+            1,
+            0,
+            0
+          ],
+          "blind_end_x_mm": 66.7712282807017,
+          "outer_wall_x_mm": 149.498291015625
+        },
+        {
+          "rail": "upper_retained",
+          "ray_origin_mm": [
+            -23,
+            269.0,
+            37.793
+          ],
+          "ray_direction": [
+            -1,
+            0,
+            0
+          ],
+          "blind_end_x_mm": -66.77122828074995,
+          "outer_wall_x_mm": -149.498291015625
+        }
+      ]
+    }
+  ],
+  "native_stop_x_mm": [
+    -66.3,
+    66.3
+  ],
+  "decision": "Preserve the user-confirmed working native S4/S-rail stop datum for all families. Original S/M/L pockets also end near the central mechanism; their local rounded ends differ. M/L rail extensions belong only to the outgoing tail.",
+  "regression": "tests.test_gear_fit.UnlockedRailStopTests checks both rails in S/M/L 1F and 2F: contact without overlap at the stop, blocked inward overtravel, and clear 0/10/20 mm operation."
+}

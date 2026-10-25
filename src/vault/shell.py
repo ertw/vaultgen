@@ -445,6 +445,10 @@ def build_shell(spec: ModuleSpec = DEFAULT_SPEC,
     for bank_x in spec.bank_centers:
         cutters.extend(_rear_notches(spec, dimensions, bank_x))
         cutters.extend(_central_recesses(spec, dimensions, bank_x))
+    # L's lock sits between its two stacking banks. Keep their catches and
+    # add the same lower/upper retaining recesses at the lock centerline.
+    if spec.family == 'L':
+        cutters.extend(_central_recesses(spec, dimensions, 0))
     shell = shell.cut(*cutters).clean()
     supports = [support for tier_z in spec.tier_offsets
                 for support in _mouth_supports(spec, dimensions, tier_z)]
