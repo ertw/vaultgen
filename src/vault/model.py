@@ -21,6 +21,8 @@ def build_module(
     connector_parameters: ConnectorParameters = ConnectorParameters(),
     progress: Callable[[str], None] | None = None,
     shadow_gap: ShadowGap | None = DEFAULT_GAP,
+    *,
+    include_supports: bool = True,
 ) -> Shape:
     """Build one valid solid, with independently editable mating features.
 
@@ -29,12 +31,17 @@ def build_module(
     applied. Use dataclasses.replace on a nested feature's dimension set to edit
     its profile without duplicating the left/right construction.
     ``progress`` receives status messages during construction, if supplied.
+    Set ``include_supports=False`` for the finished assembly geometry after
+    removing the sacrificial runner-mouth webs. Printable builds retain them.
     """
     if progress is not None:
         progress('Building sleeve, drawer runners, and retention details')
     if shell_dimensions is DEFAULT_DIMENSIONS:
         from dataclasses import replace
         shell_dimensions = replace(shell_dimensions, back_wall=spec.module_rear)
+    if not include_supports:
+        from dataclasses import replace
+        shell_dimensions = replace(shell_dimensions, pocket_support_thickness=0)
     shell = build_shell(spec=spec, dimensions=shell_dimensions)
     part = add_connectors(shell, spec=spec, parameters=connector_parameters, progress=progress)
     if shadow_gap is not None:

@@ -32,6 +32,7 @@ with sync_playwright() as p:
         from urllib.parse import urlsplit
         path = urlsplit(request.request.url).path
         payload = {'/api/config':catalog(), '/api/jobs':{'jobs':[]},
+                   '/api/assembly':{'name':'Complete set', 'instances':[], 'missing':[], 'warnings':[], 'complete':False},
                    '/api/builds':{'builds':builds,'repository':{'commit':'newcommit','dirty':True}}}.get(path)
         if payload is not None: return request.fulfill(json=payload)
         if path.startswith('/files/'): return request.fulfill(body=mesh,content_type='application/octet-stream')

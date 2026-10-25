@@ -31,6 +31,33 @@ def check_step(original, path):
     return restored, report
 
 
+def export_assembly_mesh(output, stem, solid, *, component, print_to_native):
+    """Checked finished-part mesh, retaining native coordinates for assembly use."""
+    from .tessellation import export_print_mesh
+    if not solid.is_valid or len(solid.solids()) != 1 or len(solid.shells()) != 1:
+        raise ValueError(f'{stem}: invalid finished assembly solid')
+    from build123d import export_step
+    relative = f'preview/assembly/{stem}.stl'
+    step = f'preview/assembly/{stem}.step'
+    (output / step).parent.mkdir(parents=True, exist_ok=True)
+    if not export_step(solid, output / step):
+        raise ValueError(f'{stem}: finished STEP export failed')
+    _, step_check = check_step(solid, output / step)
+    mesh = export_print_mesh(solid, output / relative)
+    return {'schema': 'vault-assembly-mesh/v1', 'coordinates': 'native',
+            'finished': True, 'component': component, 'path': relative,
+            'step_path': step, 'step_roundtrip': step_check,
+            'print_to_native': list(print_to_native),
+            'bounds_mm': mesh.bounds.tolist(), 'cad_valid': True,
+            'stl_watertight': bool(mesh.is_watertight)}
+
+
+def translation_matrix(offset):
+    """Column-major homogeneous translation; print origin back to native origin."""
+    x, y, z = offset
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]
+
+
 def export_part_set(output, spec, parts, *, kind, print_note):
     """Export named printable solids with shared per-part and assembly checks."""
     from copy import deepcopy
@@ -72,6 +99,8 @@ def export_part_set(output, spec, parts, *, kind, print_note):
             raise ValueError(f'{stem}: BREP export failed')
         mesh = export_print_mesh(printable, output / 'stl' / f'{stem}.stl')
         reports[stem] = {
+            'assembly_mesh': export_assembly_mesh(output, stem, solid,
+                component=stem.rsplit('_', 1)[-1], print_to_native=translation_matrix(bounds.min)),
             'kind': kind, 'cad_valid': True, 'solids': 1, 'boundary_shells': 1,
             'cad_volume_mm3': precise_volume(solid),
             'step_roundtrip': step_check, 'print_step_roundtrip': print_check,

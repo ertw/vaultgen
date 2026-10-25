@@ -18,6 +18,7 @@ class StepExportTests(unittest.TestCase):
             output = Path(temporary)
             with patch('vault.render.render_review'):
                 report = _export_into(Box(10, 20, 30), output, time.monotonic())
+            self.assertIsNone(report['assembly_mesh'])  # Caller supplied no finished assembly solid.
             self.assertTrue(report['step_roundtrip']['passed'])
             self.assertTrue(report['print_step_roundtrip']['passed'])
             self.assertEqual(sorted(p.suffix for p in output.glob(DEFAULT_SPEC.slug + '*')),
@@ -35,6 +36,25 @@ class StepExportTests(unittest.TestCase):
             mesh = load_model(output / f'{DEFAULT_SPEC.slug}.step')
             self.assertTrue(mesh.is_watertight)
             self.assertAlmostEqual(mesh.volume, 6000)
+
+    def test_finished_mesh_coordinates_match_print_to_native_metadata(self):
+        import numpy as np
+        import trimesh
+        from vault.box import BoxSpec
+        for spec in (DEFAULT_SPEC, BoxSpec()):
+            with self.subTest(spec=spec), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                native = Pos(2, 3, 25) * Box(10, 20, 30)
+                with patch('vault.render.render_review'):
+                    report = _export_into(native, output, time.monotonic(), spec, finished=native)
+                metadata = report['assembly_mesh']
+                preview = trimesh.load_mesh(output / metadata['path'])
+                printable = trimesh.load_mesh(output / 'stl' / f'{spec.slug}.stl')
+                printable.apply_transform(np.array(metadata['print_to_native']).reshape((4, 4)).T)
+                np.testing.assert_allclose(printable.bounds, preview.bounds, atol=1e-5)
+                expected = native.bounding_box()
+                np.testing.assert_allclose(preview.bounds, [list(expected.min), list(expected.max)], atol=1e-5)
+                self.assertTrue(metadata['step_roundtrip']['passed'])
 
     def test_rejects_changed_volume_or_position(self):
         original = Box(10, 20, 30)

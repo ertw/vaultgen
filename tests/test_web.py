@@ -120,6 +120,17 @@ class HTTPTests(unittest.TestCase):
             self.assertEqual(status, 202)
             self.assertEqual(json.loads(body)['configuration']['part'], kind)
 
+    def test_assembly_endpoint_validates_selection_and_explains_empty_cache(self):
+        status, data = self.request('GET', '/api/assembly?family=L&depth_units=6&height_units=2&box_floor=3&module_rear=2')
+        self.assertEqual(status, 200)
+        scene = json.loads(data)
+        self.assertFalse(scene['complete'])
+        self.assertEqual(len(scene['missing']), 13)
+        self.assertEqual(scene['instances'], [])
+        for query in ('family=XL', 'family=S&family=L', 'depth_units=4.5', 'part=box',
+                      'box_floor=nan', 'module_rear=3', 'unknown=1'):
+            self.assertEqual(self.request('GET', '/api/assembly?' + query)[0], 400)
+
     def test_runner_history_preserves_depth_without_inventing_a_width_family(self):
         for i, kind in enumerate(('runner_guides', 'runner_slides')):
             build_id = f'20261024T01000000000{i}Z-0123456789ab'

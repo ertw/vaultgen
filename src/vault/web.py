@@ -16,7 +16,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from urllib.parse import unquote, urlsplit
+from urllib.parse import unquote, urlsplit, parse_qs
 import uuid
 import zipfile
 
@@ -82,6 +82,66 @@ class BuildFiles:
             raise ValueError('Artifact checksum failed; generate a fresh build')
         return data
 
+    def assembly(self, configuration):
+        """Resolve one immutable build per group; never infer legacy mesh poses."""
+        from .assembly import assembly_definition
+        from .assembly_validation import validation_signature
+        definition = assembly_definition(configuration)
+        repository = git_provenance(PROJECT_ROOT)
+        builds = self.history(repository)
+        keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear'),
+                'box': ('family', 'depth_units', 'height_units', 'box_floor'),
+                'facade': ('family', 'height_units'), 'rails': ('family',),
+                'runner_guides': ('depth_units',), 'runner_slides': ('depth_units',)}
+        defaults, selected = Configuration().as_dict(), configuration.as_dict()
+        matched = {kind: next((build for build in builds if build['kind'] == kind and
+                    all(build['configuration'].get(key, defaults[key]) == selected[key]
+                        for key in fields)), None) for kind, fields in keys.items()}
+        instances, missing, warnings = [], [], []
+        used = {}
+        for item in definition['instances']:
+            build = matched[item['kind']]
+            part = next((part for part in build['parts']
+                         if part.get('assembly_mesh', {}).get('component') == item['component']), None) if build else None
+            if not part or not part.get('assembly_url'):
+                missing.append({'id': item['id'], 'kind': item['kind'], 'label': item['label'],
+                                'reason': ('Rebuild this part to generate its finished assembly mesh.' if build
+                                           else 'Not generated yet for this configuration.')})
+                continue
+            used[build['id']] = build
+            instances.append({**item, 'mesh_url': part['assembly_url'],
+                              'build_id': build['id'], 'freshness': build['freshness']})
+        for build in used.values():
+            warnings.extend(build['freshness']['reasons'])
+        if len({build.get('source_hash') for build in used.values()}) > 1:
+            warnings.append('These cached components were generated from different source revisions.')
+        # A checked receipt certifies these exact immutable component builds.
+        validation = None
+        signature = validation_signature(configuration)
+        receipt_root = self.root.parent / 'web' / 'assemblies'
+        for path in sorted(receipt_root.glob('*.json'), key=lambda path: path.stat().st_mtime_ns, reverse=True):
+            try:
+                receipt = json.loads(path.read_text())
+                if (receipt.get('validation_signature') == signature and
+                        receipt['configuration'] == selected and
+                        set(receipt['build_ids']) == set(used) and not missing):
+                    validation = receipt['validation']
+                    break
+            except (OSError, ValueError, KeyError):
+                continue
+        if validation and not validation.get('passed'):
+            failures = [item for key in ('pairs', 'mating', 'solids')
+                        for item in validation.get(key, []) if not item.get('passed')]
+            labels = [' / '.join(item.get('instances', [])) or item.get('instance', 'geometry')
+                      for item in failures]
+            labels.extend(validation.get('definition_errors', []))
+            warnings.append('Assembly fit check failed: ' + ', '.join(dict.fromkeys(labels)) + '. See the build log for details.')
+        elif not validation:
+            warnings.append('This combination of cached parts has no passing assembly fit check. Generate a complete set to check it.')
+        return {**definition, 'name': f'{configuration.family}{configuration.depth_units} · {configuration.height_units}F complete set',
+                'instances': instances, 'missing': missing, 'warnings': list(dict.fromkeys(warnings)),
+                'complete': not missing, 'repository': repository, 'validation': validation}
+
     def describe(self, build_id, repository=None):
         path, manifest = self.read(build_id)
         parameters = json.loads((path / 'resolved-parameters.json').read_text())
@@ -102,11 +162,17 @@ class BuildFiles:
             return f'/files/{build_id}/{relative}' if relative in manifest['checksums'] else None
         parts = []
         for name, details in manifest.get('parts', {}).items():
-            parts.append({'name': name, 'print_bbox_mm': details.get('print_bbox_mm', []),
+            assembly = details.get('assembly_mesh') or {}
+            assembly_ok = (assembly.get('schema') == 'vault-assembly-mesh/v1'
+                           and assembly.get('coordinates') == 'native' and assembly.get('finished') is True)
+            parts.append({'assembly_mesh': assembly if assembly_ok else {},
+                          'assembly_url': url(assembly.get('path')) if assembly_ok else None,
+                          'name': name, 'print_bbox_mm': details.get('print_bbox_mm', []),
                           'print_note': details.get('print_note', ''),
                           'stl_url': url(f'stl/{name}.stl'),
                           'step_url': url(f'{name}_print.step')})
         return {'freshness': freshness(manifest, repository if repository is not None else git_provenance(PROJECT_ROOT)),
+                'source_hash': manifest.get('source_hash'),
                 'id': build_id, 'name': manifest.get('name', part), 'kind': kind,
                 'configuration': config, 'parts': parts, 'step_url': url(f'{part}.step'),
                 'preview_url': url('review/isometric.png'),
@@ -300,6 +366,25 @@ def handler(jobs):
                     return self.send(200, {'status': 'ok'})
                 if path == '/api/config':
                     return self.send(200, catalog())
+                if path == '/api/assembly':
+                    query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                    if any(len(values) != 1 for values in query.values()):
+                        return self.send(400, {'error': 'Duplicate assembly parameters'})
+                    try:
+                        values = {key: value[0] for key, value in query.items()}
+                        for key in ('depth_units', 'height_units'):
+                            if key in values:
+                                values[key] = int(values[key])
+                        for key in ('box_floor', 'module_rear'):
+                            if key in values:
+                                values[key] = float(values[key])
+                        values.setdefault('part', 'set')
+                        config = Configuration.parse(values)
+                        if config.part != 'set':
+                            raise ValueError('Assembly previews require a complete set')
+                    except (ValueError, TypeError) as error:
+                        return self.send(400, {'error': str(error)})
+                    return self.send(200, jobs.files.assembly(config))
                 if path == '/api/builds':
                     repository = git_provenance(PROJECT_ROOT)
                     return self.send(200, {'builds': jobs.files.history(repository), 'repository': repository})
@@ -338,7 +423,7 @@ def handler(jobs):
                     for build in job['builds']:
                         _, manifest = jobs.files.read(build['id'])
                         for relative in manifest['checksums']:
-                            if relative.startswith('source/') or Path(relative).suffix not in {'.stl', '.step'}:
+                            if relative.startswith(('source/', 'preview/')) or Path(relative).suffix not in {'.stl', '.step'}:
                                 continue
                             bundle.writestr(f'{build["kind"]}/{relative}', jobs.files.artifact(build['id'], relative))
                     bundle.writestr('parts.json', json.dumps(job['builds'], indent=2))

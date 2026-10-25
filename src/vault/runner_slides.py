@@ -9,7 +9,7 @@ Reference meshes are used only by the independent comparison tool.
 from dataclasses import dataclass
 from math import sqrt
 
-from build123d import Edge, Face, Plane, Solid, Wire
+from build123d import Edge, Face, Solid, Wire
 
 
 @dataclass(frozen=True)
@@ -137,10 +137,6 @@ def build_runner_slide(*, spec=SPEC):
     head_length = 7.2435
     head = _one(_flange(head_length, block=True).intersect(_plan_mask(head_length, 1.2)))
     shape = _one(_body(spec.length).fuse(flange, head))
-    # Preserve the supplied 0.4 mm underside relief at the flange transition.
-    groove = Solid.make_cylinder(.2, WIDTH+2,
-        Plane(origin=(-WIDTH/2-1, spec.flange_end+.2, 0), z_dir=(1, 0, 0)))
-    shape = _one(shape.cut(groove))
     # Preserve the source nose relief below the crown chamfer.
     points = [(-WIDTH, -1, 6.879), (-WIDTH, 0, 6.879),
               (-WIDTH, .048, HEIGHT), (-WIDTH, .048, HEIGHT+1),

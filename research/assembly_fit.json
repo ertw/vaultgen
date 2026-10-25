@@ -1,0 +1,5783 @@
+{
+  "schema": "vault-assembly-fit/v1",
+  "units": "mm",
+  "method": "All supported scene inventories and proper rigid transforms; finished native B-rep solids placed by vault.assembly, conservative separated-bounds rejection followed by exact Boolean volume and minimum-distance checks for every remaining unordered component pair. Independent source clearance and contact expectations check mating registrations.",
+  "volume_tolerance_mm3": 1e-05,
+  "distance_tolerance_mm": 1e-06,
+  "contact_rules": [
+    {
+      "kinds": [
+        "facade",
+        "module"
+      ],
+      "reason": "Facade seats on the module's front lands"
+    },
+    {
+      "kinds": [
+        "box",
+        "facade"
+      ],
+      "reason": "Facade seats on the box's front attachment lands"
+    },
+    {
+      "kinds": [
+        "box",
+        "runner_slides"
+      ],
+      "reason": "Fully inserted slide touches its box rear stop"
+    },
+    {
+      "kinds": [
+        "facade",
+        "runner_slides"
+      ],
+      "reason": "Slide's front end is flush with the facade seating plane"
+    }
+  ],
+  "definitions": {
+    "case_count": 120,
+    "passed": true,
+    "cases": [
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "S",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "M",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 3,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 3,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 4,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 4,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 5,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 5,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 6,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 6,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 7,
+          "height_units": 1,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 0.8,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 0.9
+        },
+        "passed": true,
+        "errors": []
+      },
+      {
+        "configuration": {
+          "family": "L",
+          "depth_units": 7,
+          "height_units": 2,
+          "part": "set",
+          "box_floor": 3.0,
+          "module_rear": 2.0
+        },
+        "passed": true,
+        "errors": []
+      }
+    ]
+  },
+  "geometry_case_count": 4,
+  "cases": [
+    {
+      "configuration": {
+        "family": "S",
+        "depth_units": 3,
+        "height_units": 1,
+        "part": "set",
+        "box_floor": 0.8,
+        "module_rear": 0.9
+      },
+      "elapsed_seconds": 97.83578800401301,
+      "definition_errors": [],
+      "solids": [
+        {
+          "instance": "module",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 255280.23694648183,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "box",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 74228.6155770429,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 43090.043395662884,
+          "placement_volume_error_mm3": 3.637978807091713e-11,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 1540.8396699869909,
+          "placement_volume_error_mm3": 4.320099833421409e-12,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 1818.8181255226634,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 21071.68712006051,
+          "placement_volume_error_mm3": 1.0913936421275139e-11,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 21071.687120060513,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 14913.529921421215,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 14913.529921421215,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        }
+      ],
+      "pairs": [
+        {
+          "instances": [
+            "module",
+            "box"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.5390000000000157,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the module's front lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 1.5390000000000157,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 1.5390000000000157,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.1099699999999757,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.1099699999999757,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the box's front attachment lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 2.842170943040401e-14,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.19700000000000006,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.20000000000000284,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799871648,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799871648,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799764612,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799764612,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999998000000005,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999998000000005,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999998000000005,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999998000000005,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 23.7859998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 23.7859998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663431,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663431,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 3.199999900000009,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 3.199999900000009,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.348504910667867,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.348504910667867,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.782999799999999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.782999799999999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 3.199999900000009,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 3.199999900000009,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663431,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663431,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.782999799999999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.782999799999999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.348504910667867,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.348504910667867,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 138.5999998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 138.5999998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 134.22099888279485,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 134.22099888279485,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 134.22099888279485,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 134.22099888279485,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 129.84199796558968,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 129.84199796558968,
+          "passed": true
+        }
+      ],
+      "mating": [
+        {
+          "instance": "rail_plain",
+          "target": "box",
+          "minimum_gap_mm": 0.19700000000000006,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "target": "module",
+          "minimum_gap_mm": 1.5390000000000157,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "box",
+          "minimum_gap_mm": 0.20000000000000284,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "module",
+          "minimum_gap_mm": 1.5390000000000157,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "target": "module",
+          "minimum_gap_mm": 0.1099699999999757,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "target": "module",
+          "minimum_gap_mm": 0.1099699999999757,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "module",
+          "minimum_gap_mm": 0.0,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "box",
+          "minimum_gap_mm": 2.842170943040401e-14,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "configuration": {
+        "family": "S",
+        "depth_units": 4,
+        "height_units": 1,
+        "part": "set",
+        "box_floor": 3.0,
+        "module_rear": 0.9
+      },
+      "elapsed_seconds": 90.61914921700372,
+      "definition_errors": [],
+      "solids": [
+        {
+          "instance": "module",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 318528.0073819731,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "box",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 135970.9160351667,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 43090.043395662884,
+          "placement_volume_error_mm3": 3.637978807091713e-11,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 1540.8396699869907,
+          "placement_volume_error_mm3": 4.092726157978177e-12,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 1818.8181255226636,
+          "placement_volume_error_mm3": 2.2737367544323206e-13,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 27279.957042506834,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 27279.95704250683,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 20140.56811827097,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 20140.56811827097,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        }
+      ],
+      "pairs": [
+        {
+          "instances": [
+            "module",
+            "box"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.5390000000000157,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the module's front lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 1.5390000000000157,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 1.5390000000000157,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.10996999999998991,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.10996999999998991,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the box's front attachment lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 2.842170943040401e-14,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.19700000000000006,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.20000000000000284,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799871648,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799871648,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799764612,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799764612,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999998000000005,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999998000000005,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999998000000005,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999998000000005,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 23.7859998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 23.7859998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663431,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663431,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 3.199999900000009,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 3.199999900000009,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.348504910667867,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.348504910667867,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.782999799999999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.782999799999999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 3.199999900000009,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 3.199999900000009,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663431,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663431,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.782999799999999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.782999799999999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.348504910667867,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.348504910667867,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 138.5999998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 138.5999998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 134.22099888279485,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 134.22099888279485,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 134.22099888279485,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 134.22099888279485,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 129.84199796558968,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 129.84199796558968,
+          "passed": true
+        }
+      ],
+      "mating": [
+        {
+          "instance": "rail_plain",
+          "target": "box",
+          "minimum_gap_mm": 0.19700000000000006,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "target": "module",
+          "minimum_gap_mm": 1.5390000000000157,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "box",
+          "minimum_gap_mm": 0.20000000000000284,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "module",
+          "minimum_gap_mm": 1.5390000000000157,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "target": "module",
+          "minimum_gap_mm": 0.10996999999998991,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "target": "module",
+          "minimum_gap_mm": 0.10996999999998991,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "module",
+          "minimum_gap_mm": 0.0,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "box",
+          "minimum_gap_mm": 2.842170943040401e-14,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "configuration": {
+        "family": "M",
+        "depth_units": 3,
+        "height_units": 2,
+        "part": "set",
+        "box_floor": 0.8,
+        "module_rear": 2.0
+      },
+      "elapsed_seconds": 138.07156132298405,
+      "definition_errors": [],
+      "solids": [
+        {
+          "instance": "module",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 481372.4175454377,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "box",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 241183.5242306203,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 134536.65147680131,
+          "placement_volume_error_mm3": 2.9103830456733704e-11,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 2291.8593706215884,
+          "placement_volume_error_mm3": 1.4097167877480388e-11,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 2569.8378261532757,
+          "placement_volume_error_mm3": 4.092726157978177e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 21071.687120060513,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 21071.687120060516,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_2",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 21071.687120060516,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_2",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 21071.687120060516,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 14913.529921421215,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 14913.529921421215,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_2",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 14913.529921421212,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_2",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 14913.529921421217,
+          "placement_volume_error_mm3": 9.094947017729282e-12,
+          "passed": true
+        }
+      ],
+      "pairs": [
+        {
+          "instances": [
+            "module",
+            "box"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.3000000000000007,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the module's front lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 3.8070000000000004,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 12.710471828132455,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.10996999999998991,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.10996999999998991,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.10996999999998991,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.10996999999998991,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the box's front attachment lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 2.842170943040401e-14,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.19700000000000006,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.20000000000000284,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799871648,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799871648,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.1999998000000147,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.1999998000000147,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799871648,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799871648,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.1999998000000147,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.1999998000000147,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 3.552713678800501e-15,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 3.552713678800501e-15,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999998000000005,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999998000000005,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999998000000005,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999998000000005,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 23.7859998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 23.7859998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663424,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663424,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 47.7999999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 47.7999999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 48.560538726311144,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 48.560538726311144,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 66.6119390962416,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 66.6119390962416,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.34850491066786,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.34850491066786,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 43.51009354794208,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 43.51009354794208,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 51.75190368175954,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 51.75190368175954,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 66.81538910573424,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 66.81538910573424,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 47.7999999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 47.7999999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663424,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663424,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 50.531340446598094,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 50.531340446598094,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 21.78053852773536,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 21.78053852773536,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 43.51009354794208,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 43.51009354794208,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.34850491066786,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.34850491066786,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 48.13648200064283,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 48.13648200064283,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 23.045264431844927,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 23.045264431844927,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 227.7999998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 227.7999998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 21.0,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 21.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 228.76590635162398,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 228.76590635162398,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 223.42099888279483,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 223.42099888279483,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 25.3899999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 25.3899999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 224.85905549189656,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 224.85905549189656,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 228.76590635162398,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 228.76590635162398,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 21.0,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 21.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 223.42099888279483,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 223.42099888279483,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 224.85905549189656,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 224.85905549189656,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 25.3899999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 25.3899999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 227.7999998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 227.7999998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 25.3899999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 25.3899999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 224.85905549189656,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 224.85905549189656,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000473,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 223.42099888279483,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 223.42099888279483,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_2",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 224.85905549189656,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 224.85905549189656,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_2",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 25.3899999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 25.3899999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_2",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 223.42099888279483,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 223.42099888279483,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_2",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000473,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 219.04199796558967,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 219.04199796558967,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 29.7799998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 29.7799998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 221.05710859604898,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 221.05710859604898,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_right_1",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 221.05710859604898,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 221.05710859604898,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_right_1",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 29.7799998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 29.7799998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_2",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 219.04199796558967,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 219.04199796558967,
+          "passed": true
+        }
+      ],
+      "mating": [
+        {
+          "instance": "rail_plain",
+          "target": "box",
+          "minimum_gap_mm": 0.19700000000000006,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "target": "module",
+          "minimum_gap_mm": 3.8070000000000004,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "box",
+          "minimum_gap_mm": 0.20000000000000284,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "module",
+          "minimum_gap_mm": 12.710471828132455,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "target": "module",
+          "minimum_gap_mm": 0.10996999999998991,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "target": "module",
+          "minimum_gap_mm": 0.10996999999998991,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_2",
+          "target": "module",
+          "minimum_gap_mm": 0.10996999999998991,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_2",
+          "target": "module",
+          "minimum_gap_mm": 0.10996999999998991,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_2",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000473,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_2",
+          "target": "box",
+          "minimum_gap_mm": 3.552713678800501e-15,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_2",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000473,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_2",
+          "target": "box",
+          "minimum_gap_mm": 3.552713678800501e-15,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "module",
+          "minimum_gap_mm": 0.0,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "box",
+          "minimum_gap_mm": 2.842170943040401e-14,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "configuration": {
+        "family": "L",
+        "depth_units": 7,
+        "height_units": 2,
+        "part": "set",
+        "box_floor": 3.0,
+        "module_rear": 2.0
+      },
+      "elapsed_seconds": 149.2141872769862,
+      "definition_errors": [],
+      "solids": [
+        {
+          "instance": "module",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 1135519.8672181799,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "box",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 624399.020632482,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 165821.47136595074,
+          "placement_volume_error_mm3": 2.9103830456733704e-11,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 2932.947370685655,
+          "placement_volume_error_mm3": 7.73070496506989e-12,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 3210.9258262154945,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 46025.927935760745,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 46025.92793576073,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_2",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 46025.92793576074,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_2",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 46025.927935760745,
+          "placement_volume_error_mm3": 7.275957614183426e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 35821.682688059176,
+          "placement_volume_error_mm3": 2.1827872842550278e-11,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 35821.682688059176,
+          "placement_volume_error_mm3": 2.1827872842550278e-11,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_2",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 35821.682688059176,
+          "placement_volume_error_mm3": 2.1827872842550278e-11,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_2",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 35821.682688059176,
+          "placement_volume_error_mm3": 2.1827872842550278e-11,
+          "passed": true
+        }
+      ],
+      "pairs": [
+        {
+          "instances": [
+            "module",
+            "box"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.2999999999999954,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the module's front lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 3.8070000000000004,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 12.710471828132471,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.1099699999999757,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.1099699999999757,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.1099699999999757,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.1099699999999757,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.15039999999999765,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the box's front attachment lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 5.684341886080802e-14,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.19700000000000006,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.20000000000000284,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799871648,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799871648,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999800000029,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999800000029,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799871648,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799871648,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999800000029,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999800000029,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999997999999437,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999997999999437,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999997999999437,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999997999999437,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999664,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999664,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999664,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999664,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999664,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999664,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999664,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999664,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 23.7859998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 23.7859998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663424,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663424,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 85.59999990000003,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 85.59999990000003,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 48.56053872631113,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 48.56053872631113,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 97.3635990635176,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 97.3635990635176,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.348504910667833,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.348504910667833,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 81.26866409416338,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 81.26866409416338,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 51.75190368175953,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 51.75190368175953,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 95.7902069339552,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 95.7902069339552,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 85.59999990000003,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 85.59999990000003,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663424,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663424,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 87.15466917939627,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 87.15466917939627,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 21.78053852773536,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 21.78053852773536,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 81.26866409416338,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 81.26866409416338,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.348504910667833,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.348504910667833,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 83.83667707213533,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 83.83667707213533,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 23.045264431844913,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 23.045264431844913,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 303.39999980000005,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 303.39999980000005,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 20.999999999999986,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 20.999999999999986,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 304.12589478477497,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 304.12589478477497,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 299.02099888279486,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 299.02099888279486,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 25.3899999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 25.3899999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 300.09700076439685,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 300.09700076439685,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_guides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 304.12589478477497,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 304.12589478477497,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 20.999999999999986,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 20.999999999999986,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 299.02099888279486,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 299.02099888279486,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 300.09700076439685,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 300.09700076439685,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 25.389999899999985,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 25.389999899999985,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_guides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 303.39999980000005,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 303.39999980000005,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 25.389999899999985,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 25.389999899999985,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 300.09700076439685,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 300.09700076439685,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000473,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_2",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 299.02099888279486,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 299.02099888279486,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_2",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 300.09700076439685,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 300.09700076439685,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_2",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 25.3899999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 25.3899999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_2",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 299.02099888279486,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 299.02099888279486,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_2",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000473,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 294.64199796558967,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 294.64199796558967,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 29.7799998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 29.7799998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 296.14313321980393,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 296.14313321980393,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_right_1",
+            "runner_slides_left_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 296.14313321980393,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 296.14313321980393,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_right_1",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 29.7799998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 29.7799998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_2",
+            "runner_slides_right_2"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 294.64199796558967,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 294.64199796558967,
+          "passed": true
+        }
+      ],
+      "mating": [
+        {
+          "instance": "rail_plain",
+          "target": "box",
+          "minimum_gap_mm": 0.19700000000000006,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "target": "module",
+          "minimum_gap_mm": 3.8070000000000004,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "box",
+          "minimum_gap_mm": 0.20000000000000284,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "module",
+          "minimum_gap_mm": 12.710471828132471,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "target": "module",
+          "minimum_gap_mm": 0.1099699999999757,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "target": "module",
+          "minimum_gap_mm": 0.1099699999999757,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_2",
+          "target": "module",
+          "minimum_gap_mm": 0.1099699999999757,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_2",
+          "target": "module",
+          "minimum_gap_mm": 0.1099699999999757,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_2",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000473,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_2",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_2",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000473,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_2",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "module",
+          "minimum_gap_mm": 0.0,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "box",
+          "minimum_gap_mm": 5.684341886080802e-14,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "limitations": "Closed rigid assembled pose only. Positive exploded-view offsets are illustrative, not collision-certified paths. Module mouth webs and box runner-channel sheets are removed; printing meshes retain them. Lock, pinion, screws, and runner stoppers are omitted. Geometry cases are exactly those listed; definition coverage does not imply native solid collision coverage for other configurations. No physical print-fit qualification.",
+  "passed": true,
+  "exported_step_smoke": {
+    "origin": "Fresh S4 1F finished native STEP assets were exported, re-imported with build123d.import_step, and supplied to the same validate_assembly function. This is additional export-boundary coverage, separate from the directly constructed representative cases.",
+    "step_sha256": {
+      "preview/assembly/box_single.step": "7d433d34b57eaa8a5c3db2a88dfde089012576622ceb2f525fe9a1d6dc1c6450",
+      "preview/assembly/facade_single.step": "9d4878465c02d50febed036b1e2d7a09b71ce63bae07f5f4c74cc938d35fe406",
+      "preview/assembly/module_single.step": "e6bc23cd8be85e2f2b2b23e1b17433f686fed75804817e844b40ab387c592601",
+      "preview/assembly/rails_plain.step": "f0829a215161e62af3111ea7269183f282498df52c39f5e8a6d4e28ab2c1ddee",
+      "preview/assembly/rails_retained.step": "8b4e120ddfbb39074a04da973bfc369b40c2920122b35db9de304131eb64c709",
+      "preview/assembly/runner_guides_left.step": "d888233b42ec0feefe628f4d7aef7b0bcfd32d1f399eaa909a0fe9534a8208e6",
+      "preview/assembly/runner_guides_right.step": "4d6c93b9ec3f351c0a018ee564411cdb42e454f51324900964c624b01bdc663c",
+      "preview/assembly/runner_slides_left.step": "fd712c249daca17cb4b15d612256dfb2da54a2dbb5df020580698acf5711afd6",
+      "preview/assembly/runner_slides_right.step": "fd712c249daca17cb4b15d612256dfb2da54a2dbb5df020580698acf5711afd6"
+    },
+    "validation": {
+      "configuration": {
+        "family": "S",
+        "depth_units": 4,
+        "height_units": 1,
+        "part": "set",
+        "box_floor": 0.8,
+        "module_rear": 0.9
+      },
+      "elapsed_seconds": 75.78470761299832,
+      "definition_errors": [],
+      "solids": [
+        {
+          "instance": "module",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 318526.73594210367,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "box",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 87029.39711156834,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 43090.04339565863,
+          "placement_volume_error_mm3": 2.9103830456733704e-11,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 1540.8396699876948,
+          "placement_volume_error_mm3": 1.8189894035458565e-12,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 1818.8181255233235,
+          "placement_volume_error_mm3": 9.094947017729282e-13,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 27279.957044241077,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 27279.957044241077,
+          "placement_volume_error_mm3": 3.637978807091713e-12,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 20140.568035470962,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 20140.568035470962,
+          "placement_volume_error_mm3": 0.0,
+          "passed": true
+        }
+      ],
+      "pairs": [
+        {
+          "instances": [
+            "module",
+            "box"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.5390000000000015,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the module's front lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 1.5390000000000015,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 1.5390000000000015,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.10997000000000412,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.10997000000000412,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.1504000000000012,
+          "passed": true
+        },
+        {
+          "instances": [
+            "module",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.1504000000000012,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "facade"
+          ],
+          "contact_rule": "Facade seats on the box's front attachment lands",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 2.842170943040401e-14,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.19700000000000006,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.20000000000000284,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799873339,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799873339,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.199999799763887,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.199999799763887,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "box",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Fully inserted slide touches its box rear stop",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_plain"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999997999985794,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999997999985794,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 1.1999997999985794,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 1.1999997999985794,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.2999997999999948,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 0.2999997999999948,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "facade",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": "Slide's front end is flush with the facade seating plane",
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.0,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "rail_retained"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 23.7859998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 23.7859998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663332,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663332,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 3.199999900000009,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 3.199999900000009,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.348504910667689,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.348504910667689,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_plain",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.7829998000000025,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.7829998000000025,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 3.199999900000009,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 3.199999900000009,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 14.346270653663332,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 14.346270653663332,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 2.782999799999999,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 2.782999799999999,
+          "passed": true
+        },
+        {
+          "instances": [
+            "rail_retained",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 10.348504910667689,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 10.348504910667689,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_guides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 138.5999998,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 138.5999998,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 134.22099888279476,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 134.22099888279476,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_left_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 134.22099888279476,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 134.22099888279476,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_guides_right_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 0.0,
+          "method": "native_intersection_and_distance",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_mm": 0.04980000000000118,
+          "passed": true
+        },
+        {
+          "instances": [
+            "runner_slides_left_1",
+            "runner_slides_right_1"
+          ],
+          "contact_rule": null,
+          "bounds_gap_mm": 129.8419979655895,
+          "method": "separated_bounds",
+          "intersection_volume_mm3": 0.0,
+          "minimum_gap_lower_bound_mm": 129.8419979655895,
+          "passed": true
+        }
+      ],
+      "mating": [
+        {
+          "instance": "rail_plain",
+          "target": "box",
+          "minimum_gap_mm": 0.19700000000000006,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_plain",
+          "target": "module",
+          "minimum_gap_mm": 1.5390000000000015,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "box",
+          "minimum_gap_mm": 0.20000000000000284,
+          "expected_min_mm": 0.19,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "rail_retained",
+          "target": "module",
+          "minimum_gap_mm": 1.5390000000000015,
+          "expected_min_mm": 0.08,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_left_1",
+          "target": "module",
+          "minimum_gap_mm": 0.10997000000000412,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_guides_right_1",
+          "target": "module",
+          "minimum_gap_mm": 0.10997000000000412,
+          "expected_min_mm": 0.1,
+          "expected_max_mm": null,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_left_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "matching_runner_guide",
+          "minimum_gap_mm": 0.04980000000000118,
+          "expected_gap_mm": [
+            0.049,
+            0.051
+          ],
+          "passed": true
+        },
+        {
+          "instance": "runner_slides_right_1",
+          "target": "box",
+          "minimum_gap_mm": 0.0,
+          "expected_min_mm": null,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "module",
+          "minimum_gap_mm": 0.0,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        },
+        {
+          "instance": "facade",
+          "target": "box",
+          "minimum_gap_mm": 2.842170943040401e-14,
+          "expected_max_mm": 1e-06,
+          "passed": true
+        }
+      ],
+      "passed": true
+    }
+  }
+}

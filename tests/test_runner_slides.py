@@ -47,8 +47,17 @@ class RunnerSlideTests(unittest.TestCase):
                 self.assertFalse(shape.is_inside((8, 10, 6)))
                 self.assertTrue(shape.is_inside((8, end-2, 1.4)))
                 self.assertFalse(shape.is_inside((8, end+2, 1.4)))
-                self.assertFalse(shape.is_inside((0, end+.2, .1)))
+                self.assertTrue(shape.is_inside((0, end+.2, .1)))
                 self.assertTrue(shape.is_inside((0, end+.2, .3)))
+
+    def test_underside_is_flat_across_flange_transition(self):
+        for depth, shape in self.parts.items():
+            end = RunnerSlideSpec(depth).flange_end
+            for x in (-5, 0, 5):
+                for offset in (-.1, .1, .2, .3, .5):
+                    with self.subTest(depth=depth, x=x, offset=offset):
+                        self.assertTrue(shape.is_inside((x, end+offset, .01)))
+                        self.assertFalse(shape.is_inside((x, end+offset, -.01)))
 
     def test_pair_is_identical_and_specs_reject_unsupported_depths(self):
         pair = build_runner_slides(spec=RunnerSlideSpec(3))

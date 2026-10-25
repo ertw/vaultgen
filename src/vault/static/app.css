@@ -197,3 +197,29 @@ pre { background: var(--background); color: #cad3dc; border: 1px solid var(--bor
 .revision-status:focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
 .revision-status.warning { color: #ffe0a1; background: #3a2d15; border-color: #bd8730; }
 #selection-note { padding: 0 24px; }
+
+.assembly-controls { padding: 14px 24px 0; }
+.explosion-controls { display: flex; gap: 10px; align-items: center; }
+.explosion-controls label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.explosion-controls output { display: inline-block; width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+#explosion { flex: 1; min-width: 35px; accent-color: var(--accent); cursor: pointer; }
+.assembly-panel { padding: 18px 24px; background: var(--panel); border-top: 1px solid var(--border); }
+.assembly-warnings, .assembly-missing { border-left: 3px solid #bd8730; background: #302819; color: #ffe0a1; padding: 9px 12px; font-size: 12px; margin: 12px 0; }
+.assembly-missing { padding-left: 28px; }
+.assembly-instances { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+.assembly-instance { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); border-radius: 5px; padding: 4px 7px; }
+.assembly-instance[data-selected=true] { background: var(--selected); border-color: var(--accent); }
+.assembly-instance:has(input:not(:checked)) { opacity: .55; }
+.assembly-instance input { accent-color: var(--accent); cursor: pointer; }
+.instance-select { flex: 1; min-width: 0; text-align: left; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 5px 2px; }
+.instance-color { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; background: var(--accent); }
+.instance-label { display: block; font-size: 12px; overflow-wrap: anywhere; }
+.instance-revision { display: block; font-size: 10px; color: #a8dfba; overflow-wrap: anywhere; }
+.instance-revision.warning { color: #ffe0a1; }
+@media (max-width: 760px) { .assembly-controls, .assembly-panel { padding-left: 20px; padding-right: 20px; } }
+@media (max-width: 480px) {
+  .assembly-instances { grid-template-columns: 1fr; }
+  .explosion-controls { gap: 7px; flex-wrap: wrap; }
+  .explosion-controls label { order: 3; }
+  #explosion { order: 4; flex-basis: 65%; }
+}

@@ -21,15 +21,18 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     if part_kind(spec) == 'facade':
         from .facade import build_facade
         module = build_facade(spec=spec)
+        finished = module
     elif part_kind(spec) == 'box':
         from .box import build_box
         module = build_box(spec=spec)
+        finished = build_box(spec=spec, include_supports=False)
     else:
         module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
-    return _export_into(module, output, started, spec)
+        finished = build_module(spec=spec, include_supports=False)
+    return _export_into(module, output, started, spec, finished=finished)
 
 
-def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAULT_SPEC):
+def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAULT_SPEC, *, finished=None):
     """Export and check an already constructed native model."""
     from build123d import export_brep, export_step
     from .render import render_review
@@ -56,6 +59,16 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
     from .tessellation import export_print_mesh
     print_stl = output / 'stl' / f'{stem}.stl'
     export_print_mesh(printable, print_stl)
+    assembly_mesh = None
+    if finished is not None:
+        print('Exporting finished assembly preview…', flush=True)
+        from .exports import export_assembly_mesh, translation_matrix
+        # Module/facade print exports rotate +90° around X; box lowers its base.
+        print_to_native = (translation_matrix((0, 0, module.bounding_box().min.Z))
+                           if part_kind(spec) == 'box' else
+                           [1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1])
+        assembly_mesh = export_assembly_mesh(output, stem, finished, component='single',
+                                             print_to_native=print_to_native)
     print('Rendering exported geometry…', flush=True)
     render_review(mesh, output / 'review')
     bbox = module.bounding_box()
@@ -70,6 +83,7 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         raise ValueError(f'CAD and mesh volume disagree by {volume_difference:.2%}')
     manifest = {
         'module': asdict(spec),
+        'assembly_mesh': assembly_mesh,
         'name': spec.name,
         'units': 'mm', 'cad_valid': bool(module.is_valid), 'solids': len(module.solids()),
         'boundary_shells': len(module.shells()),
@@ -143,6 +157,7 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
             'components': [{'name': spec.slug, 'step': f'{spec.slug}.step', 'kind': part_kind(spec)}],
         }
         manifest.update(viewer='viewer.json', status='Completed CAD build', parts={spec.slug: {
+            'assembly_mesh': manifest.get('assembly_mesh'),
             'kind': part_kind(spec), 'print_note': manifest.get('print_orientation', ''),
             'print_bbox_mm': manifest.get('print_bbox_mm', []),
         }})

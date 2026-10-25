@@ -6,6 +6,9 @@ const state = {
   config: null, selection: null, job: null, artifacts: [], selectedArtifact: null,
   viewer: null, previewRequest: 0, navigationVersion: 0, jobNavigationVersion: 0, submitting: false,
   shownCompletedJob: null, shownFailedJob: null, pollTimer: null,
+  assembly: null, assemblySignature: null, assemblyKey: null, assemblyRequest: 0,
+  assemblyController: null, assemblyPending: false, assemblyShowing: false,
+  hiddenInstances: new Set(), selectedInstance: null,
 };
 const names = {
   set: 'Complete set', module: 'Module', box: 'Box', facade: 'Facade',
@@ -139,7 +142,7 @@ function renderSelection() {
   $('configuration-name').textContent = configurationName(config);
   $('configuration-dimensions').textContent = `${dimensions[0]} × ${dimensions[1].toFixed(1)} × ${dimensions[2]} mm body`;
   $('part-hint').textContent = partDescriptions[config.part] || '';
-  if (!state.selectedArtifact) {
+  if (!state.selectedArtifact && !state.assemblyShowing) {
     $('preview-title').textContent = configurationName(config);
     renderEnvelope(dimensions); setMetrics(dimensions);
   }
@@ -149,6 +152,7 @@ function renderSelection() {
 
 async function selectArtifact(index, userAction = false) {
   const artifact = state.artifacts[index]; if (!artifact) return;
+  leaveAssembly();
   if (userAction) { state.navigationVersion++; state.browsingSelection = false; }
   const { build, part } = artifact; state.selectedArtifact = artifact;
   const request = ++state.previewRequest;
@@ -176,6 +180,7 @@ async function selectArtifact(index, userAction = false) {
     if (request !== state.previewRequest) return;
     $('model-canvas').hidden = false;
     state.viewer ||= new STLViewer($('model-canvas'));
+    state.viewer.onSelect = null;
     const dimensions = state.viewer.load(bytes); setMetrics(dimensions);
     $('viewer-message').hidden = true; $('viewer-help').hidden = false; $('reset-view').hidden = false;
     $('model-canvas').dataset.modelReady = 'true';
@@ -185,7 +190,7 @@ async function selectArtifact(index, userAction = false) {
     $('model-canvas').hidden = true;
   }
 }
-function showArtifacts(builds, bundleUrl = null, userAction = false) {
+function showArtifacts(builds, bundleUrl = null, userAction = false, selectFirst = true) {
   state.artifacts = builds.flatMap(build => (build.parts || []).map(part => ({ build, part })));
   $('artifact-panel').hidden = state.artifacts.length === 0;
   downloadLink($('bundle-download'), bundleUrl);
@@ -194,7 +199,7 @@ function showArtifacts(builds, bundleUrl = null, userAction = false) {
     const button = element('button', 'artifact-tab', part.name); button.type = 'button'; button.setAttribute('aria-pressed', 'false');
     button.addEventListener('click', () => selectArtifact(index, true)); tabs.append(button);
   }
-  if (state.artifacts.length) selectArtifact(0, userAction);
+  if (state.artifacts.length && selectFirst) selectArtifact(0, userAction);
 }
 function renderFreshness(build = null) {
   const status = $('build-freshness'), info = build?.freshness, repo = state.repository;
@@ -219,7 +224,163 @@ function matches(build, kind) {
   const keys = {module: ['family','depth_units','height_units','module_rear'], box: ['family','depth_units','height_units','box_floor'], facade: ['family','height_units'], rails: ['family'], runner_guides: ['depth_units'], runner_slides: ['depth_units']}[kind];
   return keys.every(key => (c[key] ?? state.config.defaults[key]) === s[key]);
 }
+
+function leaveAssembly() {
+  state.assemblyController?.abort(); ++state.assemblyRequest;
+  state.assemblyPending = false; state.assemblyShowing = false;
+  state.assembly = null; state.assemblySignature = null;
+  $('assembly-controls').hidden = true; $('assembly-panel').hidden = true;
+  if (state.viewer) state.viewer.onSelect = null;
+}
+function setExplosion(value) {
+  const amount = Math.max(0, Math.min(100, Number(value) || 0));
+  $('explosion').value = amount; $('explosion-value').value = `${amount}%`;
+  $('assemble-view').setAttribute('aria-pressed', String(amount === 0));
+  $('explode-view').setAttribute('aria-pressed', String(amount === 100));
+  if (state.assemblyShowing) {
+    state.viewer?.setExplosion(amount / 100);
+    $('preview-badge').textContent = amount === 0 ? 'Assembled' : amount === 100 ? 'Exploded' : `Exploded · ${amount}%`;
+  }
+}
+function selectInstance(id) {
+  const instance = state.assembly?.instances.find(item => item.id === id);
+  state.selectedInstance = instance?.id || null;
+  state.viewer?.select(state.selectedInstance);
+  for (const row of $('assembly-instances').children) {
+    const selected = row.dataset.instance === state.selectedInstance;
+    row.dataset.selected = String(selected); row.querySelector('button').setAttribute('aria-pressed', String(selected));
+  }
+  $('assembly-selection').textContent = instance
+    ? `${instance.label} · ${names[instance.kind] || instance.kind} · build ${instance.build_id || 'unknown'}${state.hiddenInstances.has(instance.id) ? ' · hidden' : ''}`
+    : 'Select a component in the view or list to highlight it.';
+  $('viewport-label').textContent = instance?.label || `${state.assembly?.instances.length || 0} assembly components`;
+}
+function renderAssemblyDetails(scene) {
+  const warnings = [...new Set([...(scene.warnings || []), ...scene.instances.flatMap(instance => instance.freshness?.reasons || [])])];
+  if (state.repository?.dirty && !warnings.some(reason => reason.startsWith('Repository has uncommitted'))) warnings.unshift('Repository has uncommitted changes; rebuild to include current code.');
+  if (!state.repository) warnings.unshift('Repository status unavailable.');
+  const revisionReasons = scene.instances.flatMap(instance => instance.freshness?.warning ? instance.freshness.reasons || ['Cached build revision needs checking.'] : !instance.freshness ? ['Cached build revision unknown; rebuild recommended.'] : []);
+  renderFreshness(scene.instances.length ? { freshness: { warning: revisionReasons.length > 0, reasons: [...new Set(revisionReasons)] } } : null);
+  $('assembly-summary').textContent = `${scene.instances.length} available components · ${scene.complete ? 'All generated parts available' : 'Incomplete set'} · ${scene.complete && scene.validation?.passed ? '✓ Fit checked' : '⚠ Fit not verified for this view'}`;
+  if (scene.notes?.length) $('assembly-note').textContent = scene.notes.join(' ');
+  $('assembly-omissions').hidden = !scene.omissions?.length;
+  $('assembly-omissions').textContent = scene.omissions?.length ? `Not included: ${scene.omissions.join(', ')}.` : '';
+  $('assembly-warnings').hidden = !warnings.length; $('assembly-warnings').textContent = warnings.length ? `⚠ ${warnings.join(' ')}` : '';
+  const missing = $('assembly-missing'); missing.replaceChildren(); missing.hidden = !scene.missing.length;
+  for (const item of scene.missing) missing.append(element('li', '', `${item.label || names[item.kind] || item.kind}: ${item.reason || 'Not generated yet; generate the complete set.'}`));
+  $('selection-note').hidden = !scene.missing.length;
+  $('selection-note').textContent = scene.missing.length ? '⚠ Incomplete assembly. Generate the complete set to build missing or older parts; details below.' : '';
+  const list = $('assembly-instances'); list.replaceChildren();
+  for (const instance of scene.instances) {
+    const row = element('div', 'assembly-instance'); row.dataset.instance = instance.id;
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = !state.hiddenInstances.has(instance.id);
+    checkbox.setAttribute('aria-label', `Show ${instance.label}`);
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) state.hiddenInstances.delete(instance.id); else state.hiddenInstances.add(instance.id);
+      state.viewer?.setVisible(instance.id, checkbox.checked); selectInstance(state.selectedInstance);
+    });
+    const button = element('button', 'instance-select'); button.type = 'button'; button.setAttribute('aria-label', `Highlight ${instance.label}`);
+    const swatch = element('span', 'instance-color'); swatch.setAttribute('aria-hidden', 'true');
+    if (/^#[a-f\d]{6}$/i.test(instance.color || '')) swatch.style.backgroundColor = instance.color;
+    const text = element('span'); text.append(element('span', 'instance-label', instance.label));
+    const warning = !instance.freshness || instance.freshness.warning;
+    const revision = element('span', `instance-revision${warning ? ' warning' : ''}`, `${warning ? '⚠ Check revision' : '✓ Current'} · ${(instance.build_id || 'unknown build').slice(0, 12)}`);
+    revision.title = instance.freshness?.reasons?.join(' ') || (warning ? 'Build revision unknown.' : 'Matches the current clean commit.');
+    text.append(revision); button.append(swatch, text);
+    button.addEventListener('click', () => selectInstance(state.selectedInstance === instance.id ? null : instance.id));
+    row.append(checkbox, button); list.append(row);
+  }
+  selectInstance(state.selectedInstance);
+}
+async function showAssembly(preservePreview = false) {
+  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'module_rear'].map(key => [key, state.selection[key]])));
+  const key = query.toString(), newSelection = !state.assemblyShowing || state.assemblyKey !== key;
+  if (preservePreview && !newSelection && state.assemblyPending) return;
+  state.assemblyController?.abort();
+  const controller = new AbortController(); state.assemblyController = controller;
+  const request = ++state.assemblyRequest; state.assemblyPending = true;
+  state.selectedArtifact = null; state.assemblyShowing = true;
+  if (newSelection) {
+    ++state.previewRequest; state.assemblyKey = key; state.assembly = null; state.assemblySignature = null;
+    state.hiddenInstances.clear(); state.selectedInstance = null; setExplosion(0);
+    $('model-canvas').hidden = true; $('model-canvas').dataset.modelReady = 'false';
+    $('viewer-message').hidden = false; $('viewer-message').textContent = 'Loading assembled parts…';
+    $('viewer-help').hidden = true; $('reset-view').hidden = true;
+    $('assembly-panel').hidden = true; $('selection-note').hidden = true;
+    setMetrics(envelopeDimensions());
+  }
+  $('envelope').setAttribute('hidden', ''); $('assembly-controls').hidden = false;
+  $('preview-eyebrow').textContent = 'COMPLETE SET';
+  $('preview-title').textContent = `${configurationName(state.selection)} assembly`;
+  $('preview-kind').textContent = 'Assembled dimensions · X / Y / Z';
+  const builds = Object.keys(names).filter(kind => kind !== 'set').map(kind => state.builds.find(build => matches(build, kind))).filter(Boolean);
+  showArtifacts(builds, null, false, false);
+  $('artifact-description').textContent = 'Printable downloads · select a part below to inspect its print orientation.';
+  $('print-note').textContent = 'Assembly previews use finished parts. Print downloads retain required sacrificial supports.';
+  downloadLink($('stl-download'), null); downloadLink($('step-download'), null);
+  renderFreshness();
+  try {
+    const response = await api(`/api/assembly?${query}`, { signal: controller.signal });
+    if (request !== state.assemblyRequest) return;
+    if (response.repository) state.repository = response.repository;
+    const scene = { ...response, instances: response.instances || [], missing: response.missing || [] };
+    const signature = JSON.stringify(scene.instances.map(({ id, mesh_url, transform, explode, color }) => ({ id, mesh_url, transform, explode, color })));
+    $('preview-title').textContent = scene.name || `${configurationName(state.selection)} assembly`;
+    if (signature === state.assemblySignature && state.assembly) {
+      state.assembly = scene; renderAssemblyDetails(scene); return;
+    }
+    const urls = [...new Set(scene.instances.map(instance => instance.mesh_url))];
+    const fetched = await Promise.allSettled(urls.map(async url => {
+      if (typeof url !== 'string' || !/^\/files\/[^\s]*$/.test(url) || url.includes('\\')) throw new Error('Finished assembly mesh unavailable; rebuild this part.');
+      const mesh = await fetch(url, { signal: controller.signal });
+      if (!mesh.ok) throw new Error(mesh.status === 401 ? 'Sign in again to load this component.' : 'Finished mesh could not be loaded; retry or rebuild this part.');
+      return mesh.arrayBuffer();
+    }));
+    if (request !== state.assemblyRequest) return;
+    const loaded = [], missing = [...scene.missing];
+    for (const instance of scene.instances) {
+      const result = fetched[urls.indexOf(instance.mesh_url)];
+      if (result.status === 'fulfilled') loaded.push({ ...instance, bytes: result.value });
+      else missing.push({ kind: instance.kind, label: instance.label, reason: errorMessage(result.reason) });
+    }
+    const available = { ...scene, instances: loaded.map(({ bytes, ...instance }) => instance), missing, complete: scene.complete && !missing.length };
+    if (loaded.length) {
+      $('model-canvas').hidden = false;
+      state.viewer ||= new STLViewer($('model-canvas'));
+      const dimensions = state.viewer.loadScene(loaded); setMetrics(dimensions);
+      state.viewer.onSelect = selectInstance;
+      state.viewer.setExplosion(Number($('explosion').value) / 100);
+      for (const id of state.hiddenInstances) state.viewer.setVisible(id, false);
+      state.viewer.fitCurrent();
+      $('model-canvas').dataset.modelReady = 'true';
+      $('viewer-message').hidden = true; $('viewer-help').hidden = false; $('reset-view').hidden = false;
+    } else {
+      state.viewer?.clear(); $('model-canvas').hidden = true; $('model-canvas').dataset.modelReady = 'false';
+      $('viewer-help').hidden = true; $('reset-view').hidden = true;
+      $('viewer-message').hidden = false;
+      $('viewer-message').textContent = 'Assembly parts have not been generated yet. Generate the complete set to create finished assembly meshes.';
+    }
+    state.assembly = available; $('assembly-panel').hidden = false;
+    // A failed mesh is retried on refresh; unchanged successful scenes preserve the camera.
+    state.assemblySignature = fetched.every(result => result.status === 'fulfilled') ? signature : null;
+    renderAssemblyDetails(available);
+  } catch (error) {
+    if (request !== state.assemblyRequest || error.name === 'AbortError') return;
+    if (state.assembly) {
+      $('assembly-warnings').hidden = false;
+      $('assembly-warnings').textContent = `⚠ Could not refresh the assembly. ${errorMessage(error)}`;
+    } else {
+      $('viewer-message').hidden = false; $('viewer-message').textContent = errorMessage(error);
+      $('model-canvas').hidden = true; $('model-canvas').dataset.modelReady = 'false';
+    }
+  } finally {
+    if (request === state.assemblyRequest) state.assemblyPending = false;
+  }
+}
+
 function showSelection(preservePreview = false) {
+  if (state.selection.part === 'set') { showAssembly(preservePreview); return; }
+  leaveAssembly();
   const kinds = state.selection.part === 'set' ? Object.keys(names).filter(k => k !== 'set') : [state.selection.part];
   const builds = kinds.map(kind => state.builds.find(build => matches(build, kind))).filter(Boolean);
   const missing = kinds.filter(kind => !builds.some(build => build.kind === kind));
@@ -320,6 +481,15 @@ $('configuration-form').addEventListener('submit', async event => {
   finally { state.submitting = false; renderSelection(); }
 });
 $('reset-view').addEventListener('click', () => state.viewer?.reset());
+$('explosion').addEventListener('input', event => setExplosion(event.target.value));
+$('assemble-view').addEventListener('click', () => { setExplosion(0); state.viewer?.fitCurrent(); });
+$('explode-view').addEventListener('click', () => { setExplosion(100); state.viewer?.fitCurrent(); });
+$('fit-view').addEventListener('click', () => state.viewer?.fitCurrent());
+$('show-all-instances').addEventListener('click', () => {
+  state.hiddenInstances.clear();
+  for (const instance of state.assembly?.instances || []) state.viewer?.setVisible(instance.id, true);
+  if (state.assembly) renderAssemblyDetails(state.assembly);
+});
 $('job-artifacts-button').addEventListener('click', () => {
   if (!state.job) return;
   showArtifacts(state.job.builds || [], state.job.bundle_url, true);

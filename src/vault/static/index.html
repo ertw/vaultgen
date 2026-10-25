@@ -44,6 +44,10 @@
       <section class="preview panel" aria-labelledby="preview-title">
         <div class="preview-heading"><div><div class="preview-status-row"><p class="eyebrow" id="preview-eyebrow">SELECTION</p><span id="build-freshness" class="revision-status" role="status" tabindex="0" hidden></span></div><h2 id="preview-title">S4 · 1F</h2></div><span id="preview-badge" class="badge">Configuration envelope</span></div>
         <p id="selection-note" class="dimension-hint" hidden></p>
+        <div id="assembly-controls" class="assembly-controls" hidden>
+          <div class="explosion-controls"><button id="assemble-view" type="button" class="artifact-tab" aria-pressed="true">Assembled</button><label for="explosion">Explode <output id="explosion-value" for="explosion">0%</output></label><input id="explosion" type="range" min="0" max="100" value="0" aria-label="Assembly explosion"><button id="explode-view" type="button" class="artifact-tab" aria-pressed="false">Exploded</button><button id="fit-view" type="button" class="artifact-tab" title="Center and fit the currently visible components">Fit view</button></div>
+          <p id="assembly-note" class="dimension-hint">Finished printed parts; sacrificial supports removed. Explosion shows part relationships, not a validated disassembly path.</p>
+        </div>
         <div class="viewport" id="viewport">
           <svg id="envelope" class="envelope" viewBox="0 0 680 450" role="img" aria-label="Diagram of the configured module envelope, not generated CAD">
             <defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#2c3239"/></pattern></defs>
@@ -57,6 +61,14 @@
           <div class="viewer-help" id="viewer-help" hidden>Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Arrows to rotate</div>
         </div>
         <div class="preview-footer"><div class="metric"><span>WIDTH</span><strong id="metric-width">164.8 <small>mm</small></strong></div><div class="metric"><span>DEPTH</span><strong id="metric-depth">188.1 <small>mm</small></strong></div><div class="metric"><span>HEIGHT</span><strong id="metric-height">47 <small>mm</small></strong></div><div class="preview-kind" id="preview-kind">Module body · stacking connectors excluded</div></div>
+        <div id="assembly-panel" class="assembly-panel" hidden>
+          <div class="artifact-top"><div><span class="eyebrow">ASSEMBLY COMPONENTS</span><p id="assembly-summary" role="status"></p></div><button id="show-all-instances" type="button" class="text-button">Show all</button></div>
+          <p id="assembly-warnings" class="assembly-warnings" role="status" hidden></p>
+          <p id="assembly-omissions" class="dimension-hint" hidden></p>
+          <ul id="assembly-missing" class="assembly-missing" aria-label="Missing assembly components" hidden></ul>
+          <div id="assembly-instances" class="assembly-instances" aria-label="Assembly visibility and selection"></div>
+          <p id="assembly-selection" class="dimension-hint" role="status">Select a component in the view or list to highlight it.</p>
+        </div>
         <div id="artifact-panel" class="artifact-panel" hidden><div class="artifact-top"><div><span class="eyebrow">GENERATED PARTS</span><p id="artifact-description"></p></div><a id="bundle-download" class="text-button" hidden><svg class="icon"><use href="#i-download"/></svg>Complete ZIP</a></div><div id="artifact-tabs" class="artifact-tabs" aria-label="Generated part previews"></div><p id="print-note" class="print-note"></p><div class="download-row"><a id="stl-download" class="button button-dark"><svg class="icon"><use href="#i-download"/></svg>Download STL</a><a id="step-download" class="button button-outline">Download STEP <svg class="icon"><use href="#i-arrow"/></svg></a></div></div>
       </section>
     </div>

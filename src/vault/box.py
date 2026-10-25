@@ -138,7 +138,13 @@ def _linear_gear_exit(lower=False, corner_radius=0.8, *, layout=None):
     return passage.fuse(roof)
 
 
-def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3):
+def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3,
+              include_supports=True):
+    """Build the tray, optionally omitting its removable runner-channel sheets.
+
+    Printable builds keep the default supports. The assembled scene uses
+    ``include_supports=False`` so slides occupy the finished channels.
+    """
     floor_thickness = getattr(spec, 'box_floor', 0.8)
     layout = DrawerLayout(spec)
     spec = layout.spec
@@ -190,7 +196,8 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
                    for x,z in channel]
         for tier in spec.tier_offsets:
             part = part.cut(profile([(sign*(x+dx),z+tier) for x,z in channel],25.8,161+dy))
-            part=part.fuse(_runner_support(sign, runner_clearance, layout=layout, tier=tier))
+            if include_supports:
+                part=part.fuse(_runner_support(sign, runner_clearance, layout=layout, tier=tier))
         # Closed attachment ends alternate with the external gear exits.
         # Their blind ends locate the rail noses in the unlocked installation
         # position. Keep the proven S stop datum for every family: M/L rails

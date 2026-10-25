@@ -51,6 +51,14 @@ class RunnerBuildTests(unittest.TestCase):
                 self.assertEqual(set(manifest['parts']), {f'{spec.slug}_{side}' for side in pair})
                 for name, report in manifest['parts'].items():
                     self.assertEqual(report['kind'], kind)
+                    preview = report['assembly_mesh']
+                    self.assertTrue(preview['finished'])
+                    self.assertEqual(preview['component'], name.rsplit('_', 1)[-1])
+                    expected_min = pair[preview['component']].bounding_box().min
+                    self.assertEqual(preview['print_to_native'][12:15], list(expected_min))
+                    native = import_step(root / preview['step_path'])
+                    self.assertAlmostEqual(native.bounding_box().min.Z, expected_min.Z, places=6)
+                    self.assertTrue((root / preview['path']).is_file())
                     self.assertTrue(report['step_roundtrip']['passed'])
                     self.assertTrue(report['print_step_roundtrip']['passed'])
                     self.assertTrue(report['stl_watertight'])

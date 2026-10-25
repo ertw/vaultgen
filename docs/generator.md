@@ -29,8 +29,49 @@ STLs. Each variant has its own resolved parameters and build alias; external
 dimensions remain fixed.
 
 Changing the selection previews the newest matching cached part, or shows
-“not generated yet.” Complete sets show available matching parts and list any
-missing groups. Recent builds can still be inspected independently.
+“not generated yet.” Complete sets show the matching finished parts together in an assembled view,
+with an explosion slider, component colors, visibility controls and click-to-highlight.
+Fit view centers the visible components; endpoint buttons fit their pose, while
+dragging the explosion slider preserves the camera.
+Missing groups and legacy builds that need new assembly assets are listed explicitly. Recent builds can still be inspected independently.
+
+Assembly previews use explicit native-coordinate transforms from
+`src/vault/assembly.py`. The scene has 9 instances for 1F and 13 for 2F, with one
+left/right runner pair on each tier. The drawer group moves forward as a unit
+while the explosion separates its facade, rails and slides. Exploded positions
+illustrate the parts; they do not certify a disassembly path. Lock/pinion, screws
+and separate runner stoppers are omitted and identified in the scene.
+
+New builds include finished assembly STL and STEP assets under `preview/assembly/`.
+These omit module support webs and box runner sheets. Printable exports retain
+those supports. The manifest identifies component roles, native coordinates and
+print-to-native transforms. Legacy caches remain downloadable but require
+regeneration for assembled viewing; no placement is guessed from print bounds.
+Preview assets are excluded from printable ZIP bundles.
+
+After generating a complete set, the worker imports its exact finished STEP
+assets and checks topology, rigid transforms, mating registrations and pairwise
+intersections using `src/vault/assembly_validation.py`. Intentional seating and
+stop contacts are allowed; positive-volume collisions above numerical tolerance
+fail. A fit-check receipt pins the result to the selected configuration and
+immutable component build IDs, assembly definition and validator revision. Failed checks preserve individual exports and
+mark the job failed. The scene warns when its cache combination has no passing
+receipt. These checks verify the closed assembled pose, not printed fit or motion.
+
+Assembly audits can also be run independently:
+
+```bash
+python tools/check_assembly.py --definitions-only
+python tools/check_assembly.py --case S4:1 --case L7:2:3:2
+python tools/check_assembly.py --all  # all 120 native assemblies; expensive
+```
+
+Recorded evidence in [`research/assembly_fit.json`](../research/assembly_fit.json)
+covers all 120 definitions, four representative native assemblies, and a separate
+S4 check of imported finished STEP exports: 264 component-pair checks and 72
+mating checks passed with zero intersection volume. This sample is not an
+exhaustive native audit of all 120 configurations; complete-set generation checks
+the exact configuration and cached component builds requested.
 
 Repository status refreshes every 15 seconds. Text, a symbol and green/amber
 color distinguish a clean repository from uncommitted changes or unavailable
