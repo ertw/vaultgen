@@ -52,13 +52,21 @@ def definition_errors(configuration, definition):
     errors = []
     instances = definition.get("instances", [])
     counts = Counter(instance.get("kind") for instance in instances)
-    expected = {"module": 1, "box": 1, "facade": 1, "rails": 2,
-                "runner_guides": configuration.height_units * 2,
-                "runner_slides": configuration.height_units * 2}
+    drawer_count = configuration.drawer_count
+    per_bay = {"box": 1, "facade": 1, "rails": 2,
+               "runner_guides": configuration.drawer_height_units * 2,
+               "runner_slides": configuration.drawer_height_units * 2}
+    expected = {"module": 1, **{kind: count * drawer_count for kind, count in per_bay.items()}}
     if counts != expected:
         errors.append(f"Wrong instance inventory: {dict(counts)!r}; expected {expected!r}")
     if len({instance.get("id") for instance in instances}) != len(instances):
         errors.append("Instance IDs are not unique")
+    bay_counts = Counter((instance.get("bay", 1), instance.get("kind"))
+                         for instance in instances if instance.get("kind") != "module")
+    expected_bays = Counter({(bay, kind): count for bay in range(1, drawer_count + 1)
+                            for kind, count in per_bay.items()})
+    if bay_counts != expected_bays:
+        errors.append("Each drawer bay must have its own complete component inventory")
     for instance in instances:
         matrix = instance.get("transform", [])
         name = instance.get("id", "unnamed")
@@ -87,11 +95,12 @@ def definition_errors(configuration, definition):
                                           for value in explosion):
             errors.append(f"{name}: invalid explosion translation")
     for kind in ("runner_guides", "runner_slides"):
-        actual = Counter((instance.get("side"), instance.get("tier"))
+        actual = Counter((instance.get("bay", 1), instance.get("side"), instance.get("tier"))
                          for instance in instances if instance.get("kind") == kind)
-        expected = Counter(product((-1, 1), range(1, configuration.height_units + 1)))
+        expected = Counter(product(range(1, drawer_count + 1), (-1, 1),
+                                   range(1, configuration.drawer_height_units + 1)))
         if actual != expected:
-            errors.append(f"{kind}: expected one left/right pair per populated tier")
+            errors.append(f"{kind}: expected one left/right pair per populated tier in each bay")
     return errors
 
 
@@ -111,6 +120,9 @@ def intersection_volume(left, right):
 def check_pair(left_instance, left, right_instance, right):
     """No pair is exempt from the positive-volume collision check."""
     rule = CONTACT_RULES.get(frozenset((left_instance["kind"], right_instance["kind"])))
+    if (left_instance["kind"] != "module" and right_instance["kind"] != "module"
+            and left_instance.get("bay", 1) != right_instance.get("bay", 1)):
+        rule = None
     lower_bound = bounds_gap(left, right)
     result = {"instances": [left_instance["id"], right_instance["id"]],
               "contact_rule": rule, "bounds_gap_mm": lower_bound}
@@ -132,8 +144,9 @@ def mating_checks(configuration, placed, pair_results=()):
     checks = []
     pair_distances = {frozenset(pair["instances"]): pair["minimum_gap_mm"]
                       for pair in pair_results if "minimum_gap_mm" in pair}
-    single = {instance["kind"]: (instance, shape) for instance, shape in placed
-              if instance["kind"] in ("module", "box", "facade")}
+    module = next((instance, shape) for instance, shape in placed if instance["kind"] == "module")
+    drawers = {(instance.get("bay", 1), instance["kind"]): (instance, shape)
+               for instance, shape in placed if instance["kind"] in ("box", "facade")}
 
     def distance(left_instance, left, right_instance, right):
         cached = pair_distances.get(frozenset((left_instance["id"], right_instance["id"])))
@@ -150,6 +163,7 @@ def mating_checks(configuration, placed, pair_results=()):
             targets = [("box", None, DISTANCE_TOLERANCE_MM)]
             guide_instance, guide = next((other, shape) for other, shape in placed
                          if other["kind"] == "runner_guides"
+                         and other.get("bay", 1) == instance.get("bay", 1)
                          and other["side"] == instance["side"]
                          and other["tier"] == instance["tier"])
             gap = distance(instance, shape, guide_instance, guide)
@@ -157,20 +171,22 @@ def mating_checks(configuration, placed, pair_results=()):
                            "minimum_gap_mm": gap, "expected_gap_mm": [.049, .051],
                            "passed": .049 < gap < .051})
         for target, minimum, maximum in targets:
-            target_instance, target_shape = single[target]
+            target_instance, target_shape = (module if target == "module" else
+                                             drawers[instance.get("bay", 1), target])
             gap = distance(instance, shape, target_instance, target_shape)
             checks.append({"instance": instance["id"], "target": target,
                            "minimum_gap_mm": gap, "expected_min_mm": minimum,
                            "expected_max_mm": maximum,
                            "passed": (minimum is None or gap > minimum)
                                      and (maximum is None or gap <= maximum)})
-    for kind in ("module", "box"):
-        instance, shape = single[kind]
-        facade_instance, facade_shape = single["facade"]
-        gap = distance(instance, shape, facade_instance, facade_shape)
-        checks.append({"instance": "facade", "target": kind,
-                       "minimum_gap_mm": gap, "expected_max_mm": DISTANCE_TOLERANCE_MM,
-                       "passed": gap <= DISTANCE_TOLERANCE_MM})
+    for bay in range(1, configuration.drawer_count + 1):
+        facade_instance, facade_shape = drawers[bay, "facade"]
+        for kind in ("module", "box"):
+            instance, shape = module if kind == "module" else drawers[bay, kind]
+            gap = distance(instance, shape, facade_instance, facade_shape)
+            checks.append({"instance": facade_instance["id"], "target": kind,
+                           "minimum_gap_mm": gap, "expected_max_mm": DISTANCE_TOLERANCE_MM,
+                           "passed": gap <= DISTANCE_TOLERANCE_MM})
     return checks
 
 

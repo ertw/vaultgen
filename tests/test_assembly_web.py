@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from vault.generator import Configuration
+from vault.generator import Configuration, ASSEMBLY_PARTS
 from vault.assembly_validation import validation_signature
 from vault.web import BuildFiles
 
@@ -21,7 +21,7 @@ class AssemblyCacheTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def build(self, kind, *, legacy=False, floor=.8):
+    def build(self, kind, *, legacy=False, floor=.8, family='S', columns=None, rows=None, height=1):
         self.serial += 1
         build_id = f'20261024T010000{self.serial:06d}Z-0123456789ab'
         directory = self.root / 'builds' / build_id
@@ -29,9 +29,14 @@ class AssemblyCacheTests(unittest.TestCase):
         part = {'module':'s4_module_1f','box':'s4_box_1f','facade':'s1f_facade',
                 'rails':'s_geared_rails','runner_guides':'x4_runner_guides',
                 'runner_slides':'x4_runner_slides'}[kind]
+        if kind == 'module':
+            layout = ('_2_columns' if columns == 2 else '') + ('_2_rows' if rows == 2 else '')
+            part = f'{family.lower()}4{layout}_module_{height}f'
         roles = {'rails':['plain','retained'],'runner_guides':['left','right'],
                  'runner_slides':['left','right']}.get(kind,['single'])
-        parameters = dict(family='S',depth_units=4,height_units=1,part=part)
+        parameters = dict(family=family,depth_units=4,height_units=height,part=part)
+        if columns is not None: parameters['drawer_columns'] = columns
+        if rows is not None: parameters['drawer_rows'] = rows
         if kind == 'box': parameters['box_floor'] = floor
         (directory / 'resolved-parameters.json').write_text(json.dumps(parameters))
         reports, checksums = {}, {}
@@ -51,7 +56,7 @@ class AssemblyCacheTests(unittest.TestCase):
 
     @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
     def test_complete_scene_pins_all_builds_and_requires_check_receipt(self, _):
-        ids = [self.build(kind) for kind in Configuration().parts]
+        ids = [self.build(kind) for kind in ASSEMBLY_PARTS]
         scene = self.files.assembly(Configuration())
         self.assertTrue(scene['complete'])
         self.assertEqual(len(scene['instances']),9)
@@ -81,3 +86,67 @@ class AssemblyCacheTests(unittest.TestCase):
         self.assertTrue(any('Rebuild' in i['reason'] for i in scene['missing'] if i['kind']=='module'))
         self.assertTrue(any('Not generated' in i['reason'] for i in scene['missing'] if i['kind']=='box'))
         self.assertTrue(any('uncommitted' in w for w in scene['warnings']))
+
+    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    def test_two_drawer_scene_reuses_s_parts_and_distinguishes_l_modules(self, _):
+        drawer_builds = {kind: self.build(kind) for kind in ASSEMBLY_PARTS if kind != 'module'}
+        single_module = self.build('module', family='L')
+        double_module = self.build('module', family='L', columns=2)
+        # Newer wide L drawer components must not replace the matching S parts.
+        for kind in ('box', 'facade', 'rails'):
+            self.build(kind, family='L')
+        configuration = Configuration(family='L', drawer_columns=2)
+        scene = self.files.assembly(configuration)
+        self.assertTrue(scene['complete'])
+        self.assertEqual(len(scene['instances']), 17)
+        self.assertEqual(next(item['build_id'] for item in scene['instances'] if item['kind'] == 'module'), double_module)
+        for kind, build_id in drawer_builds.items():
+            instances = [item for item in scene['instances'] if item['kind'] == kind]
+            self.assertEqual({item['build_id'] for item in instances}, {build_id})
+            self.assertGreaterEqual(len(instances), 2)
+        single = self.files.assembly(Configuration(family='L'))
+        self.assertEqual(next(item['build_id'] for item in single['instances'] if item['kind'] == 'module'), single_module)
+        self.assertEqual(self.files.describe(double_module)['configuration']['drawer_columns'], 2)
+        self.assertEqual(self.files.describe(single_module)['configuration']['drawer_columns'], 1)
+
+    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    def test_two_and_four_drawer_scenes_share_open_module_but_keep_matching_drawers(self, _):
+        drawers = {kind: self.build(kind) for kind in ASSEMBLY_PARTS if kind != 'module'}
+        shared_module = self.build('module', family='L', columns=2, height=2)
+        partitioned_module = self.build('module', family='L', columns=2, rows=2, height=2)
+        tall_drawers = {kind: self.build(kind, family='S', height=2) for kind in ('box', 'facade')}
+        four_configuration = Configuration(family='L', height_units=2, drawer_columns=2, drawer_rows=2)
+        scene = self.files.assembly(four_configuration)
+        self.assertTrue(scene['complete'])
+        self.assertEqual(len(scene['instances']), 33)
+        self.assertEqual(next(item['build_id'] for item in scene['instances'] if item['kind'] == 'module'), shared_module)
+        for kind, build_id in drawers.items():
+            instances = [item for item in scene['instances'] if item['kind'] == kind]
+            self.assertEqual({item['build_id'] for item in instances}, {build_id})
+            self.assertGreaterEqual(len(instances), 4)
+        double = self.files.assembly(Configuration(family='L', height_units=2, drawer_columns=2))
+        self.assertTrue(double['complete'])
+        self.assertEqual(len(double['instances']), 25)
+        self.assertEqual(next(item['build_id'] for item in double['instances'] if item['kind'] == 'module'), shared_module)
+        for kind, build_id in tall_drawers.items():
+            self.assertEqual({item['build_id'] for item in double['instances'] if item['kind'] == kind}, {build_id})
+        self.assertFalse(self.files.describe(shared_module)['legacy_partitioned_module'])
+        self.assertTrue(self.files.describe(partitioned_module)['legacy_partitioned_module'])
+        self.assertIn(partitioned_module, {item['id'] for item in self.files.history()})
+        receipt = self.root / 'web/assemblies/four.json'
+        receipt.parent.mkdir(parents=True)
+        receipt.write_text(json.dumps(dict(configuration=four_configuration.as_dict(),
+            validation_signature=validation_signature(four_configuration),
+            build_ids=list({item['build_id'] for item in scene['instances']}), validation={'passed': True})))
+        self.assertTrue(self.files.assembly(four_configuration)['validation']['passed'])
+        self.assertIsNone(self.files.assembly(Configuration(family='L', height_units=2, drawer_columns=2))['validation'])
+
+    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    def test_partitioned_history_is_not_used_as_the_shared_open_module(self, _):
+        old = self.build('module', family='L', columns=2, rows=2, height=2)
+        for rows in (1, 2):
+            scene = self.files.assembly(Configuration(family='L', height_units=2,
+                                                       drawer_columns=2, drawer_rows=rows))
+            self.assertFalse(scene['complete'])
+            self.assertFalse(any(item['kind'] == 'module' for item in scene['instances']))
+        self.assertTrue(self.files.artifact(old, 'preview/assembly/single.stl'))

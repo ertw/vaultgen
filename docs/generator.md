@@ -13,14 +13,14 @@ controls and the server validation. The original lower-level module constructor
 retains its broader research capabilities for compatibility.
 
 Choose an individual module, box, facade, geared rail pair, runner guides,
-runner slides, or a complete set. A facade depends on family and height, geared
+runner slides, key, spring, runner stop, facade cap, key cap, latch, or a complete set. A facade depends on family and height, geared
 rails depend only on family, and runner guides/slides depend only on depth.
 Changing S/M/L or 1F/2F does not alter the guides or slides for a given depth.
-The complete set includes printable files for all six groups, with separate
+The complete set includes printable files for all twelve groups, with separate
 STLs for components that need their own print orientation. Runner exports contain
 one left/right pair of guides and one left/right pair of slides. Use one pair of
 each per populated runner tier, reprinting the files for additional tiers.
-No pinion, lock, lid, sustainer, screw, or divider is generated.
+The key includes its drive pinion. No separate lock, lid, sustainer, screw, or divider is generated.
 
 ## Labels
 
@@ -82,12 +82,28 @@ Fit view centers the visible components; endpoint buttons fit their pose, while
 dragging the explosion slider preserves the camera.
 Missing groups and legacy builds that need new assembly assets are listed explicitly. Recent builds can still be inspected independently.
 
+Choose **Two S drawers** with family L for an L² module. Both drawers have the
+selected depth and height: L6² 2F contains two S6 2F drawers side by side.
+The module keeps the 329.6 mm L width. Boxes, facades and geared rails resolve
+to the matching S parts. With an L 2F module, **Four S drawers** selects a
+2 × 2 arrangement of S1F drawers. Both layouts use the same open L² 2F module
+and shadow-gap pattern for four S1F facades, sharing its build and STL/STEP downloads
+for the same depth and rear thickness. The layout changes drawer parts,
+quantities and placement. Module-only previews and downloads therefore stay
+the same when switching between two and four drawers. Other families offer
+one drawer. Each complete-set ZIP
+includes `PRINTING.txt` and `print-plan.json`, identifying the immutable build
+and number of copies of each printable file; repeated parts share the same STL.
+
 Assembly previews use explicit native-coordinate transforms from
-`src/vault/assembly.py`. The scene has 9 instances for 1F and 13 for 2F, with one
-left/right runner pair on each tier. The drawer group moves forward as a unit
+`src/vault/assembly.py`. A single-drawer scene has 9 instances for 1F and 13 for
+2F; L² has 17 and 25 respectively, with a left/right runner pair on each tier
+of each bay. Four S1F drawers have 33 instances. The drawer group moves forward as a unit
 while the explosion separates its facade, rails and slides. Exploded positions
-illustrate the parts; they do not certify a disassembly path. Lock/pinion, screws
-and separate runner stoppers are omitted and identified in the scene.
+illustrate the parts; they do not certify a disassembly path. Key, spring, latch, runner stops, caps and screws are omitted and identified in the scene.
+The six accessory groups are included in complete-set downloads but are not
+positioned in the drawer preview or covered by its assembly fit receipt.
+Accessory build IDs are recorded separately from the checked drawer build IDs.
 
 New builds include finished assembly STL and STEP assets under `preview/assembly/`.
 These omit module support webs and box runner sheets. Printable exports retain
@@ -110,7 +126,9 @@ Assembly audits can also be run independently:
 ```bash
 python tools/check_assembly.py --definitions-only
 python tools/check_assembly.py --case S4:1 --case L7:2:3:2
-python tools/check_assembly.py --all  # all 120 native assemblies; expensive
+python tools/check_assembly.py --case L6x2:2 --case L3x2:1:3:2
+python tools/check_assembly.py --case L6x2x2:2
+python tools/check_assembly.py --all  # all 180 native assemblies; expensive
 ```
 
 Recorded evidence in [`research/assembly_fit.json`](../research/assembly_fit.json)
@@ -119,6 +137,23 @@ S4 check of imported finished STEP exports: 264 component-pair checks and 72
 mating checks passed with zero intersection volume. This sample is not an
 exhaustive native audit of all 120 configurations; complete-set generation checks
 the exact configuration and cached component builds requested.
+
+[`research/unified_module_assembly.json`](../research/unified_module_assembly.json)
+records the two-drawer L6² 2F audit from current native construction and the
+four-drawer audit from exact checksummed finished STEP exports, with component
+build IDs recorded. Both use the shared open module, default 0.8 mm box floor
+and 0.9 mm module rear. These are representative
+configurations; every generated complete set checks its exact finished STEP
+files before receiving a passing receipt. Two- and four-drawer sets retain
+separate fit receipts even when they share the module build. The four-drawer
+scene has 33 placed solids, 528 component pairs and 48 mating checks.
+
+Earlier reports remain in
+[`research/multi_drawer_assembly.json`](../research/multi_drawer_assembly.json)
+and [`research/four_drawer_assembly.json`](../research/four_drawer_assembly.json),
+tied to their original construction hashes. Use the commands above to audit
+the current checkout. These audits exclude catch/latch operation, accessory
+installation and loaded or printed behavior.
 
 Repository status refreshes every 15 seconds. Text, a symbol and green/amber
 color distinguish a clean repository from uncommitted changes or unavailable
@@ -164,3 +199,29 @@ python -m vault.web --port 3941
 Runtime data lives under `out/web/`; successful artifacts remain under
 `out/builds/`. Both are ignored by Git. Deployment is documented in
 [`deploy/README.md`](../deploy/README.md).
+
+## Universal accessories
+
+Key, spring, latch, runner stop, facade cap and key cap fit all offered size selections;
+changing family, depth or height does not change their cache identity. The key
+uses the existing two-piece snap-fit gear and handle. Print one of each. Print
+one spring, two runner stops per populated tier, a cap for each facade screw
+counterbore, and one key cap if desired. Each choice exports checked STL and
+STEP through immutable build storage. Complete sets contain twelve build groups
+and sixteen STL files; quantities reuse the same files.
+
+The latch retreats its entire planar outline by 0.10 mm and reduces its
+4.5 mm thickness by 0.15 mm, easing the fit without scaling attachment spacing.
+Its flexible arms, snap hooks and double countersunk finger opening remain.
+Print it flat and test insertion, retention and restoring force before making
+more. The spring now uses nominal dimensions with no added fit relief: the
+clearance request applies to the latch. Earlier spring builds remain immutable.
+Caps print closed-face down; runner stops print flange down.
+
+The universal accessories appear below the main size-dependent parts under
+**Common components**, separated by a light rule.
+
+The accessories regularize small source blends. Cap seated-pose collision checks
+and sampled source comparisons are recorded in `research/accessories.json`;
+run `python tools/check_accessories.py` to reproduce them. These diagnostics do
+not certify spring, latch or stop installation, insertion motion, retention, or printed fit.

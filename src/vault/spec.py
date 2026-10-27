@@ -36,12 +36,18 @@ class ModuleSpec:
     Supplied references cover depths 3–7 and heights 1, 2, 4 (XL: 1 only).
     Other positive tier counts and deeper boxes are generated extensions,
     not claims of agreement with an unavailable purchased reference.
+    ``drawer_columns=2`` selects L²: two S drawers side by side inside the
+    standard L envelope. By default each drawer occupies the full module
+    height. Add ``drawer_rows=2`` for four S1F drawers in the same L 2F
+    module. Rows select drawer contents and placements, not housing geometry.
     """
 
     family: str = "S"
     depth_units: int = 4
     height_units: int = 1
     module_rear: float = 0.9
+    drawer_columns: int = 1
+    drawer_rows: int = 1
 
     def __post_init__(self):
         if type(self.module_rear) not in (int, float) or self.module_rear not in (0.9, 2.0):
@@ -52,6 +58,14 @@ class ModuleSpec:
             raise ValueError("depth_units must be an integer of at least 3 so the connectors fit")
         if type(self.height_units) is not int or self.height_units < 1:
             raise ValueError("height_units must be a positive integer")
+        if type(self.drawer_columns) is not int or self.drawer_columns not in (1, 2):
+            raise ValueError('drawer_columns must be 1 or 2')
+        if self.drawer_columns == 2 and self.family != 'L':
+            raise ValueError('Two drawer columns require family L (L², two S drawers)')
+        if type(self.drawer_rows) is not int or self.drawer_rows not in (1, 2):
+            raise ValueError('drawer_rows must be 1 or 2')
+        if self.drawer_rows == 2 and (self.family != 'L' or self.height_units != 2 or self.drawer_columns != 2):
+            raise ValueError('Two drawer rows require an L 2F module with two columns')
 
     @property
     def layout(self) -> FamilyLayout:
@@ -83,12 +97,33 @@ class ModuleSpec:
         return tuple(TIER_PITCH * index for index in range(self.height_units))
 
     @property
+    def drawer_family(self) -> str:
+        """Family of each drawer; L² houses two S drawers in an L envelope."""
+        return 'S' if self.drawer_columns == 2 else self.family
+
+    @property
+    def drawer_centers(self) -> tuple[float, ...]:
+        return (-82.4, 82.4) if self.drawer_columns == 2 else (0.0,)
+
+    @property
+    def drawer_height_units(self) -> int:
+        return self.height_units // self.drawer_rows
+
+    @property
+    def drawer_origins(self) -> tuple[tuple[float, float], ...]:
+        """(X, Z) origins of the drawers within the module's native frame."""
+        return tuple((x, row * self.drawer_height_units * TIER_PITCH)
+                     for row in range(self.drawer_rows) for x in self.drawer_centers)
+
+    @property
     def name(self) -> str:
-        return f"{self.family}{self.depth_units} Module {self.height_units}F" + (" · 2 mm rear" if self.module_rear == 2 else "")
+        columns = '²' if self.drawer_columns == 2 else ''
+        return f"{self.family}{self.depth_units}{columns} Module {self.height_units}F" + (" · 2 mm rear" if self.module_rear == 2 else "")
 
     @property
     def slug(self) -> str:
-        return f"{self.family.lower()}{self.depth_units}_module_{self.height_units}f" + ("_rear_2mm" if self.module_rear == 2 else "")
+        columns = '_2_columns' if self.drawer_columns == 2 else ''
+        return f"{self.family.lower()}{self.depth_units}{columns}_module_{self.height_units}f" + ("_rear_2mm" if self.module_rear == 2 else "")
 
 
 DEFAULT_SPEC = ModuleSpec()

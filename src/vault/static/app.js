@@ -12,6 +12,7 @@ const state = {
 };
 const names = {
   set: 'Complete set', module: 'Module', box: 'Box', facade: 'Facade',
+  key: 'Key', spring: 'Spring', runner_stop: 'Runner stop', facade_cap: 'Facade cap', key_cap: 'Key cap', latch: 'Latch',
   rails: 'Geared rails', runner_guides: 'Runner guides', runner_slides: 'Runner slides',
 };
 const partDescriptions = {
@@ -20,11 +21,21 @@ const partDescriptions = {
   box: 'The drawer tray, sized to fit the selected module.',
   facade: 'The drawer front follows family and height; depth does not change it.',
   rails: 'The geared locking rails follow family; depth and height do not change them.',
+  key: 'Universal two-piece snap-fit key. Print one gear and one handle.',
+  spring: 'Universal spring at nominal dimensions.',
+  latch: 'Universal underside latch with 0.10 mm outline relief and 0.15 mm less thickness for an easier fit.',
+  runner_stop: 'Universal runner stop. Print two per populated runner tier.',
+  facade_cap: 'Universal facade screw cap. Repeat for each screw counterbore.',
+  key_cap: 'Universal cap for the key handle.',
   runner_guides: 'Guides follow depth; the same guides fit S, M and L at either height.',
   runner_slides: 'Slides follow depth; the same slides fit S, M and L at either height.',
 };
 const isActive = job => job && ['queued', 'running'].includes(job.status);
-const configurationName = config => `${config.family || 'S'}${config.depth_units || ''} · ${config.height_units || 1}F`;
+const configurationName = config => `${config.family || 'S'}${config.depth_units || ''}${config.drawer_columns === 2 ? '²' : ''} · ${config.height_units || 1}F${config.drawer_rows === 2 ? ' · 4 drawers' : ''}`;
+const drawerFamily = config => config.drawer_columns === 2 ? 'S' : config.family;
+const drawerHeight = config => config.height_units / (config.drawer_rows || 1);
+const drawerCount = config => (config.drawer_columns || 1) * (config.drawer_rows || 1);
+const layoutCount = layout => layout.columns * (layout.rows || 1);
 const svgIcon = name => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.classList.add('icon');
   const use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); use.setAttribute('href', `#i-${name}`); svg.append(use); return svg;
@@ -63,7 +74,15 @@ function optionButton(value, key, label, className) {
   button.setAttribute('aria-label', label); button.setAttribute('aria-pressed', 'false');
   button.addEventListener('click', () => {
     state.navigationVersion++; state.browsingSelection = true;
-    state.selection[key] = value; renderSelection(); showSelection();
+    if (key === 'drawer_layout') {
+      const layout = state.config.drawer_layouts.find(item => layoutCount(item) === value);
+      state.selection.drawer_columns = layout.columns; state.selection.drawer_rows = layout.rows || 1;
+    } else state.selection[key] = value;
+    if (key === 'family' && value !== 'L') {
+      state.selection.drawer_columns = 1; state.selection.drawer_rows = 1;
+    }
+    if (key === 'height_units' && value === 1) state.selection.drawer_rows = 1;
+    renderSelection(); showSelection();
   });
   return button;
 }
@@ -72,6 +91,11 @@ function createControls(config) {
     const button = optionButton(family.id, 'family', `${family.id}, ${family.width_mm} millimeters wide`, 'option');
     button.append(element('span', 'family-letter', family.id), element('span', 'family-width', `${family.width_mm} mm`));
     $('family-options').append(button);
+  }
+  for (const layout of config.drawer_layouts) {
+    const count = layoutCount(layout), label = {1: 'One drawer', 2: 'Two S drawers', 4: 'Four S drawers'}[count];
+    const button = optionButton(count, 'drawer_layout', label, '');
+    button.textContent = label; $('drawer-layout-options').append(button);
   }
   for (const [values, key, target] of [[config.depths, 'depth_units', 'depth-options'], [config.heights, 'height_units', 'height-options']]) {
     for (const value of values) {
@@ -85,7 +109,13 @@ function createControls(config) {
       const button = optionButton(value, key, label, ''); button.textContent = label; $(target).append(button);
     }
   }
+  let commonStarted = false;
   for (const part of config.parts) {
+    if (part.common && !commonStarted) {
+      const heading = element('div', 'common-components-heading', 'Common components');
+      $('part-options').append(heading);
+      commonStarted = true;
+    }
     const button = optionButton(part.id, 'part', part.name, 'part-option');
     button.append(element('span', 'radio-dot'), element('span', '', names[part.id] || part.name));
     if (part.id === 'set') button.append(element('span', 'part-option-note', 'All matching parts'));
@@ -120,6 +150,9 @@ function renderEnvelope(dimensions) {
   const insetX = Math.min(10, width * .06), insetZ = Math.min(5, height * .15);
   polygon([[insetX, 0, insetZ], [width-insetX, 0, insetZ], [width-insetX, 0, height-insetZ], [insetX, 0, height-insetZ]], '#24323e');
   polygon([[insetX+3, 0, insetZ+3], [width-insetX-3, 0, insetZ+3], [width-insetX-3, 0, height-insetZ-3], [insetX+3, 0, height-insetZ-3]], '#304352', '#7591a7');
+  if (state.selection.drawer_columns === 2) {
+    polygon([[width/2-4, 0, insetZ], [width/2+4, 0, insetZ], [width/2+4, 0, height-insetZ], [width/2-4, 0, height-insetZ]], '#485e70');
+  }
   const line = (a, b) => {
     const p = point(...a), q = point(...b), node = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     node.setAttribute('d', `M${p} L${q}`); node.setAttribute('stroke', '#7e95a8'); node.setAttribute('stroke-width', '1'); node.setAttribute('stroke-dasharray', '3 4'); drawing.append(node);
@@ -137,17 +170,49 @@ function renderSelection() {
     for (const button of $(target).querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.value === String(state.selection[key])));
   }
   const dimensions = envelopeDimensions(), config = state.selection;
+  for (const button of $('drawer-layout-options').querySelectorAll('button')) {
+    const layout = state.config.drawer_layouts.find(item => layoutCount(item) === Number(button.dataset.value));
+    button.disabled = !layout.families.includes(config.family) || (layout.heights && !layout.heights.includes(config.height_units));
+    button.setAttribute('aria-pressed', String(layoutCount(layout) === drawerCount(config)));
+  }
+  $('drawer-layout-hint').textContent = config.drawer_rows === 2
+    ? 'Four S1F drawers: two across and two high in the shared open L2F module. Print each matching drawer four times.'
+    : config.drawer_columns === 2
+      ? `Two S${config.height_units}F drawers side by side.${config.height_units === 2 ? ' The same open module also fits four S1F drawers.' : ' Choose 2F for four drawers.'} Print each matching drawer twice.`
+      : `One ${config.family} drawer. Choose L for two S drawers, or L2F for four.`;
   $('depth-hint').textContent = `${dimensions[1].toFixed(1)} mm deep`;
   $('height-hint').textContent = `${dimensions[2]} mm body height`;
   $('configuration-name').textContent = configurationName(config);
   $('configuration-dimensions').textContent = `${dimensions[0]} × ${dimensions[1].toFixed(1)} × ${dimensions[2]} mm body`;
-  $('part-hint').textContent = partDescriptions[config.part] || '';
+  $('part-hint').textContent = partDescription(config);
   if (!state.selectedArtifact && !state.assemblyShowing) {
     $('preview-title').textContent = configurationName(config);
     renderEnvelope(dimensions); setMetrics(dimensions);
   }
   $('build-button').disabled = state.submitting || isActive(state.job);
   $('build-button-text').textContent = state.submitting ? 'Starting build…' : isActive(state.job) ? 'Build in progress…' : config.part === 'set' ? 'Generate complete set' : `Generate ${names[config.part].toLowerCase()}`;
+}
+
+function partDescription(config) {
+  if (config.drawer_columns !== 2) return partDescriptions[config.part] || '';
+  const count = drawerCount(config), copies = count === 4 ? 'four' : 'two';
+  const size = config.drawer_rows === 2 ? 'S1F' : 'S', pairs = count * drawerHeight(config);
+  const quantity = {
+    set: `One L² module, ${copies} ${size} boxes, ${copies} ${size} facades and ${copies} S geared rail pairs. Print ${pairs} pairs each of runner guides and slides, plus matching common components.`,
+    module: config.height_units === 2 ? 'One L2F module with two open bays and shadow gaps for four drawer fronts. Fits two S2F drawers or four S1F drawers.' : 'One L module with two side-by-side S drawer bays.',
+    box: `Matching ${size} drawer tray. Print ${copies} for the selected L² module.`,
+    facade: `Matching ${size} drawer front. Print ${copies} for the selected L² module.`,
+    rails: `Matching S geared rail pair. Print ${copies} pairs for the selected L² module.`,
+    runner_guides: `Guides follow depth. Print ${pairs} pairs: one per tier in each drawer bay.`,
+    runner_slides: `Slides follow depth. Print ${pairs} pairs: one per tier in each drawer bay.`,
+    key: `Universal two-piece snap-fit key. Print ${copies} gears and ${copies} handles, one set per drawer.`,
+    spring: `Universal spring at nominal dimensions. Print ${copies}, one per drawer.`,
+    latch: `Universal underside latch with 0.10 mm outline relief and 0.15 mm less thickness. Print ${copies}, one per drawer.`,
+    runner_stop: `Universal runner stop. Print ${2 * pairs}, two per populated tier in each drawer bay.`,
+    facade_cap: `Universal facade screw cap. Print ${2 * pairs}, one per S facade screw counterbore.`,
+    key_cap: `Universal cap for the key handle. Print ${copies} if desired, one per drawer.`,
+  };
+  return quantity[config.part] || partDescriptions[config.part] || '';
 }
 
 async function selectArtifact(index, userAction = false) {
@@ -219,10 +284,11 @@ function renderFreshness(build = null) {
 }
 
 function matches(build, kind) {
-  if (build.kind !== kind) return false;
+  if (build.kind !== kind || (kind === 'module' && build.legacy_partitioned_module)) return false;
   const c = build.configuration, s = state.selection;
-  const keys = {module: ['family','depth_units','height_units','module_rear'], box: ['family','depth_units','height_units','box_floor'], facade: ['family','height_units'], rails: ['family'], runner_guides: ['depth_units'], runner_slides: ['depth_units']}[kind];
-  return keys.every(key => (c[key] ?? state.config.defaults[key]) === s[key]);
+  const keys = {module: ['family','depth_units','height_units','module_rear','drawer_columns'], box: ['family','depth_units','height_units','box_floor'], facade: ['family','height_units'], rails: ['family'], runner_guides: ['depth_units'], runner_slides: ['depth_units'], key: [], spring: [], runner_stop: [], facade_cap: [], key_cap: [], latch: []}[kind];
+  const selected = kind === 'module' ? s : {...s, family: drawerFamily(s), height_units: drawerHeight(s)};
+  return keys.every(key => (c[key] ?? state.config.defaults[key]) === selected[key]);
 }
 
 function leaveAssembly() {
@@ -293,7 +359,7 @@ function renderAssemblyDetails(scene) {
   selectInstance(state.selectedInstance);
 }
 async function showAssembly(preservePreview = false) {
-  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'module_rear'].map(key => [key, state.selection[key]])));
+  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'module_rear', 'drawer_columns', 'drawer_rows'].map(key => [key, state.selection[key]])));
   const key = query.toString(), newSelection = !state.assemblyShowing || state.assemblyKey !== key;
   if (preservePreview && !newSelection && state.assemblyPending) return;
   state.assemblyController?.abort();
@@ -316,7 +382,7 @@ async function showAssembly(preservePreview = false) {
   const builds = Object.keys(names).filter(kind => kind !== 'set').map(kind => state.builds.find(build => matches(build, kind))).filter(Boolean);
   showArtifacts(builds, null, false, false);
   $('artifact-description').textContent = 'Printable downloads · select a part below to inspect its print orientation.';
-  $('print-note').textContent = 'Assembly previews use finished parts. Print downloads retain required sacrificial supports.';
+  $('print-note').textContent = 'Assembly previews use finished drawer parts. Key, spring, latch, runner stops and caps are separate downloads; their installation is not checked. Print downloads retain required sacrificial supports.';
   downloadLink($('stl-download'), null); downloadLink($('step-download'), null);
   renderFreshness();
   try {

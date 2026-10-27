@@ -10,6 +10,7 @@ parser.add_argument('--base-url', default='http://127.0.0.1:3941')
 parser.add_argument('--chromium', default=shutil.which('chromium'))
 parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[1] / 'out' / 'web-review')
 parser.add_argument('--require-runners', action='store_true', help='Require saved guides and slides, then preview and download every runner component.')
+parser.add_argument('--require-accessories', action='store_true', help='Preview and download all six universal accessories.')
 args = parser.parse_args()
 if not args.chromium:
     parser.error('Chromium is required; enter the cad-tooling Nix environment or pass --chromium.')
@@ -26,10 +27,13 @@ with sync_playwright() as p:
     page.goto(args.base_url.rstrip('/')+'/')
     expect(page.get_by_role('link',name='Labels',exact=True)).to_have_attribute('href','/labels')
     expect(page.locator('#family-options button')).to_have_count(3)
+    expect(page.locator('#drawer-layout-options button')).to_have_count(3)
+    expect(page.locator('#drawer-layout-options button[data-value="2"]')).to_be_disabled()
+    expect(page.locator('#drawer-layout-options button[data-value="4"]')).to_be_disabled()
     assert page.locator('#family-options button').count()==3
     assert page.locator('#depth-options button').count()==5
     assert page.locator('#height-options button').count()==2
-    expect(page.locator('#part-options button')).to_have_count(7)
+    expect(page.locator('#part-options button')).to_have_count(13)
     for part, name in [('runner_guides', 'runner guides'), ('runner_slides', 'runner slides')]:
         page.locator(f'#part-options button[data-value="{part}"]').click()
         expect(page.locator('#build-button-text')).to_have_text(f'Generate {name}')
@@ -42,6 +46,18 @@ with sync_playwright() as p:
     page.locator('#height-options button').nth(1).click()
     assert page.locator('#configuration-name').inner_text()=='L4 · 2F'
     expect(page.locator('#preview-title')).to_have_text('L4 · 2F complete set',timeout=60000)
+    page.locator('#drawer-layout-options button[data-value="2"]').click()
+    expect(page.locator('#configuration-name')).to_have_text('L4² · 2F')
+    expect(page.locator('#preview-title')).to_have_text('L4² · 2F complete set',timeout=60000)
+    expect(page.locator('#part-hint')).to_contain_text('two S boxes')
+    page.screenshot(path=str(out/'desktop-multi-drawer.png'),full_page=True)
+    page.locator('#drawer-layout-options button[data-value="4"]').click()
+    expect(page.locator('#configuration-name')).to_have_text('L4² · 2F · 4 drawers')
+    expect(page.locator('#preview-title')).to_have_text('L4² · 2F · 4 drawers complete set',timeout=60000)
+    expect(page.locator('#part-hint')).to_contain_text('four S1F boxes')
+    page.screenshot(path=str(out/'desktop-four-drawer.png'),full_page=True)
+    page.locator('#drawer-layout-options button[data-value="1"]').click()
+    expect(page.locator('#configuration-name')).to_have_text('L4 · 2F')
     if page.locator('.history-card').count():
         page.locator('.history-card').first.click()
         expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true',timeout=60000)
@@ -59,12 +75,16 @@ with sync_playwright() as p:
         page.locator('.history-card').first.click()
         expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true',timeout=60000)
         expect(page.locator('#preview-title')).to_have_text(saved)
-    if args.require_runners:
+    if args.require_runners or args.require_accessories:
         builds=[build for build in page.request.get(args.base_url.rstrip('/')+'/api/builds').json()['builds'] if build['kind']!='label']
-        for kind in ('runner_guides','runner_slides'):
+        kinds = (('runner_guides','runner_slides') if args.require_runners else ()) + (('key','spring','runner_stop','facade_cap','key_cap', 'latch') if args.require_accessories else ())
+        for kind in kinds:
             build=next((b for b in builds[:12] if b['kind']==kind),None)
             assert build, f'Generate {kind} before running --require-runners.'
-            page.locator('.history-card').filter(has_text=build['name']).first.click()
+            if kind in ('key','spring','runner_stop','facade_cap','key_cap', 'latch'):
+                page.locator(f'#part-options button[data-value="{kind}"]').click()
+            else:
+                page.locator('.history-card').filter(has_text=build['name']).first.click()
             expect(page.locator('#artifact-tabs button')).to_have_count(len(build['parts']))
             for index,part in enumerate(build['parts']):
                 page.locator('#artifact-tabs button').nth(index).click()

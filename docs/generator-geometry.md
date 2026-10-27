@@ -30,6 +30,88 @@ geometry and the existing facade `gap` argument remains positional.
 | M outer screws | X = ±92.45 mm |
 | L outer screws | X = ±130.25 mm |
 
+## Multi-drawer modules
+
+`ModuleSpec('L', 6, 2, drawer_columns=2)` builds **L6² Module 2F**: a single
+L-width module with two continuous S-width cavities. It accepts two S6 2F
+drawers or four S6 1F drawers. Bay centers are X = −82.4 and +82.4 mm.
+Each bay has the S cavity and unchanged runner and locking profiles.
+The vertical divider is constructed from native features in one L envelope;
+it does not contain the outer ears, hooks or stacking rails of two independent
+S modules. The two stacking connector banks retain their existing L positions.
+
+The center divider has rear access passages for its runner stops on every
+48 mm tier. Handed mouth recesses and removable webs repeat independently in
+each bay. Printable exports retain all support webs; finished assembly assets
+omit them. Only the outside of the module has stacking connectors and rear
+stacking-entry reliefs.
+
+Adding `drawer_rows=2` selects **four S1F drawers** in that same open module.
+The lower drawer origins are (X,Z) = (−82.4,0) and (+82.4,0); the upper row
+uses Z = 48 mm. The cavities remain continuous from Z = 3 to 92 mm, matching
+the open layout measured in the purchased L² 2F reference. The existing
+floor/ceiling recesses stay at the outside skins. Four S1F facades retain the
+nominal 1 mm gap between rows.
+
+Every L² 2F module uses the **shadow-gap pattern for four S1F facades**,
+independently of the selected drawer contents. Four S1F perimeter rebate cutters are placed at
+the drawer origins above; they remove the existing 0.5 mm deep, 1 mm wide strips
+where they meet the module's front rim. The same pattern remains when two tall
+S2F facades are fitted. The open middle of each bay has no horizontal seating
+land or added retention recess. Facades still meet the front seating datum on
+the surrounding lands. This shared rebate is an intentional change from the
+purchased reference.
+
+The module's name, resolved build parameters and download identity depend on
+its envelope, columns and rear thickness. Drawer rows affect the installed
+parts and their quantities, not the module geometry. At depth 6, both 2F
+layouts resolve to `l6_2_columns_module_2f` and share its STL/STEP files and
+reusable build. Existing immutable exports retain their original geometry and
+provenance; a changed module is regenerated through the normal export pipeline.
+
+The generator's `drawer_columns` field defaults to 1 and accepts 2 only with
+family L. Existing saved configurations without this field remain single
+drawers. `select_spec` resolves the module to L² and the box, facade and geared
+rails to S; shared runners still depend only on depth. The assembly definition
+duplicates the S drawer instances at the recorded bay centers, and fit receipts
+include the selected layout and the exact component builds, so the two layouts
+keep separate assembly receipts while sharing the module. ZIP files reuse
+the unique STL/STEP files and record the required quantities. In the independent
+Labels editor, choose S labels for these S facades.
+
+`drawer_rows` defaults to 1. The value 2 is accepted only with family L,
+height 2F and two columns. Boxes and facades then resolve to S1F; the module
+stays 2F. The print plan calls for four copies of each box, facade and geared
+rail, and four left/right runner pairs in total. The assembly preview has 33
+instances, each with its own drawer identity and explicit (X,Z) placement.
+
+The supplied L² module references cover depths 3–7 and 1F/2F/4F. The web
+generator remains limited to 1F/2F; 4F is available only through the lower-level
+module API/CLI and has no generated matching drawer set. XL² references are
+outside this implementation. The separate CAD viewer's fixed catalog is
+unchanged; L² builds are available through the configurator and CLI.
+
+`python tools/check_multi_drawer.py` records reference registration, divider
+datums and sampled interface comparisons. The shared L6² 2F module is checked
+in [`research/unified_module_reference.json`](../research/unified_module_reference.json);
+the earlier L3² 1F and L6² 2F evidence remains in `research/multi_drawer.json`.
+The checker samples four transverse sections in both directions against a
+0.1 mm limit. It covers runner/mouth profiles and the central access passage;
+it excludes the intentionally changed rear wall and mounting bores, outside
+styling, branding, stacking connectors and shadow rebate.
+`python tools/check_assembly.py --case L6x2:2` checks the complete
+native two-drawer assembly; `--case L6x2x2:2` checks four drawers.
+[`research/unified_module_assembly.json`](../research/unified_module_assembly.json)
+records the two-drawer audit from current native construction and the four-drawer
+audit from exact checksummed finished STEP exports, identifying their component
+builds; both use the shared module and default thicknesses.
+These checks do not establish insertion motion, runner-stop installation,
+catch/latch operation, loaded behavior or printed fit. Accessory retention
+when four drawers share the open bays remains unvalidated. The historical
+S4 `validate` command does not apply to L².
+
+## Shared drawer features
+
 S repeats its screw pair at every tier. M/L keep the inner pair at the
 bottom lock and repeat their outer pair at each tier. The box and facade
 use the same list of axes. Screw holes remain 3.6 mm in the box and 4.4 mm
@@ -152,5 +234,24 @@ it 0.1 mm clears that contact. These are geometric checks, not printer fit tests
 Runner and geared-rail sets share `exports.export_part_set`, which checks each
 solid, each print/model STEP round-trip, watertight STL, and the combined STEP's
 part count and names. Identical parts receive independent STEP shapes so both
-left/right component names survive export. A complete generator set has six
-build groups and nine STL files; repeated tier quantities reuse those files.
+left/right component names survive export. A complete generator set has twelve
+build groups and sixteen STL files; repeated tier quantities reuse those files.
+
+## Universal accessories
+
+`accessories.py` constructs the spring, runner stop, facade cap and key cap from
+native arcs, extrusions, lofts and fillets. `key.py` / `key_build.py` supply the
+existing snap-fit key. CLI selectors are `key`, `spring`, `runner_stop`,
+`facade_cap`, `key_cap`, and `latch`; these have no family/depth/height dependencies.
+`latch.py` uses native symmetric curves for the underside latch.
+`LatchDimensions` records explicit outline and thickness relief (0.10 and
+0.15 mm). Setting both to zero provides the nominal comparison.
+`SpringDimensions` now defaults to zero relief; the spring is nominal.
+Reference meshes are used only by the diagnostic tool, never by construction.
+
+Accessory native frames are print frames, not installed drawer poses. They are
+excluded from drawer assembly validation and explicitly listed as omissions in
+the scene. Complete-set receipts separately record their immutable build IDs.
+The cap interface diagnostic checks a facade screw cap at (51.45, 10, 23.5)
+after a +90° X rotation, and a key cap at Z=35.517 after a 180° X rotation.
+These are geometric seated-pose checks, not insertion or snap retention tests.

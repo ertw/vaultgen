@@ -11,7 +11,7 @@ from build123d import Axis, Shape
 
 from .connectors import ConnectorParameters, add_connectors
 from .shell import DEFAULT_DIMENSIONS, ShellDimensions, build_shell
-from .spec import ModuleSpec, DEFAULT_SPEC
+from .spec import ModuleSpec, DEFAULT_SPEC, TIER_PITCH
 from .shadow_gap import DEFAULT_GAP, ShadowGap, perimeter_rebate
 
 
@@ -45,7 +45,19 @@ def build_module(
     shell = build_shell(spec=spec, dimensions=shell_dimensions)
     part = add_connectors(shell, spec=spec, parameters=connector_parameters, progress=progress)
     if shadow_gap is not None:
-        part = perimeter_rebate(part, spec.depth, -1, spec, shadow_gap)
+        if spec.drawer_columns == 1:
+            part = perimeter_rebate(part, spec.depth, -1, spec, shadow_gap)
+        else:
+            # L² 2F uses the four-S1F perimeter pattern for both drawer layouts.
+            # Only existing wall material is recessed; the middle stays open.
+            gap_height = 1 if spec.height_units == 2 else spec.height_units
+            bay = ModuleSpec(spec.drawer_family, spec.depth_units, gap_height,
+                             spec.module_rear)
+            for row in range(spec.height_units // gap_height):
+                row_z = row * gap_height * TIER_PITCH
+                for center in spec.drawer_centers:
+                    part = perimeter_rebate(part.translate((-center, 0, -row_z)),
+                                            spec.depth, -1, bay, shadow_gap).translate((center, 0, row_z))
     part.label = f'{spec.name} — unbranded'
     if not part.is_valid:
         raise ValueError('Reconstructed module is not a valid CAD shape')

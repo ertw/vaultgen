@@ -43,6 +43,8 @@ class ShellDimensions:
     stopper_length: float = 16.7
     stopper_height: float = 6.32
     stopper_chamfer: float = 0.96
+    divider_access_width: float = 4.4
+    divider_access_entry_radius: float = 3.0
     rear_notch_center_x: float = 15.13
     rear_notch_width: float = 3.5
     rear_notch_depth: float = 5.97
@@ -385,7 +387,7 @@ def _mouth_supports(spec, dimensions, tier_z):
     return [_place_mouth_feature(support, upper, tier_z) for upper in (False, True)]
 
 
-def _tier_cutters(spec, dimensions, tier_z):
+def _tier_cutters(spec, dimensions, tier_z, *, stopper_chamfer_sides=(-1, 1)):
     """Repeat the same runner, bore and stopped-slot sections at every tier."""
     cutters = []
     inner = spec.half_width - dimensions.channel_inner_inset
@@ -421,35 +423,79 @@ def _tier_cutters(spec, dimensions, tier_z):
                                                Plane(origin=(bore_x, start, tier_z+z), z_dir=(0, 1, 0))))
         slot = Face(_slot_wire(side * (outer-.01), center_y, center_z, dimensions))
         cutters.append(Solid.extrude(slot, (side * (dimensions.channel_outer_inset+.1), 0, 0)))
-        cutters.append(Solid.make_loft([
-            _slot_wire(side * (spec.half_width-dimensions.stopper_chamfer), center_y, center_z, dimensions),
-            _slot_wire(side * (spec.half_width+.01), center_y, center_z, dimensions,
-                       dimensions.stopper_chamfer+.01),
-        ], ruled=True))
+        if side in stopper_chamfer_sides:
+            cutters.append(Solid.make_loft([
+                _slot_wire(side * (spec.half_width-dimensions.stopper_chamfer), center_y, center_z, dimensions),
+                _slot_wire(side * (spec.half_width+.01), center_y, center_z, dimensions,
+                           dimensions.stopper_chamfer+.01),
+            ], ruled=True))
     cutters.extend(_mouth_pockets(spec, dimensions, tier_z))
     return cutters
+
+
+def _divider_access(spec, dimensions, tier_z):
+    """Rear-fed center stop passage with a circular entry flare.
+
+    The constant-width tunnel meets the opposing lateral capsule slots. Those
+    slots provide its rounded closed end; exterior slot chamfers are omitted
+    inside the shared divider. The passage deliberately opens through the back.
+    """
+    width, radius = dimensions.divider_access_width, dimensions.divider_access_entry_radius
+    if not 0 < width < 2 * dimensions.channel_outer_inset or not 0 < radius < 10:
+        raise ValueError('Divider access must retain side walls and a compact positive entry radius')
+    center = tier_z + dimensions.stopper_center_z
+    floor, ceiling = center - dimensions.stopper_height / 2, center + dimensions.stopper_height / 2
+    end = spec.depth / 2 + dimensions.stopper_center_offset
+    point = lambda y, z: (-width / 2, y, z)
+    diagonal = radius / sqrt(2)
+    profile = Face(Wire([
+        Edge.make_three_point_arc(point(0, floor-radius),
+                                  point(radius-diagonal, floor-radius+diagonal), point(radius, floor)),
+        Edge.make_line(point(radius, floor), point(end, floor)),
+        Edge.make_line(point(end, floor), point(end, ceiling)),
+        Edge.make_line(point(end, ceiling), point(radius, ceiling)),
+        Edge.make_three_point_arc(point(radius, ceiling),
+                                  point(radius-diagonal, ceiling+radius-diagonal), point(0, ceiling+radius)),
+        Edge.make_line(point(0, ceiling+radius), point(0, floor-radius)),
+    ]))
+    return Solid.extrude(profile, (width, 0, 0))
 
 
 def build_shell(spec: ModuleSpec = DEFAULT_SPEC,
                 dimensions: ShellDimensions = DEFAULT_DIMENSIONS):
     """Build a smooth native sleeve; size moves features without stretching them."""
     shell = build_envelope(spec, dimensions.envelope)
-    cavity_half_width = spec.half_width - dimensions.side_wall
+    # L² keeps the L outside envelope and stacking banks, with two complete
+    # S drawer interfaces. Cutting both bays from one envelope leaves a shared
+    # divider; it does not introduce exterior ears or connectors inside it.
+    # Full-height cavities let the same housing accept tall drawers or stacked
+    # short drawers. Runner and mouth interfaces already repeat on every tier.
+    bay = ModuleSpec(spec.drawer_family, spec.depth_units, spec.height_units,
+                     spec.module_rear)
+    cavity_half_width = bay.half_width - dimensions.side_wall
     cavity = _rounded_rect(-cavity_half_width, dimensions.skin,
-                           cavity_half_width, spec.height-dimensions.skin,
+                           cavity_half_width, bay.height-dimensions.skin,
                            dimensions.cavity_corner_radius,
                            lambda x, z: (x, dimensions.back_wall, z))
-    cutters = [Solid.extrude(cavity, (0, spec.depth-dimensions.back_wall+1, 0))]
-    for tier_z in spec.tier_offsets:
-        cutters.extend(_tier_cutters(spec, dimensions, tier_z))
+    cavity_cutter = Solid.extrude(cavity, (0, spec.depth-dimensions.back_wall+1, 0))
+    cutters = []
+    for center in spec.drawer_centers:
+        sides = (-1, 1) if spec.drawer_columns == 1 else (-1,) if center < 0 else (1,)
+        bay_cutters = [cavity_cutter]
+        for tier_z in bay.tier_offsets:
+            bay_cutters.extend(_tier_cutters(bay, dimensions, tier_z, stopper_chamfer_sides=sides))
+        cutters.extend(cutter.translate((center, 0, 0)) for cutter in bay_cutters)
+    if spec.drawer_columns == 2:
+        cutters.extend(_divider_access(spec, dimensions, tier_z) for tier_z in spec.tier_offsets)
     for bank_x in spec.bank_centers:
         cutters.extend(_rear_notches(spec, dimensions, bank_x))
         cutters.extend(_central_recesses(spec, dimensions, bank_x))
     # L's lock sits between its two stacking banks. Keep their catches and
     # add the same lower/upper retaining recesses at the lock centerline.
-    if spec.family == 'L':
+    if spec.family == 'L' and spec.drawer_columns == 1:
         cutters.extend(_central_recesses(spec, dimensions, 0))
     shell = shell.cut(*cutters).clean()
-    supports = [support for tier_z in spec.tier_offsets
-                for support in _mouth_supports(spec, dimensions, tier_z)]
+    supports = [support.translate((center, 0, 0))
+                for center in spec.drawer_centers for tier_z in bay.tier_offsets
+                for support in _mouth_supports(bay, dimensions, tier_z)]
     return shell.fuse(*supports).clean() if supports else shell

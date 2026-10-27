@@ -99,7 +99,7 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         'print_bbox_mm': list(printable.bounding_box().size),
         'print_orientation': ('Closed bottom on Z=0. Remove the breakaway runner sheets before assembly.' if part_kind(spec) == 'box' else
                               'Closed back on Z=0; model rotated +90 degrees about X. '
-                              'Remove the breakaway webs under both runner-mouth lips before assembly.'
+                              'Remove the breakaway webs under the runner-mouth lips in every bay and tier before assembly.'
                               if part_kind(spec) == 'module' else
                               'Rear face on Z=0; model rotated +90 degrees about X. Use supports beneath recessed faces.'),
         'source_files': source_hashes(PROJECT_ROOT),
@@ -113,6 +113,8 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
 
 
 def part_kind(spec):
+    if hasattr(spec, 'accessory'):
+        return spec.accessory
     for kind in ('runner_guides', 'runner_slides'):
         if spec.slug.endswith('_' + kind):
             return kind
@@ -135,11 +137,16 @@ def print_orientation(module, spec):
 
 
 def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
+    if hasattr(spec, 'accessory'):
+        from .accessories import build_accessory
+        return build_accessory(output, spec)
     if part_kind(spec) in {'runner_guides', 'runner_slides'}:
         return build_runners(output, spec)
     if part_kind(spec) == 'rail':
         return build_rails(output, spec)
-    from dataclasses import asdict
+    from dataclasses import asdict, replace
+    if isinstance(spec, ModuleSpec):
+        spec = replace(spec, drawer_rows=1)
     configuration = {**asdict(spec), 'part': spec.slug}
     if part_kind(spec) in {'facade', 'module'}:
         from .shadow_gap import DEFAULT_GAP
@@ -248,10 +255,19 @@ def selected_build(output, spec):
     return legacy
 
 
-def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.8, module_rear=0.9):
+def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.8, module_rear=0.9,
+                drawer_columns=1, drawer_rows=1):
     """Resolve the same native constructors for the CLI and web generator."""
+    from .generator import ACCESSORY_PARTS
+    if part in ACCESSORY_PARTS:
+        from .accessories import AccessorySpec
+        return AccessorySpec(part)
+    module_spec = ModuleSpec(family, depth_units, height_units, module_rear, drawer_columns, drawer_rows)
     if part == 'module':
-        return ModuleSpec(family, depth_units, height_units, module_rear)
+        from dataclasses import replace
+        return replace(module_spec, drawer_rows=1)
+    family = module_spec.drawer_family
+    height_units = module_spec.drawer_height_units
     if part == 'box':
         from .box import BoxSpec
         return BoxSpec(family, depth_units, height_units, box_floor)
@@ -276,20 +292,26 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['build', 'validate', 'render'])
     parser.add_argument('--output', type=Path)
-    parser.add_argument('--part', choices=['module', 'facade', 'box', 'rails', 'runner_guides', 'runner_slides'], default='module')
+    parser.add_argument('--part', choices=['module', 'facade', 'box', 'rails', 'runner_guides', 'runner_slides', 'key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch'], default='module')
     parser.add_argument('--family', choices=FAMILIES, default='S')
     parser.add_argument('--depth-units', type=int, default=4)
     parser.add_argument('--height-units', type=int, default=1)
+    parser.add_argument('--drawer-columns', type=int, choices=(1, 2), default=1,
+                        help='Two columns create an L² module for two S drawers (family L only)')
+    parser.add_argument('--drawer-rows', type=int, choices=(1, 2), default=1,
+                        help='Two rows with two columns create four S1F drawers in an L 2F module')
     parser.add_argument('--samples', type=int, default=100_000, help='Area samples and maximum vertex samples per direction')
     parser.add_argument('--tolerance', type=float, default=.25, help='Maximum retained-surface sample deviation in mm, including the simplified outside corners')
     parser.add_argument('--mating-tolerance', type=float, default=.1, help='Stricter maximum deviation in the mechanical interface regions, in mm')
     args = parser.parse_args()
     try:
-        spec = ModuleSpec(args.family, args.depth_units, args.height_units)
+        spec = ModuleSpec(args.family, args.depth_units, args.height_units,
+                          drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows)
     except ValueError as error:
         parser.error(str(error))
     try:
-        spec = select_spec(args.part, args.family, args.depth_units, args.height_units)
+        spec = select_spec(args.part, args.family, args.depth_units, args.height_units,
+                           drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows)
     except ValueError as error:
         parser.error(str(error))
     if args.output is None:

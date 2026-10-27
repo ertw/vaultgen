@@ -1,0 +1,457 @@
+{
+  "schema": "vault-multi-drawer-reference/v1",
+  "units": "mm",
+  "method": "Measure L\u00b2 references and compare retained runner/divider sections with CAD.\n\nRun after sourcing .local-env. Purchased triangles are diagnostic inputs only.\nThe comparison samples exact source plane intersections and finely sampled\nnative CAD section edges. It is a local interface audit, not a full-surface\nequivalence or physical printed-fit test.",
+  "interface_distance_limit_mm": 0.1,
+  "native_section_edge_step_mm": 0.04,
+  "construction_sha256": {
+    "model.py": "ef190cfef5af227006ea0aeca81459546325b19f81efeb80219668c58d84f129",
+    "spec.py": "ccfcc26b770b5aa4fa4a130715bbcd5834ca84180b7be47094c7c99129f17395",
+    "shell.py": "27a39db2fa0861147d52aa44d78ce27f3525389000fa1d964aa6d9a2598f8204",
+    "envelope.py": "32a78508e1d86e2b838e2ac2e8a44056dcb19b144d5977e8daee5494bc5b3608",
+    "connectors.py": "79ff8d21c475b83847c29f065b84a3e6c3d334076827d712bb8bb8136767ec5f",
+    "shadow_gap.py": "54e1c89c3dbfc8e4a71214603e14b3761d8fb43cf2554cbdca638136f00c19b6"
+  },
+  "reference_inventory": {
+    "L\u00b2": {
+      "depths": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "heights": [
+        1,
+        2,
+        4
+      ]
+    },
+    "XL\u00b2": {
+      "depths": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "heights": [
+        1
+      ],
+      "layout": "S + M; excluded from generator"
+    }
+  },
+  "limitations": "Samples four runner/mouth interfaces and the center-divider stopper access at four transverse planes, including one dedicated to the rear tunnel entry. Native removable mouth supports are removed for this finished-interface audit. The different rear thickness, mounting bores, outer styling, branding, stacking connectors and front shadow rebate are not compared. The audit does not establish whole-surface equivalence, accessory insertion or physical printed fit.",
+  "cases": [
+    {
+      "source": "original_files/01. DRAWERS/04. L\u00b2 Families/L3\u00b2/L3\u00b2 Module 1F.stl",
+      "source_sha256": "46a749ca5aa9af999233c21d1378d38eb68428961426a4665b8c5b910e9b88b1",
+      "registration": {
+        "rotation_matrix": [
+          [
+            -0.7071067811865476,
+            -0.7071067811865476,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            -0.7071067811865476,
+            0.7071067811865476,
+            0.0
+          ]
+        ],
+        "rotation_determinant": 1.0,
+        "subtract_after_rotation_mm": [
+          1544.8237462051782,
+          1088.3140869140625,
+          2823.588188181206
+        ],
+        "formula": "native = original @ rotation.T - origin"
+      },
+      "source_bounds_mm": [
+        [
+          -164.80205947544187,
+          0.0,
+          -5.208375798725228
+        ],
+        [
+          164.80205947544187,
+          146.10009765625,
+          51.80090000000018
+        ]
+      ],
+      "case": "l3-1f",
+      "depth_units": 3,
+      "height_units": 1,
+      "drawer_family": "S",
+      "drawer_centers_mm": [
+        -82.4,
+        82.4
+      ],
+      "source_datums": {
+        "center_divider_crossings_x_at_y50_z23_5_mm": [
+          -3.01034,
+          -2.20011,
+          2.19985,
+          3.00989
+        ],
+        "cavity_crossings_x_at_y50_z40_mm": [
+          -164.25614,
+          -150.03957,
+          -14.76215,
+          14.76167,
+          150.03926,
+          164.24987
+        ],
+        "central_tunnel_crossings_z_at_y50_x0_mm": [
+          0.00015,
+          20.33989,
+          26.65996,
+          46.99923
+        ],
+        "nominal_tunnel": {
+          "width_mm": 4.4,
+          "height_mm": 6.32,
+          "center_z_mm": [
+            23.5
+          ],
+          "rear_entry_radius_mm": 3.0
+        },
+        "tunnel_rear_flare_z_mm": {
+          "0.1": [
+            18.09907,
+            28.90074
+          ],
+          "1.0": [
+            19.57098,
+            27.4289
+          ],
+          "2.0": [
+            20.16435,
+            26.83549
+          ],
+          "3.1": [
+            20.33989,
+            26.65996
+          ]
+        },
+        "tunnel_end_y_mm": [
+          109.90061,
+          146.1001
+        ]
+      },
+      "native": {
+        "valid": true,
+        "solid_count": 1,
+        "shell_count": 1,
+        "volume_mm3": 507177.42077552935
+      },
+      "sections": [
+        {
+          "y_mm": 1.0,
+          "region": "access tunnel only",
+          "source_to_native": {
+            "sample_count": 204,
+            "maximum_mm": 0.006005254595606857,
+            "p99_mm": 0.005997272751438523,
+            "worst_point_xz_mm": [
+              0.11897643528408486,
+              19.570962722904184
+            ]
+          },
+          "native_to_source": {
+            "sample_count": 1842,
+            "maximum_mm": 0.006005204391498605,
+            "p99_mm": 0.0059959748294109395,
+            "worst_point_xz_mm": [
+              0.11999999999999966,
+              19.57696797749979
+            ]
+          },
+          "passed": true
+        },
+        {
+          "y_mm": 50.0,
+          "region": "runners and divider",
+          "source_to_native": {
+            "sample_count": 2235,
+            "maximum_mm": 0.0017054064658202051,
+            "p99_mm": 0.0014975548639961289,
+            "worst_point_xz_mm": [
+              -161.7915903339083,
+              9.500386102484299
+            ]
+          },
+          "native_to_source": {
+            "sample_count": 22432,
+            "maximum_mm": 0.0018557161828086967,
+            "p99_mm": 0.0014882560006407777,
+            "worst_point_xz_mm": [
+              -151.59003,
+              37.501408
+            ]
+          },
+          "passed": true
+        },
+        {
+          "y_mm": 101.55005,
+          "region": "runners and divider",
+          "source_to_native": {
+            "sample_count": 2093,
+            "maximum_mm": 0.0017054064658202051,
+            "p99_mm": 0.0015104885941400427,
+            "worst_point_xz_mm": [
+              -161.7915903339083,
+              9.500386102484299
+            ]
+          },
+          "native_to_source": {
+            "sample_count": 19910,
+            "maximum_mm": 0.0018557161828086967,
+            "p99_mm": 0.0014937464257486202,
+            "worst_point_xz_mm": [
+              -151.59003,
+              37.501408
+            ]
+          },
+          "passed": true
+        },
+        {
+          "y_mm": 143.0,
+          "region": "runners and divider",
+          "source_to_native": {
+            "sample_count": 3043,
+            "maximum_mm": 0.006214015577116091,
+            "p99_mm": 0.00489809530818873,
+            "worst_point_xz_mm": [
+              -157.57232721855343,
+              8.834418967214312
+            ]
+          },
+          "native_to_source": {
+            "sample_count": 22668,
+            "maximum_mm": 0.00627468579545172,
+            "p99_mm": 0.003661596114792794,
+            "worst_point_xz_mm": [
+              -157.63285418928734,
+              8.705469169812506
+            ]
+          },
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "source": "original_files/01. DRAWERS/04. L\u00b2 Families/L6\u00b2/L6\u00b2 Module 2F.stl",
+      "source_sha256": "8aed9c2584eba211b10f0d5d22c47017ab9a4bc99992db019c3f6202c1f00be8",
+      "registration": {
+        "rotation_matrix": [
+          [
+            -0.7071067811865476,
+            -0.7071067811865476,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            -0.7071067811865476,
+            0.7071067811865476,
+            0.0
+          ]
+        ],
+        "rotation_determinant": 1.0,
+        "subtract_after_rotation_mm": [
+          2044.823584233514,
+          -537.6859741210938,
+          2775.588188181206
+        ],
+        "formula": "native = original @ rotation.T - origin"
+      },
+      "source_bounds_mm": [
+        [
+          -164.74982705467005,
+          0.0,
+          -5.208384418134301
+        ],
+        [
+          164.74982705467005,
+          272.10015869140625,
+          99.80090000000018
+        ]
+      ],
+      "case": "l6-2f",
+      "depth_units": 6,
+      "height_units": 2,
+      "drawer_family": "S",
+      "drawer_centers_mm": [
+        -82.4,
+        82.4
+      ],
+      "source_datums": {
+        "center_divider_crossings_x_at_y50_z23_5_mm": [
+          -3.01011,
+          -2.19988,
+          2.20007,
+          3.01009
+        ],
+        "cavity_crossings_x_at_y50_z40_mm": [
+          -164.74954,
+          -150.03943,
+          -14.76184,
+          14.76199,
+          150.0394,
+          164.74958
+        ],
+        "central_tunnel_crossings_z_at_y50_x0_mm": [
+          0.00066,
+          20.33988,
+          26.65995,
+          68.33994,
+          74.65996,
+          94.99897
+        ],
+        "nominal_tunnel": {
+          "width_mm": 4.4,
+          "height_mm": 6.32,
+          "center_z_mm": [
+            23.5,
+            71.5
+          ],
+          "rear_entry_radius_mm": 3.0
+        },
+        "tunnel_rear_flare_z_mm": {
+          "0.1": [
+            18.09882,
+            28.90103
+          ],
+          "1.0": [
+            19.57092,
+            27.42894
+          ],
+          "2.0": [
+            20.16434,
+            26.83552
+          ],
+          "3.1": [
+            20.33988,
+            26.65995
+          ]
+        },
+        "tunnel_end_y_mm": [
+          172.90065,
+          272.10016
+        ]
+      },
+      "native": {
+        "valid": true,
+        "solid_count": 1,
+        "shell_count": 1,
+        "volume_mm3": 1321896.983514482
+      },
+      "sections": [
+        {
+          "y_mm": 1.0,
+          "region": "access tunnel only",
+          "source_to_native": {
+            "sample_count": 408,
+            "maximum_mm": 0.006070113151995571,
+            "p99_mm": 0.006061280458837715,
+            "worst_point_xz_mm": [
+              0.11896467544574296,
+              19.570897864347796
+            ]
+          },
+          "native_to_source": {
+            "sample_count": 3684,
+            "maximum_mm": 0.006070062371092238,
+            "p99_mm": 0.006057650011694713,
+            "worst_point_xz_mm": [
+              0.11999999999999966,
+              19.57696797749979
+            ]
+          },
+          "passed": true
+        },
+        {
+          "y_mm": 50.0,
+          "region": "runners and divider",
+          "source_to_native": {
+            "sample_count": 4595,
+            "maximum_mm": 0.0015958152604244377,
+            "p99_mm": 0.0013059537971787482,
+            "worst_point_xz_mm": [
+              151.5912491695774,
+              33.110424314666034
+            ]
+          },
+          "native_to_source": {
+            "sample_count": 44856,
+            "maximum_mm": 0.0016881752956512577,
+            "p99_mm": 0.001294129932580711,
+            "worst_point_xz_mm": [
+              -151.59003,
+              37.501408
+            ]
+          },
+          "passed": true
+        },
+        {
+          "y_mm": 164.55005,
+          "region": "runners and divider",
+          "source_to_native": {
+            "sample_count": 4166,
+            "maximum_mm": 0.0015958152604244377,
+            "p99_mm": 0.0013270655093151618,
+            "worst_point_xz_mm": [
+              151.5912491695774,
+              33.110424314666034
+            ]
+          },
+          "native_to_source": {
+            "sample_count": 39812,
+            "maximum_mm": 0.0016881752956512577,
+            "p99_mm": 0.001299756454882209,
+            "worst_point_xz_mm": [
+              -151.59003,
+              37.501408
+            ]
+          },
+          "passed": true
+        },
+        {
+          "y_mm": 269.0,
+          "region": "runners and divider",
+          "source_to_native": {
+            "sample_count": 5826,
+            "maximum_mm": 0.006053902607635986,
+            "p99_mm": 0.0048451333893402716,
+            "worst_point_xz_mm": [
+              -157.57214073674783,
+              8.834461885987142
+            ]
+          },
+          "native_to_source": {
+            "sample_count": 45332,
+            "maximum_mm": 0.006121128799789631,
+            "p99_mm": 0.0040501146747008885,
+            "worst_point_xz_mm": [
+              -157.63285418928734,
+              8.705469169812506
+            ]
+          },
+          "passed": true
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "passed": true
+}

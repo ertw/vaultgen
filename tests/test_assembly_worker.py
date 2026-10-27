@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from vault import __main__ as build_cli, assembly_validation
-from vault.generator import Configuration
+from vault.generator import Configuration, ASSEMBLY_PARTS
 from vault.web_worker import main
 
 
@@ -68,7 +68,7 @@ class AssemblyWorkerTests(unittest.TestCase):
             self.assertEqual(configuration, self.configuration)
             self.assertEqual(json.loads(self.receipt.read_text()), self.build_ids)
             self.assertEqual(components, {
-                key: ('imported-native-step', path) for key, path in self.expected_steps.items()})
+                key: ('imported-native-step', path) for key, path in self.expected_steps.items() if key[0] in ASSEMBLY_PARTS})
             return self.report
 
         self.validate = Mock(side_effect=validate)
@@ -95,24 +95,44 @@ class AssemblyWorkerTests(unittest.TestCase):
         from vault.assembly_validation import validation_signature
         self.run_worker()
         self.assertEqual(json.loads(self.receipt.read_text()), self.build_ids)
-        self.assertEqual(len(self.build_ids), 6)
+        self.assertEqual(len(self.build_ids), 12)
         self.assertEqual(self.import_step.call_count, 9)
         self.validate.assert_called_once()
         self.assertEqual(self.read_assembly_receipt(), {
-            'configuration': self.configuration.as_dict(), 'build_ids': self.build_ids,
+            'configuration': self.configuration.as_dict(), 'build_ids': self.build_ids[:6], 'accessory_build_ids': self.build_ids[6:],
             'validation': self.report, 'validation_signature': validation_signature(self.configuration),
         })
         for call in self.select_spec.call_args_list:
             self.assertEqual(call.args[1:], ('L', 6, 2))
-            self.assertEqual(call.kwargs, {'box_floor': 3., 'module_rear': 2.})
+            self.assertEqual(call.kwargs, {'box_floor': 3., 'module_rear': 2.,
+                                          'drawer_columns': 1, 'drawer_rows': 1})
+
+    def test_double_drawer_layout_is_preserved_in_selection_and_fit_receipt(self):
+        self.configuration = Configuration('L', 6, 2, 'set', 3., 2., drawer_columns=2)
+        self.run_worker()
+        for call in self.select_spec.call_args_list:
+            self.assertEqual(call.args[1:], ('L', 6, 2))
+            self.assertEqual(call.kwargs['drawer_columns'], 2)
+        self.assertEqual(self.read_assembly_receipt()['configuration']['drawer_columns'], 2)
+        self.assertEqual(len(self.build_ids), 12)
+
+    def test_four_drawer_layout_is_preserved_in_selection_and_fit_receipt(self):
+        self.configuration = Configuration('L', 6, 2, 'set', 3., 2., drawer_columns=2, drawer_rows=2)
+        self.run_worker()
+        for call in self.select_spec.call_args_list:
+            self.assertEqual(call.args[1:], ('L', 6, 2))
+            self.assertEqual(call.kwargs['drawer_columns'], 2)
+            self.assertEqual(call.kwargs['drawer_rows'], 2)
+        self.assertEqual(self.read_assembly_receipt()['configuration']['drawer_rows'], 2)
+        self.assertEqual(len(self.build_ids), 12)
 
     def test_failed_fit_publishes_failed_audit_and_preserves_all_build_receipts(self):
         with self.assertRaisesRegex(RuntimeError, 'Assembly fit checks failed'):
             self.run_worker(passed=False)
         self.assertEqual(json.loads(self.receipt.read_text()), self.build_ids)
-        self.assertEqual(len(self.build_ids), 6)
+        self.assertEqual(len(self.build_ids), 12)
         record = self.read_assembly_receipt()
-        self.assertEqual(record['build_ids'], self.build_ids)
+        self.assertEqual(record['build_ids'], self.build_ids[:6])
         self.assertEqual(record['validation'], self.report)
         self.assertFalse(record['validation']['passed'])
 
@@ -132,6 +152,68 @@ class AssemblyWorkerTests(unittest.TestCase):
         self.validate.assert_not_called()
         self.assertEqual(json.loads(self.receipt.read_text()), self.build_ids)
         self.assertFalse((self.output / 'web' / 'assemblies').exists())
+
+
+class SharedModuleCacheTests(unittest.TestCase):
+    def setUp(self):
+        from vault._build import source_digest
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.output = Path(self.temporary.name)
+        self.cached = self.output / 'builds' / 'checked-shared-module'
+        self.cached.mkdir(parents=True)
+        self.source_files = {'source.py': 'current-common-open-module'}
+        self.digest = source_digest(self.source_files)
+        self.revision = {'commit': 'current', 'dirty': False}
+        spec = build_cli.select_spec('module', 'L', 6, 2, drawer_columns=2)
+        latest = self.output / 'latest' / spec.slug
+        latest.parent.mkdir(parents=True)
+        latest.symlink_to(self.cached)
+
+    def cache(self, *, source=None, git=None):
+        (self.cached / 'manifest.json').write_text(json.dumps({
+            'passed': True, 'checksums': {},
+            'source_hash': self.digest if source is None else source,
+            'git': self.revision if git is None else git,
+        }))
+
+    def request_module(self, rows, *, revision):
+        config = Configuration('L', 6, 2, 'module', drawer_columns=2, drawer_rows=rows)
+        receipt = self.output / f'request-{rows}.receipt'
+        argv = ['vault.web_worker', '--configuration', json.dumps(config.as_dict()),
+                '--output', str(self.output), '--receipt', str(receipt)]
+        with patch.object(sys, 'argv', argv), \
+                patch.object(build_cli, 'build', return_value=self.output / 'builds' / 'fresh-module') as build, \
+                patch('vault._build.source_hashes', return_value=self.source_files), \
+                patch('vault._build.git_provenance', return_value=revision), \
+                redirect_stdout(io.StringIO()):
+            main()
+        return build, json.loads(receipt.read_text())
+
+    def test_both_drawer_layouts_reuse_the_same_current_clean_module_build(self):
+        self.cache()
+        for rows in (1, 2):
+            with self.subTest(rows=rows):
+                build, receipt = self.request_module(rows, revision=self.revision)
+                build.assert_not_called()
+                self.assertEqual(receipt, ['checked-shared-module'])
+
+    def test_shared_alias_does_not_bypass_source_or_dirty_checkout_checks(self):
+        for rows in (1, 2):
+            for reason in ('changed-source', 'dirty-checkout', 'dirty-build', 'older-commit', 'unknown-revision'):
+                with self.subTest(rows=rows, reason=reason):
+                    source = 'historical-partitioned-module' if reason == 'changed-source' else self.digest
+                    built = dict(self.revision, dirty=True) if reason == 'dirty-build' else self.revision
+                    if reason == 'older-commit':
+                        built = dict(self.revision, commit='older')
+                    current = dict(self.revision, dirty=True) if reason == 'dirty-checkout' else self.revision
+                    if reason == 'unknown-revision':
+                        current = None
+                    self.cache(source=source, git=built)
+                    build, receipt = self.request_module(rows, revision=current)
+                    build.assert_called_once()
+                    self.assertEqual(build.call_args.args[1].drawer_rows, 1)
+                    self.assertEqual(receipt, ['fresh-module'])
 
 
 if __name__ == '__main__':

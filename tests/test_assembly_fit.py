@@ -14,7 +14,7 @@ from build123d import Box, Solid
 
 from vault.assembly import assembly_definition
 from vault.assembly_validation import (
-    check_pair, definition_errors, validate_assembly, validation_signature,
+    check_pair, definition_errors, mating_checks, validate_assembly, validation_signature,
 )
 from vault.generator import Configuration
 
@@ -83,6 +83,57 @@ class AssemblyFitTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Missing finished assembly components"):
             validate_assembly(config, {})
 
+    def test_mating_parts_in_different_bays_cannot_touch(self):
+        shape = Box(2, 2, 2)
+        result = check_pair({'id': 'bay_1_box', 'kind': 'box', 'bay': 1}, shape,
+                            {'id': 'bay_2_facade', 'kind': 'facade', 'bay': 2},
+                            shape.translate((2, 0, 0)))
+        self.assertFalse(result['passed'])
+        self.assertIsNone(result['contact_rule'])
+
+    def test_bay_assignment_cannot_hide_missing_drawer_parts(self):
+        config = Configuration('L', 6, 2, drawer_columns=2)
+        for kind in ('box', 'facade', 'rails', 'runner_guides', 'runner_slides'):
+            invalid = deepcopy(assembly_definition(config))
+            instance = next(item for item in invalid['instances']
+                            if item['kind'] == kind and item['bay'] == 2)
+            instance['bay'] = 1
+            with self.subTest(kind=kind):
+                self.assertTrue(definition_errors(config, invalid))
+
+    def test_mating_checks_target_the_drawers_own_bay(self):
+        self.assert_mating_bays(Configuration('L', 6, 2, drawer_columns=2), 36)
+
+    def test_mating_checks_target_each_of_four_drawers(self):
+        self.assert_mating_bays(Configuration('L', 6, 2, drawer_columns=2, drawer_rows=2), 48)
+
+    def assert_mating_bays(self, config, expected_count):
+        instances = assembly_definition(config)['instances']
+        distances = []
+
+        def gap(left, right, value):
+            distances.append({'instances': [left, right], 'minimum_gap_mm': value})
+
+        for bay in range(1, config.drawer_count + 1):
+            prefix = f'bay_{bay}_'
+            gap('module', prefix + 'facade', 0.)
+            gap(prefix + 'box', prefix + 'facade', 0.)
+            for rail in ('rail_plain', 'rail_retained'):
+                gap('module', prefix + rail, .1)
+                gap(prefix + 'box', prefix + rail, .2)
+            for tier in range(1, config.drawer_height_units + 1):
+                for side in ('left', 'right'):
+                    guide = prefix + f'runner_guides_{side}_{tier}'
+                    slide = prefix + f'runner_slides_{side}_{tier}'
+                    gap('module', guide, .2)
+                    gap(prefix + 'box', slide, 0.)
+                    gap(guide, slide, .05)
+        # Only matching bay distances are available: an incorrect cross-bay
+        # lookup would try to measure this opaque placeholder and fail.
+        checks = mating_checks(config, [(instance, object()) for instance in instances], distances)
+        self.assertEqual(len(checks), expected_count)
+        self.assertTrue(all(check['passed'] for check in checks))
+
     def test_invalid_transforms_fail_before_native_geometry(self):
         config = Configuration()
         for index, value in ((0, -1), (0, 2), (3, 1), (12, float("nan"))):
@@ -96,6 +147,10 @@ class AssemblyFitTests(unittest.TestCase):
         signature = validation_signature(config)
         self.assertEqual(signature, validation_signature(config))
         self.assertNotEqual(signature, validation_signature(Configuration(module_rear=2)))
+        self.assertNotEqual(validation_signature(Configuration('L', 6, 2)),
+                            validation_signature(Configuration('L', 6, 2, drawer_columns=2)))
+        self.assertNotEqual(validation_signature(Configuration('L', 6, 2, drawer_columns=2)),
+                            validation_signature(Configuration('L', 6, 2, drawer_columns=2, drawer_rows=2)))
         self.assertEqual(validation_signature(Configuration(box_floor=3, module_rear=2)),
                          validation_signature(Configuration(box_floor=3.0, module_rear=2.0)))
         changed = deepcopy(assembly_definition(config))

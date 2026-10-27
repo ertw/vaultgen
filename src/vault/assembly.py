@@ -50,18 +50,21 @@ def apply_transform(shape, matrix):
 def assembly_definition(configuration: Configuration):
     """Return the complete configured drawer, independent of selected part.
 
-    Tall drawers have one box/facade and repeat runner pairs on every tier;
-    their two geared rails remain at the bottom lock. Rails are shown at
+    Each drawer has one box/facade and repeats runner pairs on every tier;
+    its two geared rails remain at the bottom lock. Rails are shown at
     zero locking travel (unlocked), the insertion pose in the fit checks.
     """
     if not isinstance(configuration, Configuration):
         raise TypeError('configuration must be a Configuration')
     spec = ModuleSpec(configuration.family, configuration.depth_units,
-                      configuration.height_units, configuration.module_rear)
-    width_delta = (spec.width - DEFAULT_SPEC.width) / 2
+                      configuration.height_units, configuration.module_rear,
+                      configuration.drawer_columns, configuration.drawer_rows)
+    drawer_spec = ModuleSpec(configuration.drawer_family, configuration.depth_units,
+                             configuration.drawer_height_units, configuration.module_rear)
+    width_delta = (drawer_spec.width - DEFAULT_SPEC.width) / 2
     depth_delta = spec.depth - DEFAULT_SPEC.depth
     drawer_explode = (0, spec.depth * .8, 0)
-    lateral_explode = max(45, spec.width * .25)
+    lateral_explode = max(45, drawer_spec.width * .25)
     instances = []
 
     def add(identifier, kind, component, label, group, rotation=IDENTITY_ROTATION,
@@ -76,35 +79,45 @@ def assembly_definition(configuration: Configuration):
         })
 
     add('module', 'module', 'single', spec.name, 'shell')
-    add('box', 'box', 'single', f'{spec.family}{spec.depth_units} Box {spec.height_units}F', 'drawer')
-    add('facade', 'facade', 'single', f'{spec.family}{spec.height_units}F Facade', 'drawer',
-        translation=(0, spec.depth, 0), explode=(0, 65, 0))
+    for bay, (center, elevation) in enumerate(spec.drawer_origins, start=1):
+        def add_drawer(identifier, kind, component, label, group,
+                       rotation=IDENTITY_ROTATION, translation=(0, 0, 0), **metadata):
+            if configuration.drawer_columns > 1:
+                identifier = f'bay_{bay}_{identifier}'
+                label += f' · drawer {bay}'
+                metadata['bay'] = bay
+            add(identifier, kind, component, label, group, rotation,
+                (translation[0] + center, translation[1], translation[2] + elevation), **metadata)
 
-    # These proper rotations preserve the source rail handedness. The retained
-    # rail's rib faces upward; the plain rail's teeth face upward. Width changes
-    # only their outgoing tails, not the nose datums or the centered lock.
-    add('rail_plain', 'rails', 'plain', 'Lower plain geared rail', 'drawer',
-        rotation=((-1, 0, 0), (0, 0, 1), (0, 1, 0)),
-        translation=(66.1, 183.1 + depth_delta, 6.807),
-        explode=(-lateral_explode, 25, -25))
-    add('rail_retained', 'rails', 'retained', 'Upper retained geared rail', 'drawer',
-        rotation=((1, 0, 0), (0, 0, 1), (0, -1, 0)),
-        translation=(-66.1, 183.1 + depth_delta, 40.193),
-        explode=(lateral_explode, 25, 25))
+        add_drawer('box', 'box', 'single',
+                   f'{drawer_spec.family}{spec.depth_units} Box {drawer_spec.height_units}F', 'drawer')
+        add_drawer('facade', 'facade', 'single', f'{drawer_spec.family}{drawer_spec.height_units}F Facade', 'drawer',
+                   translation=(0, spec.depth, 0), explode=(0, 65, 0))
 
-    for kind in ('runner_guides', 'runner_slides'):
-        for tier, offset in enumerate(spec.tier_offsets, start=1):
-            for side, name in ((-1, 'left'), (1, 'right')):
-                rotation = ((0, 0, -side), (0, 1, 0), (side, 0, 0))
-                guide = kind == 'runner_guides'
-                translation = ((side * (78.7 + width_delta), 2.3, 23.5 + offset - side * 13.5)
-                               if guide else
-                               (side * (73.9 + width_delta), 28.1, 23.5 + offset))
-                add(f'{kind}_{name}_{tier}', kind, name,
-                    f'{name.title()} runner {"guide" if guide else "slide"} · tier {tier}',
-                    'shell' if guide else 'drawer', rotation, translation,
-                    explode=(side * lateral_explode, 0, (tier - 1) * 25),
-                    tier=tier, side=side)
+        # Proper rotations preserve rail handedness. Each drawer's bottom lock
+        # retains its own nose datums; a second bay only translates the drawer.
+        add_drawer('rail_plain', 'rails', 'plain', 'Lower plain geared rail', 'drawer',
+                   rotation=((-1, 0, 0), (0, 0, 1), (0, 1, 0)),
+                   translation=(66.1, 183.1 + depth_delta, 6.807),
+                   explode=(-lateral_explode, 25, -25))
+        add_drawer('rail_retained', 'rails', 'retained', 'Upper retained geared rail', 'drawer',
+                   rotation=((1, 0, 0), (0, 0, 1), (0, -1, 0)),
+                   translation=(-66.1, 183.1 + depth_delta, 40.193),
+                   explode=(lateral_explode, 25, 25))
+
+        for kind in ('runner_guides', 'runner_slides'):
+            for tier, offset in enumerate(drawer_spec.tier_offsets, start=1):
+                for side, name in ((-1, 'left'), (1, 'right')):
+                    rotation = ((0, 0, -side), (0, 1, 0), (side, 0, 0))
+                    guide = kind == 'runner_guides'
+                    translation = ((side * (78.7 + width_delta), 2.3, 23.5 + offset - side * 13.5)
+                                   if guide else
+                                   (side * (73.9 + width_delta), 28.1, 23.5 + offset))
+                    add_drawer(f'{kind}_{name}_{tier}', kind, name,
+                               f'{name.title()} runner {"guide" if guide else "slide"} · tier {tier}',
+                               'shell' if guide else 'drawer', rotation, translation,
+                               explode=(side * lateral_explode, 0, (tier - 1) * 25),
+                               tier=tier, side=side)
 
     return {
         'schema': SCHEMA, 'units': 'mm', 'coordinates': 'native-module',
@@ -113,7 +126,7 @@ def assembly_definition(configuration: Configuration):
         'groups': [{'id': 'shell', 'label': 'Module and fixed guides'},
                    {'id': 'drawer', 'label': 'Drawer and attached parts'}],
         'instances': instances,
-        'omissions': ['Lock and drive pinion', 'Screws', 'Separate runner stoppers'],
+        'omissions': ['Key, spring, latch, runner stops and caps (separate downloads; installation not checked)', 'Screws'],
         'notes': ['Finished parts: module webs and box runner sheets removed.',
                   'Geared rails shown unlocked at zero locking travel.',
                   'Exploded spacing illustrates components; it is not a disassembly path.'],
@@ -136,12 +149,13 @@ def build_finished_components(configuration: Configuration):
 
     if not isinstance(configuration, Configuration):
         raise TypeError('configuration must be a Configuration')
-    family, depth, height = configuration.family, configuration.depth_units, configuration.height_units
+    family, depth, height = configuration.drawer_family, configuration.depth_units, configuration.drawer_height_units
     guides = build_runner_guide(spec=RunnerGuideSpec(depth))
     slides = build_runner_slide(spec=RunnerSlideSpec(depth))
     return {
         ('module', 'single'): build_module(
-            spec=ModuleSpec(family, depth, height, configuration.module_rear), include_supports=False),
+            spec=ModuleSpec(configuration.family, depth, configuration.height_units, configuration.module_rear,
+                            configuration.drawer_columns, configuration.drawer_rows), include_supports=False),
         ('box', 'single'): build_box(
             spec=BoxSpec(family, depth, height, configuration.box_floor), include_supports=False),
         ('facade', 'single'): build_facade(spec=FacadeSpec(family, height)),

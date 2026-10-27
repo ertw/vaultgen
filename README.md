@@ -1,7 +1,8 @@
 # Vault CAD
 
 The size configurator at **https://vaultgen.erik.cl** generates matching modules,
-boxes, facades, geared rails, runner guides and runner slides. Choose S, M or L,
+boxes, facades, geared rails, runner guides, runner slides, keys, springs, runner
+stops, facade caps, key caps and latches. Choose S, M or L,
 depth 3–7, and 1F or 2F;
 XL and taller configurations are excluded from the generator. Build a single
 part or a complete set, inspect the actual print-oriented STL in 3D, and download
@@ -55,7 +56,35 @@ python -m vault build --part facade --family M --height-units 2
 python -m vault build --part rails --family L
 python -m vault build --part runner_guides --depth-units 4
 python -m vault build --part runner_slides --depth-units 7
+python -m vault build --family L --depth-units 6 --height-units 2 --drawer-columns 2
 ```
+
+**L² multi-drawer modules** have two S-width bays inside the standard
+329.6 mm L envelope. Select **Two S drawers** with family L in the configurator,
+or pass `--drawer-columns 2` to the CLI. The generator offers depths 3–7 and
+heights 1F/2F. Single-part box, facade and geared-rail selections resolve to S
+parts; complete sets record the required copies and place each drawer in the
+assembly view.
+
+An L² 2F module accepts either **Two S drawers** at 2F or **Four S drawers**
+at 1F in a 2 × 2 arrangement. Both selections use the same open module,
+with two continuous tall cavities and the same shadow-gap pattern for four
+S1F facades.
+Changing the drawer layout changes the matching parts, print quantities and
+assembly placements. For four drawers, use
+`--family L --height-units 2 --drawer-columns 2 --drawer-rows 2` on the CLI.
+The matching boxes and facades are 1F, with four copies of each in the print plan.
+Both layouts share the `l6_2_columns_module_2f` module identity at depth 6,
+and the same module STL/STEP downloads and reusable build.
+
+The vertical divider repeats the native runner channels, bores, handed mouth
+pockets and removable supports. Rear access passages lead to the center runner
+stops. Outer stacking connectors retain the L layout; there are no exterior
+hooks or rails inside the divider. The normal checked export pipeline applies
+to both layouts. Original L² STLs remain local comparison inputs. Assembly
+clearance checks do not establish catch/latch operation, loaded behavior or
+physical printed fit.
+See [multi-drawer geometry and validation](docs/generator-geometry.md#multi-drawer-modules).
 
 All sizes use the shared [build storage library](../../cad-tooling/docs/builds.md).
 Successful builds are preserved in `out/builds/<build-id>/`, with Git provenance,
@@ -352,3 +381,12 @@ print-oriented STL and STEP files, also available in the web preview and ZIP.
 Each runner build contains a left/right pair. Use one guide pair and one slide
 pair per populated runner tier; reprint these files for additional tiers.
 Check the first printed assembly on the intended printer before making more.
+
+## Universal accessories
+
+The generator includes **Key**, **Spring**, **Runner stop**, **Facade cap**,
+**Key cap**, and **Latch** individually and in complete-set downloads. For CLI builds use
+`python -m vault build --part spring` (or `key`, `runner_stop`, `facade_cap`,
+`key_cap`, `latch`). The latch has 0.10 mm outline relief and 0.15 mm thickness relief
+for a slightly looser fit. The key retains its existing two-piece snap joint.
+See [accessory print quantities and validation limits](docs/generator.md#universal-accessories).

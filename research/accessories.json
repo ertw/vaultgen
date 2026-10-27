@@ -1,0 +1,111 @@
+{
+  "limits": "Sampled deviations include regularized blends and intentional latch relief. No reference-equivalence or printed-fit acceptance is implied. Cap checks cover only the stated seated poses, not insertion or retention. Runner stop, spring and latch installation are not certified.",
+  "latch_construction_sha256": "66445d68da1f25c5ca76c610ba0f03f0ee868a1a4443c3d91aca69783d9e59b8",
+  "construction_sha256": "982f182f9444cae09a46957f91d35ceda562f8ae0f2cd99fcc2f0dbb2ec1e1f2",
+  "parts": {
+    "Springs.stl": {
+      "source_sha256": "55f2736227703b6e37b0e5beb844019f067e6a7732fd7ae7d0dfc95ba73e1a2c",
+      "source_origin": [
+        9039.95849609375,
+        1857.687255859375,
+        20.954917907714844
+      ],
+      "source_volume_mm3": 4070.7591335933444,
+      "native_volume_mm3": 4133.453661446097,
+      "sampled_deviation": {
+        "source_to_native": {
+          "max_mm": 0.6244294993813033,
+          "p95_mm": 0.12390803089304163
+        },
+        "native_to_source": {
+          "max_mm": 0.5712635150440873,
+          "p95_mm": 0.12410403874806229
+        }
+      }
+    },
+    "Runner Stopper.stl": {
+      "source_sha256": "7dfa53d56ba9470317e586aba121181b380d26597547f51a6e85742ee9d56a87",
+      "source_origin": [
+        9079.8642578125,
+        1809.5912475585938,
+        19.418758392333984
+      ],
+      "source_volume_mm3": 708.0977213043428,
+      "native_volume_mm3": 717.6890837854477,
+      "sampled_deviation": {
+        "source_to_native": {
+          "max_mm": 0.3171215106210844,
+          "p95_mm": 0.09325254129897045
+        },
+        "native_to_source": {
+          "max_mm": 0.41251249494281833,
+          "p95_mm": 0.17910309164065358
+        }
+      }
+    },
+    "Facade Cap.stl": {
+      "source_sha256": "d18a84f53da54e33f8b2b9763c26c86893b595bb4af33d2049d23552b5e741e4",
+      "source_origin": [
+        8950.1005859375,
+        1862.4417724609375,
+        21.603513717651367
+      ],
+      "source_volume_mm3": 150.71283006623415,
+      "native_volume_mm3": 151.03876640920035,
+      "sampled_deviation": {
+        "source_to_native": {
+          "max_mm": 0.10591887663484119,
+          "p95_mm": 0.021639044404876687
+        },
+        "native_to_source": {
+          "max_mm": 0.09092236092385582,
+          "p95_mm": 0.024037371336371093
+        }
+      }
+    },
+    "Key Cap.stl": {
+      "source_sha256": "c5858b1e62cd00d119c108c246a3a352ba713a94ebd29b521495fea0d8a2c444",
+      "source_origin": [
+        9001.5576171875,
+        1875.7033081054688,
+        17.771886825561523
+      ],
+      "source_volume_mm3": 2837.6761627321443,
+      "native_volume_mm3": 2839.293153000624,
+      "sampled_deviation": {
+        "source_to_native": {
+          "max_mm": 0.31687934116231314,
+          "p95_mm": 0.1426326223770889
+        },
+        "native_to_source": {
+          "max_mm": 0.31430977251492903,
+          "p95_mm": 0.16148994380441323
+        }
+      }
+    },
+    "Latch.stl": {
+      "source_sha256": "175d0b22fc698f023c2b3d171a8323b46db862c9a3f5187767aeffa7522710ee",
+      "source_origin": [
+        9001.55712890625,
+        1734.570068359375,
+        -4.499413967132568
+      ],
+      "source_volume_mm3": 10114.237829828975,
+      "native_volume_mm3": 9494.117295772468,
+      "sampled_deviation": {
+        "source_to_native": {
+          "max_mm": 0.2906638165332146,
+          "p95_mm": 0.1943387112409636
+        },
+        "native_to_source": {
+          "max_mm": 0.27955427457076903,
+          "p95_mm": 0.16943620295308623
+        }
+      }
+    }
+  },
+  "interfaces": {
+    "facade_cap_overlap_mm3": 0.0,
+    "key_cap_overlap_mm3": 0.0
+  }
+}

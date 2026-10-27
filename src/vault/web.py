@@ -89,13 +89,17 @@ class BuildFiles:
         definition = assembly_definition(configuration)
         repository = git_provenance(PROJECT_ROOT)
         builds = self.history(repository)
-        keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear'),
+        keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear', 'drawer_columns'),
                 'box': ('family', 'depth_units', 'height_units', 'box_floor'),
                 'facade': ('family', 'height_units'), 'rails': ('family',),
                 'runner_guides': ('depth_units',), 'runner_slides': ('depth_units',)}
         defaults, selected = Configuration().as_dict(), configuration.as_dict()
-        matched = {kind: next((build for build in builds if build['kind'] == kind and
-                    all(build['configuration'].get(key, defaults[key]) == selected[key]
+        selected_drawer = {**selected, 'family': configuration.drawer_family,
+                           'height_units': configuration.drawer_height_units}
+        matched = {kind: next((build for build in builds if build['kind'] == kind
+                    and not build['legacy_partitioned_module'] and
+                    all(build['configuration'].get(key, defaults[key]) ==
+                        (selected if kind == 'module' else selected_drawer)[key]
                         for key in fields)), None) for kind, fields in keys.items()}
         instances, missing, warnings = [], [], []
         used = {}
@@ -138,7 +142,9 @@ class BuildFiles:
             warnings.append('Assembly fit check failed: ' + ', '.join(dict.fromkeys(labels)) + '. See the build log for details.')
         elif not validation:
             warnings.append('This combination of cached parts has no passing assembly fit check. Generate a complete set to check it.')
-        return {**definition, 'name': f'{configuration.family}{configuration.depth_units} · {configuration.height_units}F complete set',
+        columns = '²' if configuration.drawer_columns == 2 else ''
+        rows = ' · 4 drawers' if configuration.drawer_rows == 2 else ''
+        return {**definition, 'name': f'{configuration.family}{configuration.depth_units}{columns} · {configuration.height_units}F{rows} complete set',
                 'instances': instances, 'missing': missing, 'warnings': list(dict.fromkeys(warnings)),
                 'complete': not missing, 'repository': repository, 'validation': validation}
 
@@ -146,7 +152,10 @@ class BuildFiles:
         path, manifest = self.read(build_id)
         parameters = json.loads((path / 'resolved-parameters.json').read_text())
         part = parameters.get('part', '')
-        kind = ('label' if part.endswith('_label') else
+        from .generator import ACCESSORY_PARTS
+        kind = ('key' if part == 'snap_key' else
+                part if part in ACCESSORY_PARTS else
+                'label' if part.endswith('_label') else
                 'runner_guides' if part.endswith('_runner_guides') else
                 'runner_slides' if part.endswith('_runner_slides') else
                 'rails' if part.endswith('_geared_rails') else
@@ -161,6 +170,8 @@ class BuildFiles:
             config['box_floor'] = parameters.get('box_floor', 0.8)
         if kind == 'module':
             config['module_rear'] = parameters.get('module_rear', 0.9)
+            config['drawer_columns'] = parameters.get('drawer_columns', 1)
+            config['drawer_rows'] = parameters.get('drawer_rows', 1)
         def url(relative):
             return f'/files/{build_id}/{relative}' if relative in manifest['checksums'] else None
         parts = []
@@ -177,6 +188,7 @@ class BuildFiles:
                           'step_url': url(f'{name}_print.step')})
         return {'freshness': freshness(manifest, repository if repository is not None else git_provenance(PROJECT_ROOT)),
                 'source_hash': manifest.get('source_hash'),
+                'legacy_partitioned_module': kind == 'module' and '_2_rows_module_' in part,
                 'id': build_id, 'name': manifest.get('name', part), 'kind': kind,
                 'configuration': config, 'parts': parts, 'step_url': url(f'{part}.step'),
                 'label_dimensions': manifest.get('label_dimensions') if kind == 'label' else None,
@@ -193,10 +205,15 @@ class BuildFiles:
             try:
                 item = self.describe(path.name, repository)
                 config = item['configuration']
-                if (config['part'] == 'label' or ((config.get('family') in ('S', 'M', 'L')
+                if (config['part'] in ('label', 'key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch') or ((config.get('family') in ('S', 'M', 'L')
                      or (config['part'] in ('runner_guides', 'runner_slides') and 'family' not in config))
                         and config.get('height_units', 1) in (1, 2)
-                        and config.get('depth_units', 4) in range(3, 8))):
+                        and config.get('depth_units', 4) in range(3, 8)
+                        and (config.get('drawer_columns', 1) == 1 or
+                             (config.get('drawer_columns') == 2 and config.get('family') == 'L'))
+                        and (config.get('drawer_rows', 1) == 1 or
+                             (config.get('drawer_rows') == 2 and config.get('drawer_columns') == 2
+                              and config.get('family') == 'L' and config.get('height_units') == 2)))):
                     result.append(item)
             except (OSError, ValueError, KeyError):
                 continue
@@ -383,7 +400,7 @@ def handler(jobs):
                         return self.send(400, {'error': 'Duplicate assembly parameters'})
                     try:
                         values = {key: value[0] for key, value in query.items()}
-                        for key in ('depth_units', 'height_units'):
+                        for key in ('depth_units', 'height_units', 'drawer_columns', 'drawer_rows'):
                             if key in values:
                                 values[key] = int(values[key])
                         for key in ('box_floor', 'module_rear'):
@@ -438,6 +455,15 @@ def handler(jobs):
             return self.build_bundle(job['builds'], job['configuration'], f'vault-{job_id[:8]}.zip')
 
         def build_bundle(self, builds, configuration, filename):
+            print_plan = None
+            if configuration.get('part') != 'label':
+                try:
+                    config = Configuration.parse(configuration)
+                    print_plan = {'schema': 'vault-print-plan/v1', 'configuration': config.as_dict(),
+                                  'files': []}
+                except ValueError:
+                    # Keep older, broader research builds downloadable.
+                    pass
             with tempfile.TemporaryFile() as archive:
                 with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as bundle:
                     bundle.writestr('configuration.json', json.dumps(configuration, indent=2))
@@ -447,7 +473,25 @@ def handler(jobs):
                             if relative.startswith(('source/', 'preview/')) or Path(relative).suffix not in {'.stl', '.step', '.3mf', '.txt'}:
                                 continue
                             bundle.writestr(f'{build["kind"]}/{relative}', jobs.files.artifact(build['id'], relative))
+                            if print_plan is not None and Path(relative).suffix == '.stl':
+                                print_plan['files'].append({'path': f'{build["kind"]}/{relative}',
+                                    'kind': build['kind'], 'build_id': build['id'],
+                                    'copies': config.print_copies[build['kind']],
+                                    'optional': build['kind'] == 'key_cap'})
                     bundle.writestr('parts.json', json.dumps(builds, indent=2))
+                    if print_plan is not None:
+                        bundle.writestr('print-plan.json', json.dumps(print_plan, indent=2))
+                        instructions = [
+                            'Print quantities for the configuration in configuration.json.',
+                            'Each file is included once; print the number of copies listed below.',
+                            'Use the supplied print orientation and each part\'s print notes in parts.json.',
+                            'Remove sacrificial supports before assembly. CAD checks do not establish printed fit.',
+                            '',
+                        ]
+                        instructions.extend(f'{item["copies"]} × {item["path"]}' +
+                                            (' (optional)' if item['optional'] else '')
+                                            for item in print_plan['files'])
+                        bundle.writestr('PRINTING.txt', '\n'.join(instructions) + '\n')
                 size = archive.tell()
                 archive.seek(0)
                 self.send_response(200)

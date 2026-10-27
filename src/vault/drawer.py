@@ -11,7 +11,9 @@ from .spec import DEFAULT_SPEC, ModuleSpec
 
 def drawer_spec(spec=DEFAULT_SPEC):
     """Normalize public part specs while limiting supported printable families."""
-    normalized = ModuleSpec(spec.family, getattr(spec, "depth_units", 4), spec.height_units)
+    normalized = ModuleSpec(getattr(spec, 'drawer_family', spec.family),
+                            getattr(spec, "depth_units", 4),
+                            getattr(spec, 'drawer_height_units', spec.height_units))
     if normalized.family not in ("S", "M", "L"):
         raise ValueError("Drawer parts support S, M, and L families")
     if normalized.height_units not in (1, 2):

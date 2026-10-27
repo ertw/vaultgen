@@ -27,7 +27,8 @@ def main():
             generate = build_label
         else:
             spec = select_spec(part, config.family, config.depth_units, config.height_units,
-                               box_floor=config.box_floor, module_rear=config.module_rear)
+                               box_floor=config.box_floor, module_rear=config.module_rear,
+                               drawer_columns=config.drawer_columns, drawer_rows=config.drawer_rows)
             generate = build
         print(f'Preparing {"multicolor label" if part == "label" else spec.name}', flush=True)
         previous = args.output / 'latest' / spec.slug
@@ -54,7 +55,12 @@ def main():
         from build123d import import_step
         from .assembly_validation import validate_assembly, validation_signature
         components = {}
+        from .generator import ASSEMBLY_PARTS
+        assembly_builds = []
         for kind, build_id in zip(config.parts, builds):
+            if kind not in ASSEMBLY_PARTS:
+                continue
+            assembly_builds.append(build_id)
             directory = args.output / 'builds' / build_id
             manifest = verify_files(directory)
             for details in manifest['parts'].values():
@@ -73,7 +79,9 @@ def main():
         if source_digest(source_hashes(PROJECT_ROOT)) != digest:
             raise RuntimeError('Generator source changed during assembly validation. Generate again.')
         record = {'validation_signature': validation_signature(config),
-                  'configuration': config.as_dict(), 'build_ids': builds, 'validation': validation}
+                  'configuration': config.as_dict(), 'build_ids': assembly_builds,
+                  'accessory_build_ids': [b for b in builds if b not in assembly_builds],
+                  'validation': validation}
         destination = args.output / 'web' / 'assemblies'
         destination.mkdir(parents=True, exist_ok=True)
         temporary = destination / (args.receipt.stem + '.tmp')
