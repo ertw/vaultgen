@@ -36,6 +36,9 @@ const configurationName = config => [
   `${config.height_units || 1}F`, config.drawer_rows === 2 ? '4 drawers' : '',
   ['set','module'].includes(config.part) ? {waffle:'Waffle', miura:'Miura-ori'}[config.wall_pattern] : '',
   ['set','module'].includes(config.part) && config.wall_pattern !== 'plain' && config.pattern_construction === 'corrugated' ? 'Corrugated' : '',
+  ['set','box'].includes(config.part) && config.box_variant === 'gridfinity' ? 'Gridfinity' : '',
+  ['set','box'].includes(config.part) && config.box_floor === 0 ? 'Floorless' : '',
+  ['set','box'].includes(config.part) ? {waffle:'Waffle rear', miura:'Miura-ori rear'}[config.box_rear_pattern] : '',
 ].filter(Boolean).join(' · ');
 const drawerFamily = config => config.drawer_columns === 2 ? 'S' : config.family;
 const drawerHeight = config => config.height_units / (config.drawer_rows || 1);
@@ -44,8 +47,13 @@ const layoutCount = layout => layout.columns * (layout.rows || 1);
 const patternKeys = ['wall_pattern', 'pattern_pitch', 'pattern_depth', 'pattern_line_width', 'pattern_faces', 'pattern_construction'];
 const patternDefaults = {wall_pattern: 'plain', pattern_pitch: 14, pattern_depth: 1.7, pattern_line_width: 0.65, pattern_faces: 'all', pattern_construction: 'recessed'};
 const moduleSelected = () => ['set', 'module'].includes(state.selection.part);
+const boxSelected = () => ['set', 'box'].includes(state.selection.part);
 const defaultPattern = () => Object.fromEntries(patternKeys.map(key => [key, state.config.defaults[key] ?? patternDefaults[key]]));
-const requestConfiguration = () => moduleSelected() ? {...state.selection} : {...state.selection, ...defaultPattern(), wall_pattern: 'plain'};
+const requestConfiguration = () => ({
+  ...state.selection,
+  ...(!moduleSelected() ? {...defaultPattern(), wall_pattern: 'plain'} : {}),
+  ...(!boxSelected() ? {box_variant: 'plain', box_rear_pattern: 'plain', box_floor: state.selection.box_floor || 0.8} : {}),
+});
 const svgIcon = name => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.classList.add('icon');
   const use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); use.setAttribute('href', `#i-${name}`); svg.append(use); return svg;
@@ -93,6 +101,7 @@ function optionButton(value, key, label, className) {
     }
     if (key === 'height_units' && value === 1) state.selection.drawer_rows = 1;
     if (key === 'wall_pattern' && value === 'plain') Object.assign(state.selection, defaultPattern(), {wall_pattern: 'plain'});
+    if (key === 'box_variant' && value === 'plain' && state.selection.box_floor === 0) state.selection.box_floor = 0.8;
     renderSelection(); showSelection();
   });
   return button;
@@ -115,12 +124,14 @@ function createControls(config) {
     }
   }
   for (const [key, target] of [['box_floor', 'box-floor-options'], ['module_rear', 'module-rear-options']]) {
-    for (const [index, value] of config.thicknesses[key].entries()) {
-      const label = `${value} mm · ${index ? 'Original' : 'Current'}`;
+    for (const value of config.thicknesses[key]) {
+      const label = value === 0 ? 'Floorless' : `${value} mm · ${value === config.defaults[key] ? 'Current' : 'Original'}`;
       const button = optionButton(value, key, label, ''); button.textContent = label; $(target).append(button);
     }
   }
   for (const [values, key, target] of [
+    [config.box_variants || [{id:'plain', name:'Plain'}, {id:'gridfinity', name:'Gridfinity'}], 'box_variant', 'box-variant-options'],
+    [config.box_rear_patterns || [{id:'plain', name:'Plain'}, {id:'waffle', name:'Waffle'}, {id:'miura', name:'Miura-ori'}], 'box_rear_pattern', 'box-rear-pattern-options'],
     [config.wall_patterns || [{id:'plain', name:'Plain'}, {id:'waffle', name:'Waffle'}, {id:'miura', name:'Miura-ori'}], 'wall_pattern', 'wall-pattern-options'],
     [config.pattern_faces || [{id:'all', name:'All outer walls'}, {id:'sides', name:'Sides only'}], 'pattern_faces', 'pattern-faces-options'],
     [config.pattern_constructions || [{id:'recessed', name:'Recessed'}, {id:'corrugated', name:'Two-perimeter corrugated'}], 'pattern_construction', 'pattern-construction-options'],
@@ -195,7 +206,7 @@ function renderEnvelope(dimensions) {
   label(width/2,0,-17,`${width} mm`); label(width+25,depth/2,0,`${depth.toFixed(1)} mm`);
 }
 function renderSelection() {
-  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-floor-options','box_floor'], ['module-rear-options','module_rear'], ['wall-pattern-options','wall_pattern'], ['pattern-faces-options','pattern_faces'], ['pattern-construction-options','pattern_construction']]) {
+  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-variant-options','box_variant'], ['box-rear-pattern-options','box_rear_pattern'], ['box-floor-options','box_floor'], ['module-rear-options','module_rear'], ['wall-pattern-options','wall_pattern'], ['pattern-faces-options','pattern_faces'], ['pattern-construction-options','pattern_construction']]) {
     for (const button of $(target).querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.value === String(state.selection[key])));
   }
   const dimensions = envelopeDimensions(), config = state.selection;
@@ -214,6 +225,16 @@ function renderSelection() {
   $('configuration-name').textContent = configurationName(config);
   $('configuration-dimensions').textContent = `${dimensions[0]} × ${dimensions[1].toFixed(1)} × ${dimensions[2]} mm body`;
   $('part-hint').textContent = partDescription(config);
+  $('box-variant-field').hidden = !boxSelected();
+  const floorless = $('box-floor-options').querySelector('button[data-value="0"]');
+  if (floorless) floorless.hidden = !boxSelected() || config.box_variant !== 'gridfinity';
+  $('box-variant-hint').textContent = config.box_variant === 'gridfinity'
+    ? `Integrated ${({S: 3, M: 5, L: 6})[drawerFamily(config)]} × ${config.depth_units} Gridfinity grid inside each box, on a 42 mm pitch. ${config.box_floor === 0 ? 'Open cell bottoms; bins rest on the grid. The perimeter and grid webs support the box.' : 'Adds 5 mm above the selected floor.'}`
+    : 'A plain interior floor. Choose Gridfinity to locate bins on an integrated grid inside the box.';
+  $('box-rear-pattern-field').hidden = !boxSelected();
+  $('box-rear-pattern-hint').textContent = config.box_rear_pattern === 'plain'
+    ? 'Solid rear wall. Choose Waffle or Miura-ori for a two-perimeter pattern.'
+    : 'Two-perimeter corrugation at 14 mm pitch, with 1.3 mm facets for 0.65 mm extrusion lines. Floor and corner bands stay solid.';
   if (!state.selectedArtifact && !state.assemblyShowing) {
     $('preview-title').textContent = configurationName(config);
     renderEnvelope(dimensions); setMetrics(dimensions);
@@ -350,6 +371,8 @@ function matches(build, kind) {
   const c = build.configuration, s = state.selection;
   const keys = {module: ['family','depth_units','height_units','module_rear','drawer_columns'], box: ['family','depth_units','height_units','box_floor'], facade: ['family','height_units'], rails: ['family'], runner_guides: ['depth_units'], runner_slides: ['depth_units'], key: [], spring: [], runner_stop: [], facade_cap: [], key_cap: [], latch: []}[kind];
   const selected = kind === 'module' ? s : {...s, family: drawerFamily(s), height_units: drawerHeight(s)};
+  if (kind === 'box' && (c.box_variant ?? 'plain') !== s.box_variant) return false;
+  if (kind === 'box' && (c.box_rear_pattern ?? 'plain') !== s.box_rear_pattern) return false;
   if (kind === 'module') {
     if ((c.wall_pattern ?? 'plain') !== s.wall_pattern) return false;
     if (s.wall_pattern !== 'plain' && !patternKeys.slice(1).every(key => (c[key] ?? state.config.defaults[key] ?? patternDefaults[key]) === s[key])) return false;
@@ -425,7 +448,7 @@ function renderAssemblyDetails(scene) {
   selectInstance(state.selectedInstance);
 }
 async function showAssembly(preservePreview = false) {
-  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'module_rear', 'drawer_columns', 'drawer_rows', ...patternKeys].map(key => [key, state.selection[key]])));
+  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'box_variant', 'box_rear_pattern', 'module_rear', 'drawer_columns', 'drawer_rows', ...patternKeys].map(key => [key, state.selection[key]])));
   const key = query.toString(), newSelection = !state.assemblyShowing || state.assemblyKey !== key;
   if (preservePreview && !newSelection && state.assemblyPending) return;
   state.assemblyController?.abort();
@@ -644,7 +667,7 @@ $('refresh-history').addEventListener('click', async () => {
 });
 async function initialize() {
   try {
-    state.config = await api('/api/config'); state.selection = { ...patternDefaults, ...state.config.defaults };
+    state.config = await api('/api/config'); state.selection = { ...patternDefaults, box_variant: 'plain', box_rear_pattern: 'plain', ...state.config.defaults };
     createControls(state.config); renderSelection();
     await refreshHistory();
     const { jobs: allJobs } = await api('/api/jobs');

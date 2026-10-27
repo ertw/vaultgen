@@ -1,6 +1,17 @@
 """Tray integrity, breakaway supports, attachment clearance, and print placement."""
 import unittest
-from vault.box import SPEC, build_box, print_orientation
+from vault.box import SPEC, _runner_support, build_box, print_orientation
+from vault.drawer import DrawerLayout
+from vault.spec import ModuleSpec
+
+
+def support_tooth_intervals(support):
+    """Measure each tooth's bottom face independently of the spacing formula."""
+    bottom = support.bounding_box().min.Z
+    return sorted((face.bounding_box().min.Y, face.bounding_box().max.Y)
+                  for face in support.faces()
+                  if abs(face.bounding_box().min.Z-bottom) < 1e-7
+                  and abs(face.bounding_box().max.Z-bottom) < 1e-7)
 
 
 class BoxTests(unittest.TestCase):
@@ -95,10 +106,10 @@ class BoxTests(unittest.TestCase):
 
     def test_linear_gear_exits_retain_rounded_lips_roof_and_front_rim(self):
         # R1 rolled lips widen the exit below/above the straight gear slot.
-        for x, z in ((66.8, 35.1), (-66.8, 11.9)):
-            self.assertFalse(self.box.is_inside((x, 185.5, z)))
-        for x, z in ((66.8, 34.7), (-66.8, 12.3)):
-            self.assertTrue(self.box.is_inside((x, 185.5, z)))
+        for x, y, z in ((66.8, 185.5, 35.1), (-66.8, 183.3, 11.9)):
+            self.assertFalse(self.box.is_inside((x, y, z)))
+        for x, y, z in ((66.8, 185.5, 34.7), (-66.8, 183.3, 12.3)):
+            self.assertTrue(self.box.is_inside((x, y, z)))
         # The upper clearance has a rounded raised center and solid shoulders;
         # a plain taller rectangle would erase both shoulders and the roof.
         self.assertFalse(self.box.is_inside((65, 185, 41.6)))
@@ -109,6 +120,34 @@ class BoxTests(unittest.TestCase):
         for x, z in ((65, 38), (-65, 9)):
             for y in (182.4, 187.6):
                 self.assertTrue(self.box.is_inside((x, y, z)))
+
+    def test_lower_gear_roofs_have_rounded_bridge_relief(self):
+        # Both halves of the lower passage need headroom above the rail.
+        # The upper profile supplies a 1.516 mm rise and 0.8 mm flat crown;
+        # curved shoulders keep the original front and rear walls intact.
+        for x, floor, roof in ((-60, 6.607, 11.807), (60, 6.61, 11.89)):
+            with self.subTest(x=x):
+                for y in (184.7, 185, 185.3):
+                    self.assertFalse(self.box.is_inside((x, y, roof+1.5)))
+                    self.assertTrue(self.box.is_inside((x, y, roof+1.54)))
+                # These points distinguish the rounded crown from a raised
+                # rectangle and from an arch inverted into the channel floor.
+                for y in (183.9, 186.1):
+                    self.assertFalse(self.box.is_inside((x, y, roof+1.2)))
+                    self.assertTrue(self.box.is_inside((x, y, roof+1.4)))
+                for y in (183.3, 186.7):
+                    self.assertTrue(self.box.is_inside((x, y, roof+.2)))
+                for y in (182.4, 187.6):
+                    for z in (floor+.5, roof+.6):
+                        self.assertTrue(self.box.is_inside((x, y, z)))
+                self.assertTrue(self.box.is_inside((x, 185, floor-.02)))
+                self.assertFalse(self.box.is_inside((x, 185, floor+.02)))
+        # Relief reaches the open exit, but the blind pocket's fixed stop
+        # remains a closed wall at the rail's original installation datum.
+        self.assertFalse(self.box.is_inside((-67.05, 185, 13)))
+        for z in (9, 13):
+            self.assertFalse(self.box.is_inside((66.29, 185, z)))
+            self.assertTrue(self.box.is_inside((66.31, 185, z)))
 
     def test_runner_channels_and_print_bed(self):
         for sign in (-1,1):
@@ -144,16 +183,40 @@ class BoxTests(unittest.TestCase):
         # Sample the first and last teeth as well as teeth along the channel.
         # A continuous connection at each tooth supports the first sheet layers
         # and the roof while the narrow gaps between teeth permit removal.
+        intervals = support_tooth_intervals(_runner_support(1))
+        selected = (0, len(intervals)//4, len(intervals)//2, len(intervals)-1)
         for sign in (-1, 1):
-            for y in (31.35, 67.7, 113.2, 185.9):
+            for index in selected:
+                y = sum(intervals[index])/2 + 2.3
                 with self.subTest(side=sign, tooth_y=y):
                     for z in (18, 18.55, 19.2, 23.5, 28.4, 28.6, 28.9):
                         self.assertTrue(self.box.is_inside((sign*66.15, y, z)))
-            for y in (36, 72.3, 117.7, 181.4):
+            for index in (0, len(intervals)//4, len(intervals)//2, len(intervals)-2):
+                y = (intervals[index][1]+intervals[index+1][0])/2 + 2.3
                 with self.subTest(side=sign, gap_y=y):
                     self.assertFalse(self.box.is_inside((sign*66.15, y, 18.55)))
                     self.assertTrue(self.box.is_inside((sign*66.15, y, 23.5)))
                     self.assertFalse(self.box.is_inside((sign*66.15, y, 28.6)))
+
+    def test_runner_support_shortens_bridges_and_keeps_end_contacts_at_every_depth(self):
+        for depth in range(3, 8):
+            layout = DrawerLayout(ModuleSpec('S', depth))
+            for sign in (-1, 1):
+                with self.subTest(depth=depth, side=sign):
+                    support = _runner_support(sign, layout=layout)
+                    self.assertTrue(support.is_valid)
+                    self.assertEqual(len(support.solids()), 1)
+                    self.assertAlmostEqual(support.bounding_box().size.X, .5)
+                    intervals = support_tooth_intervals(support)
+                    self.assertAlmostEqual(intervals[0][0], 28.7)
+                    self.assertAlmostEqual(intervals[-1][1], 183.95+layout.depth_delta)
+                    for start, end in intervals:
+                        self.assertAlmostEqual(end-start, .7)
+                    for previous, following in zip(intervals, intervals[1:]):
+                        self.assertLessEqual(following[0]-previous[0], 7.5+1e-7)
+                        self.assertLessEqual(following[0]-previous[1], 6.8+1e-7)
+                    if depth == 4:
+                        self.assertGreater(len(intervals), 18)
 
     def test_runner_support_leaves_its_back_and_ends_clear(self):
         for sign in (-1, 1):

@@ -97,7 +97,9 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         'step_bytes': (output / f'{stem}.step').stat().st_size,
         'elapsed_seconds': time.monotonic() - started,
         'print_bbox_mm': list(printable.bounding_box().size),
-        'print_orientation': ('Closed bottom on Z=0. Remove the breakaway runner sheets before assembly.' if part_kind(spec) == 'box' else
+        'print_orientation': (('Gridfinity frame on Z=0; sockets remain open underneath. '
+                               if getattr(spec, 'box_floor', .8) == 0 else 'Closed bottom on Z=0. ')
+                              + 'Remove the breakaway runner sheets before assembly.' if part_kind(spec) == 'box' else
                               'Closed back on Z=0; model rotated +90 degrees about X. '
                               'Remove the breakaway webs under the runner-mouth lips in every bay and tier before assembly.'
                               if part_kind(spec) == 'module' else
@@ -117,6 +119,19 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
             f' Pattern valleys retain at least {2 * spec.pattern_line_width:g} mm for two '
             f'{spec.pattern_line_width:g} mm extrusion lines with a 0.6 mm nozzle; crests and '
             'structural lands remain thicker. Verify the perimeter paths in your slicer.')
+    if part_kind(spec) == 'box' and getattr(spec, 'box_variant', 'plain') == 'gridfinity':
+        from .gridfinity import GridfinityLayout
+        manifest['gridfinity'] = GridfinityLayout(spec).notes()
+        manifest['print_orientation'] += (
+            ' Integral Gridfinity pockets use a 42 mm grid inside the drawer. '
+            + ('The 5 mm grid has no closed floor. ' if spec.box_floor == 0 else
+               'The grid rises 5 mm above the selected floor. ')
+            + 'Check bin height and printed fit before filling the drawer.')
+    if part_kind(spec) == 'box' and getattr(spec, 'box_rear_pattern', 'plain') != 'plain':
+        manifest['print_orientation'] += (
+            ' The corrugated rear wall uses a 14 mm pattern pitch and targets 1.3 mm '
+            'normal facet thickness for two 0.65 mm extrusion lines with a 0.6 mm nozzle. '
+            'Folds and structural borders remain thicker. Verify perimeter paths in your slicer.')
     (output / 'build.json').write_text(json.dumps(manifest, indent=2) + '\n')
     return manifest
 
@@ -266,7 +281,8 @@ def selected_build(output, spec):
 
 def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.8, module_rear=0.9,
                 drawer_columns=1, drawer_rows=1, wall_pattern='plain', pattern_pitch=14.0,
-                pattern_depth=1.7, pattern_line_width=0.65, pattern_faces='all', pattern_construction='recessed'):
+                pattern_depth=1.7, pattern_line_width=0.65, pattern_faces='all', pattern_construction='recessed',
+                box_variant='plain', box_rear_pattern='plain'):
     """Resolve the same native constructors for the CLI and web generator."""
     from .generator import ACCESSORY_PARTS
     if part in ACCESSORY_PARTS:
@@ -282,7 +298,7 @@ def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.
     height_units = module_spec.drawer_height_units
     if part == 'box':
         from .box import BoxSpec
-        return BoxSpec(family, depth_units, height_units, box_floor)
+        return BoxSpec(family, depth_units, height_units, box_floor, box_variant, box_rear_pattern)
     if part == 'facade':
         from .facade import FacadeSpec
         return FacadeSpec(family, height_units)
@@ -308,6 +324,12 @@ def main():
     parser.add_argument('--family', choices=FAMILIES, default='S')
     parser.add_argument('--depth-units', type=int, default=4)
     parser.add_argument('--height-units', type=int, default=1)
+    parser.add_argument('--box-variant', choices=('plain', 'gridfinity'), default='plain',
+                        help='Plain drawer floor or integral Gridfinity pockets')
+    parser.add_argument('--box-rear-pattern', choices=('plain', 'waffle', 'miura'), default='plain',
+                        help='Plain box rear or a two-perimeter corrugated waffle/Miura rear wall')
+    parser.add_argument('--box-floor', type=float, choices=(0., .8, 3.), default=.8,
+                        help='Box floor thickness in mm; 0 selects Floorless and requires --box-variant gridfinity')
     parser.add_argument('--drawer-columns', type=int, choices=(1, 2), default=1,
                         help='Two columns create an L² module for two S drawers (family L only)')
     parser.add_argument('--drawer-rows', type=int, choices=(1, 2), default=1,
@@ -325,6 +347,8 @@ def main():
     parser.add_argument('--tolerance', type=float, default=.25, help='Maximum retained-surface sample deviation in mm, including the simplified outside corners')
     parser.add_argument('--mating-tolerance', type=float, default=.1, help='Stricter maximum deviation in the mechanical interface regions, in mm')
     args = parser.parse_args()
+    if args.box_floor == 0 and args.box_variant != 'gridfinity':
+        parser.error('A floorless box requires --box-variant gridfinity')
     try:
         spec = ModuleSpec(args.family, args.depth_units, args.height_units,
                           drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows,
@@ -335,6 +359,8 @@ def main():
         parser.error(str(error))
     try:
         spec = select_spec(args.part, args.family, args.depth_units, args.height_units,
+                           box_variant=args.box_variant, box_floor=args.box_floor,
+                           box_rear_pattern=args.box_rear_pattern,
                            drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows,
                            wall_pattern=args.wall_pattern, pattern_pitch=args.pattern_pitch,
                            pattern_depth=args.pattern_depth, pattern_line_width=args.pattern_line_width,

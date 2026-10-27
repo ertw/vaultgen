@@ -61,6 +61,7 @@ def configuration_label(configuration):
         layout = ' (2×2 drawers)'
     return (f"{configuration.family}{configuration.depth_units}{layout} {configuration.height_units}F "
             f"floor={configuration.box_floor:g} rear={configuration.module_rear:g} "
+            f"box={configuration.box_variant} box_rear={configuration.box_rear_pattern} "
             f"pattern={configuration.wall_pattern}/{configuration.pattern_construction}")
 
 
@@ -102,6 +103,10 @@ def main():
     mode.add_argument("--definitions-only", action="store_true", help="Only check inexpensive scene inventory/placement")
     parser.add_argument("--output", type=Path, default=Path("research/assembly_fit.json"))
     parser.add_argument("--verbose", action="store_true", help="Print individual native pair progress")
+    parser.add_argument('--box-variant', choices=('plain', 'gridfinity'), default='plain')
+    parser.add_argument('--box-floor', type=float, choices=(0., .8, 3.),
+                        help='Override the box floor for every case; 0 requires --box-variant gridfinity')
+    parser.add_argument('--box-rear-pattern', choices=('plain', 'waffle', 'miura'), default='plain')
     parser.add_argument('--wall-pattern', choices=('plain', 'waffle', 'miura'), default='plain')
     parser.add_argument('--pattern-construction', choices=('recessed', 'corrugated'), default='recessed')
     parser.add_argument('--pattern-pitch', type=float, default=14.)
@@ -110,6 +115,10 @@ def main():
     parser.add_argument('--pattern-faces', choices=('all', 'sides'), default='all')
     args = parser.parse_args()
     pattern_settings = {key: getattr(args, key) for key in PATTERN_DEFAULTS}
+    pattern_settings['box_variant'] = args.box_variant
+    pattern_settings['box_rear_pattern'] = args.box_rear_pattern
+    if args.box_floor is not None:
+        pattern_settings['box_floor'] = args.box_floor
     try:
         Configuration(**pattern_settings)
     except ValueError as error:

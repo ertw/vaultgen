@@ -75,6 +75,47 @@ floor available. Module rear thickness defaults to 0.9 mm, with the original
 STLs. Each variant has its own resolved parameters and build alias; external
 dimensions remain fixed.
 
+For a box or complete set, **Box base** selects **Plain** (the default) or
+**Gridfinity**. Gridfinity integrates a baseplate into the closed drawer floor,
+with 42 mm cells: S has three columns, M five, and L six; the number of rows
+matches depth units 3–7. Two- and four-drawer L² layouts use three columns in
+each S drawer. Both 1F and 2F boxes and both floor thicknesses are supported.
+The grid rises 5 mm above the selected floor, and bin feet recess into its
+sockets. Choose bins whose installed height fits beneath the drawer opening;
+bin height is not validated by the generator. Bins, magnet holes and magnets
+are not generated.
+
+The API field is `box_variant`, accepting `plain` or `gridfinity`; older saved
+configurations default to `plain`. Gridfinity boxes have separate cache and
+download identities and appear in the finished assembly preview. Their STL
+retains the normal breakaway runner supports. Complete-set fit receipts still
+check the exact selected component builds. Gridfinity bin seating is checked
+separately with nominal native feet; physical printed fit remains untested.
+
+With Gridfinity selected, **Box floor → Floorless** opens the cell bottoms
+and retains the grid webs and perimeter as physical support. The socket
+profiles and height match the 0.8 mm-floor Gridfinity box. The API/CLI value
+is `box_floor: 0` / `--box-floor 0`, accepted only with Gridfinity; switching
+the browser back to a plain base restores the 0.8 mm floor. Floorless boxes
+have their own build and cache identity and combine with either rear-wall
+pattern. Regenerate the box to use this option.
+
+```bash
+python -m vault build --part box --box-variant gridfinity
+python tools/check_assembly.py --definitions-only --box-variant gridfinity
+python tools/check_assembly.py --case S4:1 --box-variant gridfinity
+```
+
+For a box or complete set, **Box rear wall** selects Plain, Waffle, or
+Miura-ori independently of the box base and module pattern. Waffle and
+Miura-ori use two-perimeter corrugation with fixed 14 mm pitch and 1.3 mm
+facets for two 0.65 mm extrusion lines. Floor, corner and top bands remain
+solid. The API field is `box_rear_pattern` (`plain`, `waffle`, or `miura`);
+older requests and cached boxes default to `plain`. Patterned rear walls
+have separate build identities and are matched in assembly previews and
+fit receipts. The CLI option is `--box-rear-pattern`. Regenerate the box
+to include the chosen rear wall, the lower rail arches and denser support teeth.
+
 For a module or complete set, **Module wall pattern** selects Plain, Waffle,
 or Miura-ori. Patterned variants also select **Recessed** or **Two-perimeter
 corrugated** construction, pitch, maximum recess depth, extrusion line width,

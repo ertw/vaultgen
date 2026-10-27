@@ -105,7 +105,7 @@ class AssemblyWorkerTests(unittest.TestCase):
         })
         for call in self.select_spec.call_args_list:
             self.assertEqual(call.args[1:], ('L', 6, 2))
-            self.assertEqual(call.kwargs, {'box_floor': 3., 'module_rear': 2.,
+            self.assertEqual(call.kwargs, {'box_floor': 3., 'box_variant': 'plain', 'box_rear_pattern': 'plain', 'module_rear': 2.,
                                           'drawer_columns': 1, 'drawer_rows': 1, **PATTERN_DEFAULTS})
 
     def test_pattern_settings_are_preserved_in_selection_and_fit_receipt(self):
@@ -120,6 +120,36 @@ class AssemblyWorkerTests(unittest.TestCase):
             self.assertEqual(call.kwargs['pattern_line_width'], .8)
             self.assertEqual(call.kwargs['pattern_faces'], 'sides')
             self.assertEqual(call.kwargs['pattern_construction'], 'corrugated')
+        self.assertEqual(self.read_assembly_receipt()['configuration'], self.configuration.as_dict())
+
+    def test_gridfinity_variant_is_preserved_in_selection_and_fit_receipt(self):
+        self.configuration = Configuration(box_variant='gridfinity')
+        self.run_worker()
+        for call in self.select_spec.call_args_list:
+            self.assertEqual(call.kwargs['box_variant'], 'gridfinity')
+        self.assertEqual(self.read_assembly_receipt()['configuration']['box_variant'], 'gridfinity')
+
+    def test_floorless_gridfinity_is_preserved_in_selection_and_fit_receipt(self):
+        self.configuration = Configuration(box_variant='gridfinity', box_floor=0,
+                                           box_rear_pattern='miura')
+        self.run_worker()
+        for call in self.select_spec.call_args_list:
+            self.assertEqual(call.kwargs['box_variant'], 'gridfinity')
+            self.assertEqual(call.kwargs['box_floor'], 0)
+            self.assertEqual(call.kwargs['box_rear_pattern'], 'miura')
+        self.assertEqual(self.read_assembly_receipt()['configuration'], self.configuration.as_dict())
+
+    def test_box_rear_and_module_patterns_remain_independent_in_worker(self):
+        self.configuration = Configuration(box_variant='gridfinity', box_rear_pattern='waffle',
+                                           wall_pattern='miura', pattern_pitch=20,
+                                           pattern_depth=1.4, pattern_line_width=.8,
+                                           pattern_construction='corrugated')
+        self.run_worker()
+        for call in self.select_spec.call_args_list:
+            self.assertEqual(call.kwargs['box_rear_pattern'], 'waffle')
+            self.assertEqual(call.kwargs['box_variant'], 'gridfinity')
+            self.assertEqual(call.kwargs['wall_pattern'], 'miura')
+            self.assertEqual(call.kwargs['pattern_pitch'], 20)
         self.assertEqual(self.read_assembly_receipt()['configuration'], self.configuration.as_dict())
 
     def test_double_drawer_layout_is_preserved_in_selection_and_fit_receipt(self):

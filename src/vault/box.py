@@ -3,13 +3,14 @@
 Measured nominal dimensions from S4 Box 1F.stl. The front seating plane is
 Y=188.1 and screw axes coincide with the S1F facade. Small source blends and
 attachment recesses are simplified; branding is omitted. Sacrificial sheets support
-both runner channels during bottom-down printing. The rear wall is solid.
+both runner channels during bottom-down printing. The rear wall is plain by
+default, with optional two-perimeter Waffle and Miura-ori corrugation.
 """
 from dataclasses import dataclass
 from math import ceil, isfinite, sqrt
 from build123d import Axis, Edge, Solid, Wire, Face, Plane
 from .shell import _rounded_rect
-from .spec import DEFAULT_SPEC
+from .spec import DEFAULT_SPEC, WALL_PATTERNS
 from .drawer import DrawerLayout, drawer_spec
 
 
@@ -19,17 +20,33 @@ class BoxSpec:
     depth_units: int = 4
     height_units: int = 1
     box_floor: float = 0.8
+    box_variant: str = 'plain'
+    box_rear_pattern: str = 'plain'
 
     def __post_init__(self):
         drawer_spec(self)
-        if type(self.box_floor) not in (int, float) or self.box_floor not in (0.8, 3.0):
-            raise ValueError('Box floor must be 0.8 or 3.0 mm')
+        if type(self.box_floor) not in (int, float) or self.box_floor not in (0.0, 0.8, 3.0):
+            raise ValueError('Box floor must be 0 (floorless Gridfinity), 0.8, or 3.0 mm')
+        if self.box_variant not in ('plain', 'gridfinity'):
+            raise ValueError('Box variant must be plain or gridfinity')
+        if self.box_floor == 0 and self.box_variant != 'gridfinity':
+            raise ValueError('Floorless boxes require the Gridfinity base')
+        if not isinstance(self.box_rear_pattern, str) or self.box_rear_pattern not in WALL_PATTERNS:
+            raise ValueError('Box rear pattern must be plain, waffle, or miura')
 
     @property
-    def name(self): return f'{self.family}{self.depth_units} Box {self.height_units}F' + (' · 3 mm floor' if self.box_floor == 3 else '')
+    def name(self):
+        floor = ' · Floorless' if self.box_floor == 0 else ' · 3 mm floor' if self.box_floor == 3 else ''
+        base = ' · Gridfinity' if self.box_variant == 'gridfinity' else ''
+        rear = f' · {WALL_PATTERNS[self.box_rear_pattern]} corrugated rear' if self.box_rear_pattern != 'plain' else ''
+        return f'{self.family}{self.depth_units} Box {self.height_units}F' + floor + base + rear
 
     @property
-    def slug(self): return f'{self.family.lower()}{self.depth_units}_box_{self.height_units}f' + ('_floor_3mm' if self.box_floor == 3 else '')
+    def slug(self):
+        floor = '_floorless' if self.box_floor == 0 else '_floor_3mm' if self.box_floor == 3 else ''
+        base = '_gridfinity' if self.box_variant == 'gridfinity' else ''
+        rear = f'_rear_{self.box_rear_pattern}_corrugated' if self.box_rear_pattern != 'plain' else ''
+        return f'{self.family.lower()}{self.depth_units}_box_{self.height_units}f' + floor + base + rear
 
 
 SPEC = BoxSpec()
@@ -47,7 +64,7 @@ def _runner_support(sign, clearance=0, *, layout=None, tier=0):
     """Half-mm removable sheet with repeated teeth into both channel lips.
 
     The source has roughly 0.7 mm teeth at irregular 8–10.7 mm intervals.
-    Regular spacing keeps the first sheet layers bridging less than 9 mm,
+    Regular spacing keeps the first sheet layers bridging at most 6.8 mm,
     rather than the full channel length. Dimensions use the construction datum.
     """
     layout = layout or DrawerLayout()
@@ -56,7 +73,7 @@ def _runner_support(sign, clearance=0, *, layout=None, tier=0):
     y0, y1 = 28.7, 183.95+dy
     sheet = block(x0, y0, 20.105, x1, y1, 29.483)
     tooth_width = .7
-    tooth_count = ceil((y1-y0-tooth_width) / ((183.95-28.7-.7)/17)) + 1
+    tooth_count = ceil((y1-y0-tooth_width) / 7.5) + 1
     pitch = (y1-y0-tooth_width)/(tooth_count-1)
     teeth = [block(x0, y0+i*pitch, 18.9-clearance,
                    x1, y0+i*pitch+tooth_width, 30.1+clearance)
@@ -82,12 +99,40 @@ def _round_gear_channel(passage, radius):
     return passage.fillet(radius, edges)
 
 
+def _gear_roof_clearance(x0, x1, ceiling, *, layout):
+    """Raised 2.8 mm roof with R1 corners and a 0.8 mm bridging crown.
+
+    Reuse the upper rail's flange relief above both lower rail passages to
+    give drooping bridge strands 1.516 mm of headroom at the center. These
+    coordinates precede box registration; the relief always rises in Z.
+    """
+    radius = 1.0
+    diagonal = radius / sqrt(2)
+    point = lambda y, z: (x0, y, z)
+    back, front = 181.3+layout.depth_delta, 184.1+layout.depth_delta
+    shoulder = ceiling + .516
+    edges = [
+        Edge.make_line(point(back, ceiling), point(front, ceiling)),
+        Edge.make_line(point(front, ceiling), point(front, shoulder)),
+        Edge.make_three_point_arc(point(front, shoulder),
+                                  point(front-radius+diagonal, shoulder+diagonal),
+                                  point(front-radius, shoulder+radius)),
+        Edge.make_line(point(front-radius, shoulder+radius),
+                       point(back+radius, shoulder+radius)),
+        Edge.make_three_point_arc(point(back+radius, shoulder+radius),
+                                  point(back+radius-diagonal, shoulder+diagonal),
+                                  point(back, shoulder)),
+        Edge.make_line(point(back, shoulder), point(back, ceiling)),
+    ]
+    return Solid.extrude(Face(Wire(edges)), (x1-x0, 0, 0))
+
+
 def _linear_gear_exit(lower=False, corner_radius=0.8, *, layout=None):
     """Handed gear passage with a one-mm roll out through the outside wall.
 
     Source sections place the exits at +X/upper and -X/lower, not at both
     ends of every attachment recess. Coordinates here precede registration.
-    The upper passage also has the source's rounded clearance in its roof.
+    Both roofs have the upper source passage's rounded clearance profile.
     """
     layout = layout or DrawerLayout()
     dx, dy = layout.width_delta, layout.depth_delta
@@ -115,27 +160,13 @@ def _linear_gear_exit(lower=False, corner_radius=0.8, *, layout=None):
     passage = Solid.extrude(Face(Wire(edges)), (0, 4.4, 0))
     passage = _round_gear_channel(passage, corner_radius)
     if lower:
-        return passage.rotate(Axis((0, 0, 24.5), (0, 1, 0)), 180)
+        passage = passage.rotate(Axis((0, 0, 24.5), (0, 1, 0)), 180)
+        # Rotate the handed slot first so the added arch stays above the rail.
+        return passage.fuse(_gear_roof_clearance(
+            -outside, -inner, 49-floor, layout=layout))
 
-    # The raised roof is 2.8 mm wide with R1 upper corners. Keeping the
-    # surrounding shoulders leaves the front rim and a 0.591 mm top skin.
-    point = lambda y, z: (inner, y, z)
-    back, front, shoulder = 181.3+dy, 184.1+dy, 41.909
-    edges = [
-        Edge.make_line(point(back, ceiling), point(front, ceiling)),
-        Edge.make_line(point(front, ceiling), point(front, shoulder)),
-        Edge.make_three_point_arc(point(front, shoulder),
-                                  point(front-radius+diagonal, shoulder+diagonal),
-                                  point(front-radius, shoulder+radius)),
-        Edge.make_line(point(front-radius, shoulder+radius),
-                       point(back+radius, shoulder+radius)),
-        Edge.make_three_point_arc(point(back+radius, shoulder+radius),
-                                  point(back+radius-diagonal, shoulder+diagonal),
-                                  point(back, shoulder)),
-        Edge.make_line(point(back, shoulder), point(back, ceiling)),
-    ]
-    roof = Solid.extrude(Face(Wire(edges)), (outside-inner, 0, 0))
-    return passage.fuse(roof)
+    # Original upper shoulders retain the front rim and 0.591 mm top skin.
+    return passage.fuse(_gear_roof_clearance(inner, outside, ceiling, layout=layout))
 
 
 def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3,
@@ -146,8 +177,12 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
     ``include_supports=False`` so slides occupy the finished channels.
     """
     floor_thickness = getattr(spec, 'box_floor', 0.8)
+    box_variant = getattr(spec, 'box_variant', 'plain')
+    box_rear_pattern = getattr(spec, 'box_rear_pattern', 'plain')
     layout = DrawerLayout(spec)
     spec = layout.spec
+    box_spec = BoxSpec(spec.family, spec.depth_units, spec.height_units,
+                       floor_thickness, box_variant, box_rear_pattern)
     dx, dy, dz = layout.width_delta, layout.depth_delta, layout.height_delta
     if not isfinite(gear_corner_radius) or not 0 <= gear_corner_radius <= 1.0:
         raise ValueError('gear_corner_radius must be between 0 and 1 mm')
@@ -162,7 +197,9 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
     part = part.fuse(block(-67.1-dx,182.3+dy,6,67.1+dx,185.8+dy,43.5+dz)).clean()
     # Rounding the cavity cutter leaves a reinforcing inside floor fillet.
     floor_radius = 1.0
-    floor_z = 6 + floor_thickness
+    # Floorless Gridfinity retains the thin foundation beneath its webs and
+    # perimeter; socket openings are cut through it after the grid is fused.
+    floor_z = 6 + max(0.8, floor_thickness)
     # Leave 1.3 mm behind the runner channels for two extrusion lines
     # with a 0.6 mm nozzle. Keep front/rear planes and exterior fixed.
     cavity_half_width = 64.9 + dx - 1.3
@@ -207,6 +244,11 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
         z0,z1 = (7.61,12.89) if sign == 1 else (36.11,42.86)
         closed_pocket = block(a,180.5+dy,z0,b,184.9+dy,z1)
         closed_pocket = _round_gear_channel(closed_pocket, gear_corner_radius)
+        if sign == 1:
+            # Relieve the blind half of the lower track as well as its exit;
+            # ending at the same X datum preserves the installation stop.
+            closed_pocket = closed_pocket.fuse(
+                _gear_roof_clearance(a, b, z1, layout=layout))
         if sign == -1 and spec.height_units == 1:
             # Keep a wall under the outside top chamfer (|X|+Z=108.6).
             # The taller closed pocket otherwise breaks through near its roof.
@@ -221,7 +263,16 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
     part=part.cut(_linear_gear_exit(corner_radius=gear_corner_radius, layout=layout),
                   _linear_gear_exit(lower=True, corner_radius=gear_corner_radius, layout=layout))
     part=part.translate((0,2.3,-1))
-    part.label=BoxSpec(spec.family, spec.depth_units, spec.height_units).name + ' — unbranded'
+    if box_rear_pattern != 'plain':
+        from .box_wall_patterns import apply_box_rear_pattern
+        part = apply_box_rear_pattern(part, box_spec)
+    if box_variant == 'gridfinity':
+        from .gridfinity import build_gridfinity_base
+        part = part.fuse(build_gridfinity_base(box_spec)).clean()
+        if floor_thickness == 0:
+            from .gridfinity import apply_gridfinity_floorless
+            part = apply_gridfinity_floorless(part, box_spec)
+    part.label=box_spec.name + ' — unbranded'
     if not part.is_valid or len(part.solids()) != 1 or len(part.shells()) != 1:
         raise ValueError('Expected one valid box solid with one boundary shell')
     return part

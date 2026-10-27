@@ -13,7 +13,7 @@ viewer to interpolate directly without changing its assembled transform.
 from __future__ import annotations
 
 from .generator import Configuration
-from .spec import DEFAULT_SPEC, ModuleSpec, pattern_parameters
+from .spec import DEFAULT_SPEC, ModuleSpec, WALL_PATTERNS, pattern_parameters
 
 
 SCHEMA = 'vault-assembly/v1'
@@ -91,7 +91,11 @@ def assembly_definition(configuration: Configuration):
                 (translation[0] + center, translation[1], translation[2] + elevation), **metadata)
 
         add_drawer('box', 'box', 'single',
-                   f'{drawer_spec.family}{spec.depth_units} Box {drawer_spec.height_units}F', 'drawer')
+                   f'{drawer_spec.family}{spec.depth_units} Box {drawer_spec.height_units}F'
+                   + (' · Floorless' if configuration.box_floor == 0 else '')
+                   + (' · Gridfinity' if configuration.box_variant == 'gridfinity' else '')
+                   + (f' · {WALL_PATTERNS[configuration.box_rear_pattern]} corrugated rear'
+                      if configuration.box_rear_pattern != 'plain' else ''), 'drawer')
         add_drawer('facade', 'facade', 'single', f'{drawer_spec.family}{drawer_spec.height_units}F Facade', 'drawer',
                    translation=(0, spec.depth, 0), explode=(0, 65, 0))
 
@@ -159,7 +163,9 @@ def build_finished_components(configuration: Configuration):
                             configuration.drawer_columns, configuration.drawer_rows,
                             **pattern_parameters(configuration)), include_supports=False),
         ('box', 'single'): build_box(
-            spec=BoxSpec(family, depth, height, configuration.box_floor), include_supports=False),
+            spec=BoxSpec(family, depth, height, configuration.box_floor, configuration.box_variant,
+                         configuration.box_rear_pattern),
+            include_supports=False),
         ('facade', 'single'): build_facade(spec=FacadeSpec(family, height)),
         ('rails', 'plain'): build_gear_rail(False, spec=GearRailSpec(family)),
         ('rails', 'retained'): build_gear_rail(True, spec=GearRailSpec(family)),

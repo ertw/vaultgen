@@ -34,6 +34,8 @@ with sync_playwright() as p:
     assert page.locator('#depth-options button').count()==5
     assert page.locator('#height-options button').count()==2
     expect(page.locator('#part-options button')).to_have_count(13)
+    expect(page.locator('#box-variant-options button')).to_have_count(2)
+    expect(page.locator('#box-variant-options button[data-value="plain"]')).to_have_attribute('aria-pressed','true')
     for part, name in [('runner_guides', 'runner guides'), ('runner_slides', 'runner slides')]:
         page.locator(f'#part-options button[data-value="{part}"]').click()
         expect(page.locator('#build-button-text')).to_have_text(f'Generate {name}')
@@ -95,11 +97,34 @@ with sync_playwright() as p:
                     assert response.ok, f'{kind} {part["name"]}: {link} failed'
                     assert len(response.body())>100
             page.screenshot(path=str(out/f'{kind}-preview.png'),full_page=True)
+    page.locator('#part-options button[data-value="box"]').click()
+    for target,value in [('family','S'),('depth','4'),('height','1'),('box-floor','0.8')]:
+        page.locator(f'#{target}-options button[data-value="{value}"]').click()
+    page.locator('#box-variant-options button[data-value="gridfinity"]').click()
+    expect(page.locator('#configuration-name')).to_have_text('S4 · 1F · Gridfinity')
+    expect(page.locator('#box-variant-hint')).to_contain_text('42 mm pitch')
+    builds=page.request.get(args.base_url.rstrip('/')+'/api/builds').json()['builds']
+    gridfinity_build=next((build for build in builds
+        if build['kind']=='box' and all(build['configuration'].get(key)==value for key,value in
+            [('family','S'),('depth_units',4),('height_units',1),('box_variant','gridfinity')])
+        and build['configuration'].get('box_floor',0.8)==0.8),None)
+    if gridfinity_build:
+        expect(page.locator('#preview-title')).to_have_text(gridfinity_build['name'],timeout=60000)
+        expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true',timeout=60000)
+        for link,url_key in [('stl-download','stl_url'),('step-download','step_url')]:
+            url=gridfinity_build['parts'][0][url_key]
+            expect(page.locator(f'#{link}')).to_have_attribute('href',url)
+            response=page.request.get(args.base_url.rstrip('/')+url)
+            assert response.ok and len(response.body())>100, f'Gridfinity {link} failed'
+        print('PASS: saved S4 Gridfinity mesh and STL/STEP downloads')
+    page.screenshot(path=str(out/'desktop-gridfinity.png'),full_page=True)
     page.set_viewport_size({'width':390,'height':844})
     page.screenshot(path=str(out/'mobile.png'),full_page=True)
+    page.screenshot(path=str(out/'mobile-gridfinity.png'),full_page=True)
+    page.locator('#box-variant-field').screenshot(path=str(out/'mobile-gridfinity-controls.png'))
     overflow=page.evaluate('document.documentElement.scrollWidth > innerWidth')
     assert not overflow,'Mobile horizontal overflow'
     expect(page.get_by_role('link',name='Labels',exact=True)).to_be_visible()
     assert not errors,errors
-    print('PASS: actual app config, bounded sizes, runner selectors, immutable history preview, STL WebGL, mobile width; no page errors')
+    print('PASS: actual app config, bounded sizes, runner selectors, Gridfinity control, immutable history preview, STL WebGL, mobile width; no page errors')
     browser.close()

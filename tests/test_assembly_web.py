@@ -22,7 +22,8 @@ class AssemblyCacheTests(unittest.TestCase):
         self.temp.cleanup()
 
     def build(self, kind, *, legacy=False, floor=.8, family='S', columns=None, rows=None, height=1,
-              pattern=None, pitch=14., depth=1.7, line_width=.65, faces='all', construction=None):
+              pattern=None, pitch=14., depth=1.7, line_width=.65, faces='all', construction=None,
+              box_rear=None, box_variant='plain'):
         self.serial += 1
         build_id = f'20261024T010000{self.serial:06d}Z-0123456789ab'
         directory = self.root / 'builds' / build_id
@@ -38,7 +39,11 @@ class AssemblyCacheTests(unittest.TestCase):
         parameters = dict(family=family,depth_units=4,height_units=height,part=part)
         if columns is not None: parameters['drawer_columns'] = columns
         if rows is not None: parameters['drawer_rows'] = rows
-        if kind == 'box': parameters['box_floor'] = floor
+        if kind == 'box':
+            parameters['box_floor'] = floor
+            parameters['box_variant'] = box_variant
+            if box_rear is not None:
+                parameters['box_rear_pattern'] = box_rear
         if kind == 'module' and pattern is not None:
             parameters.update(wall_pattern=pattern, pattern_pitch=pitch, pattern_depth=depth,
                               pattern_line_width=line_width, pattern_faces=faces)
@@ -59,6 +64,43 @@ class AssemblyCacheTests(unittest.TestCase):
             passed=True,build_id=build_id,parts=reports,checksums=checksums,
             git={'commit':'current','dirty':False},source_hash='same-source')))
         return build_id
+
+    @patch('vault.web.git_provenance', return_value={'commit': 'current', 'dirty': False})
+    def test_box_rear_cache_and_receipts_preserve_independent_module_and_base_choices(self, _):
+        from dataclasses import replace
+        common = [self.build(kind) for kind in ASSEMBLY_PARTS if kind not in ('box', 'module')]
+        module = self.build('module', pattern='miura', pitch=20, depth=1.4,
+                            line_width=.8, construction='corrugated')
+        config = Configuration(wall_pattern='miura', pattern_pitch=20, pattern_depth=1.4,
+                               pattern_line_width=.8, pattern_construction='corrugated')
+        legacy = self.build('box')
+        self.assertEqual(self.files.describe(legacy)['configuration']['box_rear_pattern'], 'plain')
+        for rear in ('waffle', 'miura'):
+            missing = self.files.assembly(replace(config, box_rear_pattern=rear))
+            self.assertFalse(missing['complete'])
+            self.assertEqual({item['kind'] for item in missing['missing']}, {'box'})
+        waffle = self.build('box', box_rear='waffle')
+        miura = self.build('box', box_rear='miura')
+        grid = self.build('box', box_rear='waffle', box_variant='gridfinity')
+        self.build('box', box_rear='waffle', box_variant='gridfinity', floor=3.)
+        for rear, variant, expected in (('plain', 'plain', legacy), ('waffle', 'plain', waffle),
+                                        ('miura', 'plain', miura), ('waffle', 'gridfinity', grid)):
+            scene = self.files.assembly(replace(config, box_rear_pattern=rear, box_variant=variant))
+            self.assertTrue(scene['complete'])
+            self.assertEqual({item['build_id'] for item in scene['instances']}, {*common, module, expected})
+        selected = replace(config, box_rear_pattern='waffle', box_variant='gridfinity')
+        receipt = self.root / 'web/assemblies/box-rear.json'
+        receipt.parent.mkdir(parents=True)
+        receipt.write_text(json.dumps(dict(configuration=selected.as_dict(),
+            validation_signature=validation_signature(selected), build_ids=[*common, module, grid],
+            validation={'passed': True})))
+        scene = self.files.assembly(selected)
+        self.assertTrue(scene['validation']['passed'])
+        self.assertIn('Waffle corrugated box rear', scene['name'])
+        self.assertIsNone(self.files.assembly(replace(selected, box_variant='plain'))['validation'])
+        mismatch = self.files.assembly(replace(selected, box_rear_pattern='miura'))
+        self.assertFalse(mismatch['complete'])
+        self.assertEqual({item['kind'] for item in mismatch['missing']}, {'box'})
 
     @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
     def test_pattern_module_cache_and_fit_receipts_match_every_geometry_parameter(self, _):

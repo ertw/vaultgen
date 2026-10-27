@@ -100,6 +100,24 @@ The matching boxes and facades are 1F, with four copies of each in the print pla
 Both layouts share the `l6_2_columns_module_2f` module identity at depth 6,
 and the same module STL/STEP downloads and reusable build.
 
+Boxes also offer a **Gridfinity** base in the configurator. It integrates a
+42 mm grid inside the drawer: S has three columns, M five, and L six, with
+one row per depth unit. L² layouts use the S grid in each drawer. Select
+**Box base → Gridfinity** for a box or complete set, or run:
+
+```bash
+python -m vault build --part box --box-variant gridfinity
+```
+
+The sockets rise 5 mm above the selected 0.8 or 3 mm closed floor. Exterior
+dimensions, runners, lock passages and print orientation stay the same. Bins
+and magnets are not included. See [Gridfinity geometry and fit checks](docs/generator-geometry.md#gridfinity-boxes).
+Choose **Floorless** under Box floor with the Gridfinity base to open each
+cell bottom. The grid and its perimeter support the drawer and bins; the
+socket height and profiles match the 0.8 mm-floor option. On the CLI, use
+`--box-variant gridfinity --box-floor 0`. Floorless is available only with
+Gridfinity and can be combined with either patterned rear wall.
+
 The vertical divider repeats the native runner channels, bores, handed mouth
 pockets and removable supports. Rear access passages lead to the center runner
 stops. Outer stacking connectors retain the L layout; there are no exterior
@@ -321,8 +339,19 @@ attachment wall are retained.
 The front attachment pockets open through the outside wall at negative X/lower
 and positive X/upper, matching the module's handed gear mates. The exits retain
 the original rounded outer lips and front rim; the upper exit also includes
-the raised round-ended roof clearance shown in the source model. Both box
-variants use these same passages.
+the raised round-ended roof clearance shown in the source model. Both lower
+rail passages now use the same **2.8 mm wide, R1 roof arch**, adding **1.516 mm
+of central headroom** for bridge sag during bottom-down printing. The arch
+retains the side shoulders and blind installation stop. Plain and Gridfinity
+boxes use these same passages; printed clearance still needs checking.
+
+**Box rear wall** offers Plain, Waffle, and Miura-ori independently of the
+module walls and box base. The patterned choices use two-perimeter corrugation
+inside the existing 3 mm rear wall, with 14 mm pitch and 1.3 mm facet thickness
+for two 0.65 mm extrusion lines. Floor fillets, corners and the top rim retain
+solid lands. Use `--box-rear-pattern waffle` or `--box-rear-pattern miura`
+when building a box; Plain remains the default. Inspect the slicer paths and
+printed fit before use.
 
 The exterior front corners are square in plan, as in the original box. This
 preserves the side walls and front rims around the two closed attachment
@@ -341,7 +370,8 @@ depth retained. `build_box(runner_clearance=0)` restores nominal flank spacing.
 The central lock opening extends back to the original beveled floor edge
 (Y=177.1 at the underside), providing clearance for lock rotation.
 The support teeth are
-spaced about 9.1 mm apart along their upper and lower edges. Remove these
+spaced at most 7.5 mm apart along their upper and lower edges, limiting open
+bridge spans to 6.8 mm. Remove these
 sacrificial supports after printing. The two rear circular holes and central oval opening are omitted,
 along with the oval's support panel, leaving a continuous rear wall. Source measurements and the
 regularized native dimensions are recorded in `research/box_supports.json`.

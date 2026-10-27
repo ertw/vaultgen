@@ -60,6 +60,19 @@ class DrawerSizeTests(unittest.TestCase):
                         self.assertTrue(box.is_inside((side*(64.8+layout.width_delta),50,23.5+tier)))
                 for side,z in ((-1,8), (1,39)):
                     self.assertFalse(box.is_inside((side*(67+layout.width_delta),spec.depth-3,z)))
+                # The lower bridge relief moves with depth and the open
+                # side's width, retaining the same crown and blind stop.
+                center_y = spec.depth-3.1
+                for x, roof in ((-65-layout.width_delta, 11.807), (60, 11.89)):
+                    self.assertFalse(box.is_inside((x, center_y, roof+1.5)))
+                    self.assertTrue(box.is_inside((x, center_y, roof+1.54)))
+                    for offset in (-1.1, 1.1):
+                        self.assertFalse(box.is_inside((x, center_y+offset, roof+1.2)))
+                        self.assertTrue(box.is_inside((x, center_y+offset, roof+1.4)))
+                    for offset in (-1.7, 1.7):
+                        self.assertTrue(box.is_inside((x, center_y+offset, roof+.2)))
+                self.assertFalse(box.is_inside((66.29, center_y, 13)))
+                self.assertTrue(box.is_inside((66.31, center_y, 13)))
                 self.assertFalse(facade.is_inside((0,5,23.5)))
                 # The shared silhouette rebate follows the taller/wider size.
                 for z in (.5, spec.height-.5):

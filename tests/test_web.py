@@ -123,6 +123,14 @@ class HTTPTests(unittest.TestCase):
             self.assertEqual(status, 202)
             self.assertEqual(json.loads(body)['configuration']['part'], kind)
 
+    def test_floorless_gridfinity_submission_keeps_zero_and_rejects_plain(self):
+        self.assertEqual(self.request('POST', '/api/jobs', {'part': 'box', 'box_floor': 0})[0], 400)
+        request = {'part': 'box', 'box_floor': 0, 'box_variant': 'gridfinity', 'box_rear_pattern': 'waffle'}
+        status, data = self.request('POST', '/api/jobs', request)
+        self.assertEqual(status, 202)
+        submitted = json.loads(data)['configuration']
+        self.assertEqual({key: submitted[key] for key in request}, request)
+
     def test_assembly_endpoint_validates_selection_and_explains_empty_cache(self):
         status, data = self.request('GET', '/api/assembly?family=L&depth_units=6&height_units=2&box_floor=3&module_rear=2')
         self.assertEqual(status, 200)
@@ -146,14 +154,29 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(json.loads(data)['configuration']['wall_pattern'], 'miura')
         self.assertEqual(json.loads(data)['configuration']['pattern_construction'], 'corrugated')
         self.assertIn('corrugated', json.loads(data)['name'])
+        status, data = self.request('GET', '/api/assembly?box_rear_pattern=waffle&wall_pattern=miura&box_variant=gridfinity')
+        self.assertEqual(status, 200)
+        configured = json.loads(data)
+        self.assertEqual(configured['configuration']['box_rear_pattern'], 'waffle')
+        self.assertEqual(configured['configuration']['wall_pattern'], 'miura')
+        self.assertEqual(configured['configuration']['box_variant'], 'gridfinity')
+        self.assertIn('Waffle corrugated box rear', configured['name'])
+        status, data = self.request('GET', '/api/assembly?box_floor=0&box_variant=gridfinity&box_rear_pattern=miura')
+        self.assertEqual(status, 200)
+        configured = json.loads(data)
+        self.assertEqual(configured['configuration']['box_floor'], 0)
+        self.assertEqual(configured['configuration']['box_rear_pattern'], 'miura')
+        self.assertIn('Floorless Gridfinity', configured['name'])
         for query in ('family=XL', 'family=S&family=L', 'depth_units=4.5', 'part=box',
-                      'box_floor=nan', 'module_rear=3', 'unknown=1', 'drawer_columns=2',
+                      'box_floor=nan', 'box_floor=0', 'box_floor=0&box_variant=plain',
+                      'module_rear=3', 'unknown=1', 'drawer_columns=2',
                       'family=L&drawer_columns=3', 'family=L&drawer_columns=2.0',
                       'family=L&drawer_columns=2&drawer_rows=2', 'family=L&height_units=2&drawer_rows=2',
                       'family=L&height_units=2&drawer_columns=2&drawer_rows=2.0',
                       'wall_pattern=unknown', 'pattern_faces=front', 'pattern_pitch=nan',
                       'wall_pattern=waffle&pattern_depth=2', 'pattern_line_width=0.3',
-                      'pattern_construction=solid'):
+                      'pattern_construction=solid', 'box_rear_pattern=unknown', 'box_rear_pattern=',
+                      'box_rear_pattern=plain&box_rear_pattern=waffle'):
             self.assertEqual(self.request('GET', '/api/assembly?' + query)[0], 400)
 
     def test_multi_drawer_submission_and_catalog_agree(self):

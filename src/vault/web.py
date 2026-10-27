@@ -92,7 +92,7 @@ class BuildFiles:
         from .spec import PATTERN_FIELDS
         module_pattern_fields = PATTERN_FIELDS if configuration.wall_pattern != 'plain' else ('wall_pattern',)
         keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear', 'drawer_columns', *module_pattern_fields),
-                'box': ('family', 'depth_units', 'height_units', 'box_floor'),
+                'box': ('family', 'depth_units', 'height_units', 'box_floor', 'box_variant', 'box_rear_pattern'),
                 'facade': ('family', 'height_units'), 'rails': ('family',),
                 'runner_guides': ('depth_units',), 'runner_slides': ('depth_units',)}
         defaults, selected = Configuration().as_dict(), configuration.as_dict()
@@ -150,6 +150,10 @@ class BuildFiles:
         pattern = f' · {WALL_PATTERNS[configuration.wall_pattern]}' if configuration.wall_pattern != 'plain' else ''
         if pattern and configuration.pattern_construction == 'corrugated':
             pattern += ' corrugated'
+        if configuration.box_variant == 'gridfinity':
+            pattern += ' · Floorless Gridfinity' if configuration.box_floor == 0 else ' · Gridfinity'
+        if configuration.box_rear_pattern != 'plain':
+            pattern += f' · {WALL_PATTERNS[configuration.box_rear_pattern]} corrugated box rear'
         return {**definition, 'name': f'{configuration.family}{configuration.depth_units}{columns} · {configuration.height_units}F{rows}{pattern} complete set',
                 'instances': instances, 'missing': missing, 'warnings': list(dict.fromkeys(warnings)),
                 'complete': not missing, 'repository': repository, 'validation': validation}
@@ -174,6 +178,8 @@ class BuildFiles:
             config = parameters['label_configuration']
         if kind == 'box':
             config['box_floor'] = parameters.get('box_floor', 0.8)
+            config['box_variant'] = parameters.get('box_variant', 'plain')
+            config['box_rear_pattern'] = parameters.get('box_rear_pattern', 'plain')
         if kind == 'module':
             from .spec import PATTERN_DEFAULTS
             config['module_rear'] = parameters.get('module_rear', 0.9)

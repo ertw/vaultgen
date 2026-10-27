@@ -30,6 +30,109 @@ geometry and the existing facade `gap` argument remains positional.
 | M outer screws | X = ±92.45 mm |
 | L outer screws | X = ±130.25 mm |
 
+## Gridfinity boxes
+
+`BoxSpec(box_variant='gridfinity')` adds an integral baseplate inside the native
+Vault tray. `plain` remains the default, including for existing saved requests.
+The 42 mm pitch and mating dimensions follow the
+[Gridfinity design reference](https://gridfinity.xyz/specification/) and the
+[Gridfinity Rebuilt bin](https://github.com/kennetek/gridfinity-rebuilt-openscad/blob/main/src/core/standard.scad)
+and [baseplate definitions](https://github.com/kennetek/gridfinity-rebuilt-openscad/blob/main/src/core/gridfinity-baseplate.scad).
+Construction uses native rounded wires, extrusions, lofts and booleans; no
+downloaded or purchased geometry is a constructor input.
+
+| Property | Value |
+| --- | --- |
+| Cell pitch | 42 mm in X and Y |
+| Grid columns | S 3, M 5, L 6; L² uses S drawers |
+| Grid rows | Selected depth units, 3–7 |
+| Socket opening | 42 mm square, R4 corners |
+| Socket profile, bottom to top | 0.7 mm lower chamfer, 1.8 mm vertical, 2.15 mm upper chamfer |
+| Clearance below profile | 0.35 mm |
+| Total rise above the closed floor | 5 mm |
+| Closed floor beneath sockets | Selected 0.8 or 3 mm |
+
+Whole cells are centered across the available floor and stay behind the front
+lock opening. Mating profiles keep their dimensions for every family, depth,
+height and drawer layout. Exterior geometry, attachment passages, screw axes,
+runner channels, removable supports and assembly transforms are preserved.
+The grid remains in both printable and finished assembly exports; only the
+normal sacrificial runner sheets are removed from finished previews.
+
+Default identity is `s4_box_1f_gridfinity`; the thick-floor variant is
+`s4_box_1f_floor_3mm_gridfinity`. Plain aliases stay unchanged. The configuration
+and immutable build parameters record `box_variant`; module, facade, rail and
+accessory identities remain independent of this box option. No catalog entries
+are inferred from generated files.
+
+**Floorless Gridfinity** uses `BoxSpec(box_variant='gridfinity', box_floor=0)`
+and the identity `s4_box_1f_floorless_gridfinity`. Each 36.3 mm rounded-square
+cell bottom (R1.15 corners) is cut through the floor and base skin. The
+0.8 mm foundation remains beneath the grid webs and perimeter to connect
+the grid to the drawer walls. The socket datum stays at Z = 5.8 mm, matching
+the thin-floor variant; the 5 mm socket profile is unchanged. This removes
+the square cell floors without moving the bins, runner interfaces or outer
+envelope. The lower socket chamfers support single-cell bins, and the webs
+support multi-cell bridges. This option combines with either rear-wall
+pattern; its protected floor-fillet band uses the retained 0.8 mm foundation.
+Plain boxes reject `box_floor=0`.
+
+Native tests check the retained floor, socket sections, unchanged outer bounds,
+and nominal Gridfinity feet at edge cells and across multiple cells. The normal
+export pipeline also checks solid validity, STEP round trips and watertight
+print meshes. The assembly audit checks the closed Vault assembly, including
+its runners and rails; it does not check added bins or their height. These
+checks do not certify printed fit, retention under load or insertion motion.
+
+```bash
+python tools/check_gridfinity.py --case S4:1 --case L7:2:3
+python tools/check_assembly.py --case S4:1 --box-variant gridfinity
+python -m vault build --part box --box-variant gridfinity --box-floor 3
+```
+
+The Gridfinity checker compares the variant with a plain native box, proves
+that material was added only inside the grid footprint above the floor, and
+checks nominal rounded bin feet and a full-grid bin base. Single-cell feet can
+seat on the floor; a multi-cell bin's continuous bridge seats on the webs with
+its feet 0.25 mm above the floor. A deliberately displaced bin must collide
+with a socket wall. `--plain-step` and `--gridfinity-step`, with a single
+`--case`, audit saved solids and record their input checksums.
+
+## Patterned box rear walls
+
+`BoxSpec(box_rear_pattern='waffle')` and
+`BoxSpec(box_rear_pattern='miura')` add two-perimeter corrugation to the rear
+wall. `plain` remains the default. This setting is independent of module wall
+patterns and combines with either box base and either floor thickness.
+
+The rear wall remains inside its original Y = 2.3–5.3 mm envelope. Both faces
+are relieved using the same native Waffle and Miura-ori constructors as the
+module's corrugated walls. Pitch is fixed at 14 mm, maximum relief depth at
+1.7 mm, and nominal facet thickness at 1.3 mm normal to the face, for two
+0.65 mm extrusion lines. Miura fold height is reduced to fit this thickness
+inside the original wall. Solid perimeter lands preserve rear corners, the
+floor fillet and top rim; the pattern stops 3 mm above the floor fillet and
+3 mm below the top. The Gridfinity base, runner channels, removable supports,
+rail passages and assembly placements retain their geometry.
+
+Default patterned identities are `s4_box_1f_rear_waffle_corrugated` and
+`s4_box_1f_rear_miura_corrugated`; floor and Gridfinity suffixes precede the
+rear pattern suffix. Resolved parameters and assembly matching retain
+`box_rear_pattern`. Existing plain identities and immutable builds remain
+unchanged. Finished previews retain the pattern and omit only the normal
+sacrificial runner supports.
+
+```bash
+python -m vault build --part box --box-rear-pattern waffle
+python -m vault build --part box --box-rear-pattern miura --box-variant gridfinity
+python tools/check_assembly.py --case S4:1 --box-rear-pattern waffle
+```
+
+Native checks cover solid validity, removed-material containment, preserved
+interfaces and sampled normal facet thickness. Export checks include STEP
+round trips and watertight print meshes. Inspect the slicer's perimeter paths;
+these checks do not establish printed stiffness, bridging or fit.
+
 ## Patterned module walls
 
 `ModuleSpec(wall_pattern='waffle')` and `ModuleSpec(wall_pattern='miura')`
@@ -210,6 +313,12 @@ in the facade, with the original facade counterbores and bosses.
 The gear mechanism remains on the bottom tier in both heights; its central
 opening, cross-sections, rounded exit lips, roof clearance and fixed gear
 Z positions do not scale. Its open exit passages extend with family width.
+Both lower rail passages include the upper exit's rounded roof profile:
+2.8 mm wide with R1 corners, a 0.8 mm flat crown and 1.516 mm rise above their
+original ceilings. This intentional relief gives bridge sag extra headroom
+while preserving the floors, side shoulders, front rim and blind stops.
+It applies to plain and Gridfinity boxes at every supported size; CAD checks
+do not establish printed bridging or fit.
 The two blind rail pockets end at X = ±66.3 mm for every family, preserving
 the working S4/S-rail unlocked installation stop. M/L rails extend their
 outgoing tails only; extending the blind pockets would let the tooth train

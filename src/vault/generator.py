@@ -30,13 +30,21 @@ class Configuration:
     pattern_line_width: float = 0.65
     pattern_faces: str = 'all'
     pattern_construction: str = 'recessed'
+    box_variant: str = 'plain'
+    box_rear_pattern: str = 'plain'
 
     def __post_init__(self):
         validate_wall_pattern(self)
-        for key, choices in (('box_floor', (0.8, 3.0)), ('module_rear', (0.9, 2.0))):
+        if self.box_variant not in ('plain', 'gridfinity'):
+            raise ValueError('Box variant must be plain or gridfinity')
+        if not isinstance(self.box_rear_pattern, str) or self.box_rear_pattern not in WALL_PATTERNS:
+            raise ValueError('Box rear pattern must be plain, waffle, or miura')
+        for key, choices in (('box_floor', (0.0, 0.8, 3.0)), ('module_rear', (0.9, 2.0))):
             value = getattr(self, key)
             if type(value) not in (int, float) or value not in choices:
                 raise ValueError(f'{key} must be one of {choices} mm')
+        if self.box_floor == 0 and self.box_variant != 'gridfinity':
+            raise ValueError('A floorless box requires the Gridfinity base')
         if self.family not in ('S', 'M', 'L'):
             raise ValueError('Choose family S, M, or L')
         if type(self.drawer_columns) is not int or self.drawer_columns not in (1, 2):
@@ -111,7 +119,10 @@ def catalog():
                  'heights': [2], 'drawer_family': 'S'},
             ],
             'parts': [{'id': key, 'name': value, 'common': key in ACCESSORY_PARTS} for key, value in PARTS.items()],
-            'thicknesses': {'box_floor': [0.8, 3.0], 'module_rear': [0.9, 2.0]},
+            'thicknesses': {'box_floor': [0.0, 0.8, 3.0], 'module_rear': [0.9, 2.0]},
+            'box_variants': [{'id': 'plain', 'name': 'Plain'},
+                             {'id': 'gridfinity', 'name': 'Gridfinity'}],
+            'box_rear_patterns': [{'id': key, 'name': value} for key, value in WALL_PATTERNS.items()],
             'wall_patterns': [{'id': key, 'name': value} for key, value in WALL_PATTERNS.items()],
             'pattern_constructions': [{'id': key, 'name': value} for key, value in PATTERN_CONSTRUCTIONS.items()],
             'pattern_faces': [{'id': 'all', 'name': 'All four long faces'},
