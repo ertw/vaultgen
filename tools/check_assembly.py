@@ -19,6 +19,7 @@ assembled pose, not a continuous insertion, locking, or disassembly path.
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from itertools import product
 import json
 from pathlib import Path
@@ -29,6 +30,7 @@ from vault.assembly_validation import (
     definition_errors, validate_assembly,
 )
 from vault.generator import Configuration
+from vault.spec import PATTERN_DEFAULTS
 
 
 def all_configurations():
@@ -58,12 +60,15 @@ def configuration_label(configuration):
     if configuration.drawer_rows == 2:
         layout = ' (2×2 drawers)'
     return (f"{configuration.family}{configuration.depth_units}{layout} {configuration.height_units}F "
-            f"floor={configuration.box_floor:g} rear={configuration.module_rear:g}")
+            f"floor={configuration.box_floor:g} rear={configuration.module_rear:g} "
+            f"pattern={configuration.wall_pattern}/{configuration.pattern_construction}")
 
 
-def definition_report():
+def definition_report(pattern_settings=None):
     cases = []
     for configuration in all_configurations():
+        if pattern_settings:
+            configuration = replace(configuration, **pattern_settings)
         errors = definition_errors(configuration, assembly_definition(configuration))
         cases.append({"configuration": configuration.as_dict(), "passed": not errors,
                       "errors": errors})
@@ -97,10 +102,22 @@ def main():
     mode.add_argument("--definitions-only", action="store_true", help="Only check inexpensive scene inventory/placement")
     parser.add_argument("--output", type=Path, default=Path("research/assembly_fit.json"))
     parser.add_argument("--verbose", action="store_true", help="Print individual native pair progress")
+    parser.add_argument('--wall-pattern', choices=('plain', 'waffle', 'miura'), default='plain')
+    parser.add_argument('--pattern-construction', choices=('recessed', 'corrugated'), default='recessed')
+    parser.add_argument('--pattern-pitch', type=float, default=14.)
+    parser.add_argument('--pattern-depth', type=float, default=1.7)
+    parser.add_argument('--pattern-line-width', type=float, default=.65)
+    parser.add_argument('--pattern-faces', choices=('all', 'sides'), default='all')
     args = parser.parse_args()
+    pattern_settings = {key: getattr(args, key) for key in PATTERN_DEFAULTS}
+    try:
+        Configuration(**pattern_settings)
+    except ValueError as error:
+        parser.error(str(error))
     configurations = ([] if args.definitions_only else args.case or
                       (all_configurations() if args.all else representative_configurations()))
-    definitions = definition_report()
+    configurations = [replace(configuration, **pattern_settings) for configuration in configurations]
+    definitions = definition_report(pattern_settings)
     cases = []
     for configuration in configurations:
         label = configuration_label(configuration)

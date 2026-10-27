@@ -34,6 +34,14 @@ builds += [build('module', dict(family='L', depth_units=6, height_units=2, drawe
 legacy = build('module', dict(family='L', depth_units=6, height_units=2, drawer_columns=2, drawer_rows=2), 'L6² Module 2F · 4 S1F drawers')
 legacy['legacy_partitioned_module'] = True
 builds.insert(0, legacy)
+pattern_config = dict(family='L', depth_units=6, height_units=2, drawer_columns=2,
+                      pattern_pitch=14, pattern_depth=1.7, pattern_line_width=0.65, pattern_faces='all')
+builds += [build('module', dict(**pattern_config, wall_pattern='waffle'), 'L6 waffle module'),
+           build('module', dict(pattern_config, wall_pattern='miura', pattern_pitch=16,
+                                pattern_depth=1.4, pattern_line_width=0.7, pattern_faces='sides'), 'L6 Miura module'),
+           build('module', dict(pattern_config, wall_pattern='waffle', pattern_construction='corrugated'), 'L6 corrugated waffle module'),
+           build('module', dict(pattern_config, wall_pattern='miura', pattern_pitch=16,
+                                pattern_depth=1.4, pattern_line_width=0.7, pattern_construction='corrugated'), 'L6 corrugated Miura module')]
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=args.chromium, headless=True,
         args=['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
@@ -54,9 +62,14 @@ with sync_playwright() as p:
             if query.get('drawer_columns') == '2':
                 config = Configuration(family=query['family'], depth_units=int(query['depth_units']),
                                        height_units=int(query['height_units']), drawer_columns=2,
-                                       drawer_rows=int(query['drawer_rows']))
+                                       drawer_rows=int(query['drawer_rows']),
+                                       wall_pattern=query['wall_pattern'], pattern_pitch=float(query['pattern_pitch']),
+                                       pattern_depth=float(query['pattern_depth']), pattern_line_width=float(query['pattern_line_width']),
+                                       pattern_faces=query['pattern_faces'], pattern_construction=query['pattern_construction'])
                 scene = assembly_definition(config)
                 suffix = ' · 4 drawers' if config.drawer_rows == 2 else ''
+                if config.wall_pattern != 'plain': suffix += ' · ' + {'waffle':'Waffle', 'miura':'Miura-ori'}[config.wall_pattern]
+                if config.wall_pattern != 'plain' and config.pattern_construction == 'corrugated': suffix += ' · Corrugated'
                 scene.update(name=f'L{config.depth_units}² · {config.height_units}F{suffix} complete set',
                              missing=[], warnings=[], complete=True, validation={'passed':True})
                 for item in scene['instances']:
@@ -74,6 +87,9 @@ with sync_playwright() as p:
     page.route('**/*',route)
     page.goto('http://vault.test/')
     expect(page.locator('#box-floor-options button')).to_have_count(2)
+    expect(page.locator('#wall-pattern-options button')).to_have_count(3)
+    expect(page.locator('#pattern-construction-options button')).to_have_count(2)
+    expect(page.locator('#wall-pattern-settings')).to_be_hidden()
     expect(page.locator('#drawer-layout-options button[data-value="2"]')).to_be_disabled()
     expect(page.locator('#drawer-layout-options button[data-value="4"]')).to_be_disabled()
     expect(page.locator('#part-options .common-components-heading')).to_have_text('Common components')
@@ -152,6 +168,80 @@ with sync_playwright() as p:
     page.locator('#part-options button[data-value="module"]').click()
     expect(page.locator('#preview-title')).to_have_text('L6² Module 2F')
     expect(page.locator('#part-hint')).to_contain_text('Fits two S2F drawers or four S1F drawers')
+    page.locator('#wall-pattern-options button[data-value="waffle"]').click()
+    expect(page.locator('#wall-pattern-settings')).to_be_visible()
+    expect(page.locator('#preview-title')).to_have_text('L6 waffle module')
+    expect(page.locator('#wall-pattern-hint')).to_contain_text('0.6 mm nozzle and 2 perimeters')
+    expect(page.locator('#pattern-construction-options button[data-value="recessed"]')).to_have_attribute('aria-pressed','true')
+    expect(page.locator('#wall-pattern-hint')).to_contain_text('Recessed valleys')
+    page.locator('#pattern-construction-options button[data-value="corrugated"]').click()
+    expect(page.locator('#preview-title')).to_have_text('L6 corrugated waffle module')
+    expect(page.locator('#configuration-name')).to_contain_text('Corrugated')
+    expect(page.locator('#wall-pattern-hint')).to_contain_text('Thin facets target 1.30 mm thickness perpendicular')
+    page.locator('#pattern-construction-options button[data-value="recessed"]').click()
+    expect(page.locator('#preview-title')).to_have_text('L6 waffle module')
+    # Every geometric pattern parameter participates in module cache matching.
+    for selector, changed, original in [('#pattern-pitch','15','14'), ('#pattern-depth','1.6','1.7'),
+                                         ('#pattern-line-width','0.64','0.65')]:
+        page.locator(selector).fill(changed)
+        expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
+        page.locator(selector).fill(original)
+        expect(page.locator('#preview-title')).to_have_text('L6 waffle module')
+    page.locator('#pattern-faces-options button[data-value="sides"]').click()
+    expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
+    page.locator('#pattern-faces-options button[data-value="all"]').click()
+    expect(page.locator('#preview-title')).to_have_text('L6 waffle module')
+    page.locator('#pattern-depth').fill('2')
+    expect(page.locator('#wall-pattern-error')).to_contain_text('Depth plus two line widths')
+    expect(page.locator('#build-button')).to_be_disabled()
+    page.locator('#pattern-depth').fill('')
+    expect(page.locator('#wall-pattern-error')).to_contain_text('Depth must be between')
+    expect(page.locator('#build-button')).to_be_disabled()
+    page.locator('#pattern-depth').fill('1.7')
+    expect(page.locator('#build-button')).to_be_enabled()
+    page.locator('#pattern-line-width').fill('0.59')
+    expect(page.locator('#wall-pattern-error')).to_contain_text('Line width must be between')
+    expect(page.locator('#build-button')).to_be_disabled()
+    page.locator('#part-options button[data-value="box"]').click()
+    expect(page.locator('#wall-pattern-field')).to_be_hidden()
+    expect(page.locator('#build-button')).to_be_enabled()
+    expect(page.locator('#preview-title')).to_have_text('S6 1F box thick')
+    page.locator('#part-options button[data-value="module"]').click()
+    expect(page.locator('#wall-pattern-error')).to_be_visible()
+    page.locator('#wall-pattern-options button[data-value="plain"]').click()
+    expect(page.locator('#wall-pattern-settings')).to_be_hidden()
+    expect(page.locator('#preview-title')).to_have_text('L6² Module 2F')
+    page.locator('#wall-pattern-options button[data-value="miura"]').click()
+    expect(page.locator('#pattern-line-width')).to_have_value('0.65')
+    page.locator('#pattern-pitch').fill('16')
+    page.locator('#pattern-depth').fill('1.4')
+    page.locator('#pattern-line-width').fill('0.7')
+    page.locator('#pattern-faces-options button[data-value="sides"]').click()
+    expect(page.locator('#preview-title')).to_have_text('L6 Miura module')
+    page.locator('#part-options button[data-value="set"]').click()
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(33)
+    expect(page.locator('#configuration-name')).to_contain_text('Miura-ori')
+    assert {key: assembly_queries[-1][key] for key in ('wall_pattern', 'pattern_pitch', 'pattern_depth', 'pattern_line_width', 'pattern_faces')} == {
+        'wall_pattern':'miura', 'pattern_pitch':'16', 'pattern_depth':'1.4', 'pattern_line_width':'0.7', 'pattern_faces':'sides'}
+    assert assembly_queries[-1]['pattern_construction'] == 'recessed'
+    page.locator('#part-options button[data-value="module"]').click()
+    page.locator('#pattern-construction-options button[data-value="corrugated"]').click()
+    expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
+    page.locator('#pattern-faces-options button[data-value="all"]').click()
+    expect(page.locator('#preview-title')).to_have_text('L6 corrugated Miura module')
+    expect(page.locator('#wall-pattern-hint')).to_contain_text('fold height is reduced')
+    page.locator('#part-options button[data-value="set"]').click()
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(33)
+    assert assembly_queries[-1]['pattern_construction'] == 'corrugated' and assembly_queries[-1]['pattern_faces'] == 'all'
+    page.screenshot(path=str(output / 'wall-pattern-desktop.png'), full_page=True)
+    page.set_viewport_size({'width':390,'height':844})
+    page.screenshot(path=str(output / 'wall-pattern-mobile.png'), full_page=True)
+    page.locator('#wall-pattern-field').screenshot(path=str(output / 'wall-pattern-controls-mobile.png'))
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+    page.set_viewport_size({'width':1440,'height':1150})
+    page.locator('#wall-pattern-options button[data-value="plain"]').click()
+    expect(page.locator('#pattern-construction-options button[data-value="recessed"]')).to_have_attribute('aria-pressed','true')
+    page.locator('#part-options button[data-value="module"]').click()
     page.locator('#depth-options button[data-value="7"]').click()
     page.locator('#drawer-layout-options button[data-value="2"]').click()
     open_envelope = page.locator('#envelope-drawing').inner_html()
@@ -180,10 +270,15 @@ with sync_playwright() as p:
     page.set_viewport_size({'width':390,'height':844})
     page.screenshot(path=str(output / 'four-drawer-mobile.png'), full_page=True)
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+    page.locator('#wall-pattern-options button[data-value="waffle"]').click()
+    page.locator('#pattern-construction-options button[data-value="corrugated"]').click()
     page.locator('#build-button').click()
     expect(page.locator('#build-button')).to_be_disabled()
     assert len(submissions) == 1 and submissions[0]['drawer_columns'] == 2 and submissions[0]['family'] == 'L'
     assert submissions[0]['drawer_rows'] == 2 and submissions[0]['height_units'] == 2
+    assert {key:submissions[0][key] for key in ('wall_pattern','pattern_pitch','pattern_depth','pattern_line_width','pattern_faces')} == {
+        'wall_pattern':'waffle', 'pattern_pitch':14, 'pattern_depth':1.7, 'pattern_line_width':0.65, 'pattern_faces':'all'}
+    assert submissions[0]['pattern_construction'] == 'corrugated'
     page.reload()
     expect(page.locator('#job-description')).to_contain_text('L6² · 2F · 4 drawers')
     expect(page.locator('#job-status')).to_have_text('Queued')

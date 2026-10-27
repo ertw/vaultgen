@@ -12,6 +12,7 @@ from unittest.mock import Mock, patch
 
 from vault import __main__ as build_cli, assembly_validation
 from vault.generator import Configuration, ASSEMBLY_PARTS
+from vault.spec import PATTERN_DEFAULTS
 from vault.web_worker import main
 
 
@@ -105,7 +106,21 @@ class AssemblyWorkerTests(unittest.TestCase):
         for call in self.select_spec.call_args_list:
             self.assertEqual(call.args[1:], ('L', 6, 2))
             self.assertEqual(call.kwargs, {'box_floor': 3., 'module_rear': 2.,
-                                          'drawer_columns': 1, 'drawer_rows': 1})
+                                          'drawer_columns': 1, 'drawer_rows': 1, **PATTERN_DEFAULTS})
+
+    def test_pattern_settings_are_preserved_in_selection_and_fit_receipt(self):
+        self.configuration = Configuration(wall_pattern='miura', pattern_pitch=20,
+                                           pattern_depth=1.4, pattern_line_width=.8,
+                                           pattern_faces='sides', pattern_construction='corrugated')
+        self.run_worker()
+        for call in self.select_spec.call_args_list:
+            self.assertEqual(call.kwargs['wall_pattern'], 'miura')
+            self.assertEqual(call.kwargs['pattern_pitch'], 20)
+            self.assertEqual(call.kwargs['pattern_depth'], 1.4)
+            self.assertEqual(call.kwargs['pattern_line_width'], .8)
+            self.assertEqual(call.kwargs['pattern_faces'], 'sides')
+            self.assertEqual(call.kwargs['pattern_construction'], 'corrugated')
+        self.assertEqual(self.read_assembly_receipt()['configuration'], self.configuration.as_dict())
 
     def test_double_drawer_layout_is_preserved_in_selection_and_fit_receipt(self):
         self.configuration = Configuration('L', 6, 2, 'set', 3., 2., drawer_columns=2)

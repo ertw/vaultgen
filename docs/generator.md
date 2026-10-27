@@ -75,6 +75,32 @@ floor available. Module rear thickness defaults to 0.9 mm, with the original
 STLs. Each variant has its own resolved parameters and build alias; external
 dimensions remain fixed.
 
+For a module or complete set, **Module wall pattern** selects Plain, Waffle,
+or Miura-ori. Patterned variants also select **Recessed** or **Two-perimeter
+corrugated** construction, pitch, maximum recess depth, extrusion line width,
+and either all four long sleeve faces or just the left/right sides. Defaults are
+Recessed, all four faces, 14 mm pitch, 1.7 mm depth, and 0.65 mm line width for a
+0.6 mm nozzle. Recessed valleys retain a 1.3 mm minimum web for two nominal lines;
+crests are thicker and original inner surfaces remain. Corrugated construction
+relieves both sides of the nonmating panels, targeting 1.3 mm normal facet
+thickness throughout their thin areas. Fold junctions and transitions can be
+thicker. Both choices stay within the existing 3 mm wall. Front lips, stopper
+regions, connector roots and other mechanical lands remain full thickness with
+tapered transitions. Miura-ori is a rigid crease relief, not a folding mechanism;
+its corrugated fold height is reduced as needed to fit the normal thickness within
+the selected maximum recess envelope. Inspect the slicer's actual perimeter paths
+before printing; full-thickness lands intentionally need more than two lines.
+
+Pitch accepts 8–40 mm, depth 0.2–2 mm, and line width 0.6–1 mm. Depth plus two line
+widths must fit within the 3 mm wall. A pattern must also fit the protected panels;
+the geometry builder rejects a selection that leaves no complete pattern.
+Pattern settings affect only module geometry. Plain retains its existing identity;
+patterned modules record all settings and use distinct build aliases, including
+custom parameter values. Matching assembly previews and fit receipts retain the
+selected pattern and exact module build. Two- and four-drawer L² sets share a
+module only when their wall settings also agree. The separate CAD viewer's fixed
+catalog stays unchanged; use this configurator or the CLI for patterned variants.
+
 Changing the selection previews the newest matching cached part, or shows
 “not generated yet.” Complete sets show the matching finished parts together in an assembled view,
 with an explosion slider, component colors, visibility controls and click-to-highlight.
@@ -128,6 +154,9 @@ python tools/check_assembly.py --definitions-only
 python tools/check_assembly.py --case S4:1 --case L7:2:3:2
 python tools/check_assembly.py --case L6x2:2 --case L3x2:1:3:2
 python tools/check_assembly.py --case L6x2x2:2
+python tools/check_assembly.py --case S4:1 --wall-pattern waffle
+python tools/check_assembly.py --case S4:1 --wall-pattern miura
+python tools/check_assembly.py --case S4:1 --wall-pattern miura --pattern-construction corrugated
 python tools/check_assembly.py --all  # all 180 native assemblies; expensive
 ```
 

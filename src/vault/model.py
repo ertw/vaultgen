@@ -58,6 +58,8 @@ def build_module(
                 for center in spec.drawer_centers:
                     part = perimeter_rebate(part.translate((-center, 0, -row_z)),
                                             spec.depth, -1, bay, shadow_gap).translate((center, 0, row_z))
+    from .wall_patterns import apply_wall_pattern
+    part = apply_wall_pattern(part, spec, shell_dimensions, connector_parameters, progress)
     part.label = f'{spec.name} — unbranded'
     if not part.is_valid:
         raise ValueError('Reconstructed module is not a valid CAD shape')

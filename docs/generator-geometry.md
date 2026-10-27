@@ -30,6 +30,96 @@ geometry and the existing facade `gap` argument remains positional.
 | M outer screws | X = ±92.45 mm |
 | L outer screws | X = ±130.25 mm |
 
+## Patterned module walls
+
+`ModuleSpec(wall_pattern='waffle')` and `ModuleSpec(wall_pattern='miura')`
+apply native relief cutters from `src/vault/wall_patterns.py`. Plain remains the
+default. Both patterns offer `pattern_construction='recessed'` (the default) and
+`pattern_construction='corrugated'`. Recessed construction removes material from
+the outside while preserving the original inner surfaces, producing a variable
+wall thickness. Corrugated construction pairs relief on both sides of the
+nonmating panels to form thin facets; the entire construction stays inside the
+original wall thickness. Waffle uses rounded square dimples with sloping
+shoulders and flat valleys. Miura-ori uses connected planar parallelograms with
+alternating row offsets to form a sharper zigzag crease layout. This is a rigid
+printed relief, not a foldable origami mechanism.
+
+| Parameter | Default | Accepted range or values |
+| --- | --- | --- |
+| `wall_pattern` | `plain` | `plain`, `waffle`, `miura` |
+| `pattern_construction` | `recessed` | `recessed`, `corrugated` |
+| `pattern_pitch` | 14 mm | 8–40 mm |
+| `pattern_depth` | 1.7 mm | 0.2–2 mm |
+| `pattern_line_width` | 0.65 mm | 0.6–1 mm |
+| `pattern_faces` | `all` | `all` four long faces, or `sides` left/right only |
+
+Recessed default valleys retain **1.3 mm** within the 3 mm skin, targeting two
+0.65 mm extrusion lines for a 0.6 mm nozzle; crests and ribs retain more material.
+Corrugated patterned facets target **1.3 mm thickness measured normal to the
+facet**, with thicker fold junctions, panel borders and structural transitions.
+For corrugated Miura-ori, the selected depth is a maximum recess envelope:
+the effective fold amplitude is reduced so the normal facet thickness also
+fits inside the original skin. It is not a promise of a full 1.7 mm fold height.
+The constructor requires `pattern_depth + 2 * pattern_line_width`
+to fit the actual native wall; custom `ShellDimensions` therefore receive an
+additional thickness check. Values are finite and bounded at both API and CLI
+entry points. Cells become rectangular on narrow side panels; when a large cell
+cannot avoid a short module's connectors, its footprint is trimmed to an
+available rectangular land. A panel with no room for a tapered cell is rejected. These
+are geometric limits; slicer line placement, printability and loaded stiffness
+still need checking on a physical part.
+
+Side panels stay between the existing runner floors and ceilings. Solid lands
+retain the entire stopper footprint and its chamfer, corners, inter-tier webs,
+front mouth lips, catches and mounting features. The front and rear bands follow
+native feature dimensions, retaining at least 12 mm at the front and 8 mm at the
+rear. Top and bottom panel exclusions use the actual native connector and cutter
+footprints, with 3 mm of surrounding full-thickness material. This protects the
+stacking mating surfaces and their roots. L² also retains the central divider
+and its root lands. The rear panel, its selected thickness, and all sacrificial
+mouth supports remain unchanged.
+
+Waffle uses tapered cells that avoid every protected footprint. Miura
+clips its connected crease field with native tapered masks: panel edges and
+feature exclusions return to full thickness over a 2:1 run relative to depth.
+Both constructions preserve mating surfaces and their protected inner and outer
+lands; corrugation changes only nonmating panel surfaces. Patterns never stretch
+a mating cross-section or move assembly transforms.
+Corrugated side walls reshape the broad back of the runner channels while
+retaining their floor, ceiling, stopper and mouth regions. Recessed walls keep
+those broad inner faces flat. This difference matters when comparing loaded
+stiffness and print behavior.
+Finished assembly exports omit only the usual sacrificial supports; printable
+exports retain them. Every patterned build uses the existing solid, STEP
+round-trip and watertight-mesh validation pipeline.
+
+```bash
+python -m vault build --wall-pattern waffle
+python -m vault build --wall-pattern miura
+python -m vault build --wall-pattern waffle --pattern-construction corrugated
+python -m vault build --wall-pattern miura --pattern-construction corrugated
+python -m vault build --wall-pattern miura --pattern-pitch 20 \
+  --pattern-depth 1.4 --pattern-line-width 0.8 --pattern-faces sides
+python tools/check_assembly.py --definitions-only --wall-pattern waffle
+python tools/check_assembly.py --case S4:1 --wall-pattern miura
+python tools/check_assembly.py --case S4:1 --wall-pattern miura --pattern-construction corrugated
+python tools/check_wall_patterns.py --pattern waffle --construction corrugated
+```
+
+The wall-pattern audit checks exact containment of the removed material and
+unchanged native connector roots, probes the protected interfaces, and samples
+corrugated thickness along native face normals. Its optional `--baseline-step`
+and `--pattern-step` arguments inspect exported solids and record their hashes.
+Thickness samples do not establish slicer toolpaths or printed fit.
+
+Default pattern identities are `s4_module_1f_waffle` and
+`s4_module_1f_miura`. Nondefault pattern controls add a stable parameter digest;
+the corrugated constructions add `_corrugated`, and resolved parameters retain
+every value. Existing recessed aliases remain unchanged. Box, facade, rail and accessory
+identities remain independent of wall style. Existing build directories remain
+immutable. The historical S4 source comparison expects the original flat skin
+and is not an acceptance test for these intentional reliefs.
+
 ## Multi-drawer modules
 
 `ModuleSpec('L', 6, 2, drawer_columns=2)` builds **L6² Module 2F**: a single

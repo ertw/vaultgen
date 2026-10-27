@@ -108,6 +108,15 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
             for path in sorted(output.glob(f'{stem}*'))
         },
     }
+    if isinstance(spec, ModuleSpec) and spec.wall_pattern != 'plain':
+        manifest['print_orientation'] += (
+            f' Corrugated patterned facets target {2 * spec.pattern_line_width:g} mm normal thickness '
+            f'for two {spec.pattern_line_width:g} mm extrusion lines with a 0.6 mm nozzle; '
+            'folds, transitions and structural lands remain thicker. Verify the perimeter paths in your slicer.'
+            if spec.pattern_construction == 'corrugated' else
+            f' Pattern valleys retain at least {2 * spec.pattern_line_width:g} mm for two '
+            f'{spec.pattern_line_width:g} mm extrusion lines with a 0.6 mm nozzle; crests and '
+            'structural lands remain thicker. Verify the perimeter paths in your slicer.')
     (output / 'build.json').write_text(json.dumps(manifest, indent=2) + '\n')
     return manifest
 
@@ -256,13 +265,16 @@ def selected_build(output, spec):
 
 
 def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.8, module_rear=0.9,
-                drawer_columns=1, drawer_rows=1):
+                drawer_columns=1, drawer_rows=1, wall_pattern='plain', pattern_pitch=14.0,
+                pattern_depth=1.7, pattern_line_width=0.65, pattern_faces='all', pattern_construction='recessed'):
     """Resolve the same native constructors for the CLI and web generator."""
     from .generator import ACCESSORY_PARTS
     if part in ACCESSORY_PARTS:
         from .accessories import AccessorySpec
         return AccessorySpec(part)
-    module_spec = ModuleSpec(family, depth_units, height_units, module_rear, drawer_columns, drawer_rows)
+    module_spec = ModuleSpec(family, depth_units, height_units, module_rear, drawer_columns, drawer_rows,
+                             wall_pattern, pattern_pitch, pattern_depth, pattern_line_width, pattern_faces,
+                             pattern_construction)
     if part == 'module':
         from dataclasses import replace
         return replace(module_spec, drawer_rows=1)
@@ -300,18 +312,33 @@ def main():
                         help='Two columns create an L² module for two S drawers (family L only)')
     parser.add_argument('--drawer-rows', type=int, choices=(1, 2), default=1,
                         help='Two rows with two columns create four S1F drawers in an L 2F module')
+    parser.add_argument('--wall-pattern', choices=('plain', 'waffle', 'miura'), default='plain')
+    parser.add_argument('--pattern-construction', choices=('recessed', 'corrugated'), default='recessed',
+                        help='Outer recesses or a thin corrugated wall inside the original wall envelope')
+    parser.add_argument('--pattern-pitch', type=float, default=14.0, help='Pattern cell pitch, 8–40 mm')
+    parser.add_argument('--pattern-depth', type=float, default=1.7, help='Pattern relief within the existing wall, 0.2–2 mm')
+    parser.add_argument('--pattern-line-width', type=float, default=0.65,
+                        help='Target extrusion width for two perimeters with a 0.6 mm nozzle, 0.6–1 mm')
+    parser.add_argument('--pattern-faces', choices=('all', 'sides'), default='all',
+                        help='Pattern all four long sleeve faces, or just the left/right sides')
     parser.add_argument('--samples', type=int, default=100_000, help='Area samples and maximum vertex samples per direction')
     parser.add_argument('--tolerance', type=float, default=.25, help='Maximum retained-surface sample deviation in mm, including the simplified outside corners')
     parser.add_argument('--mating-tolerance', type=float, default=.1, help='Stricter maximum deviation in the mechanical interface regions, in mm')
     args = parser.parse_args()
     try:
         spec = ModuleSpec(args.family, args.depth_units, args.height_units,
-                          drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows)
+                          drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows,
+                          wall_pattern=args.wall_pattern, pattern_pitch=args.pattern_pitch,
+                          pattern_depth=args.pattern_depth, pattern_line_width=args.pattern_line_width,
+                          pattern_faces=args.pattern_faces, pattern_construction=args.pattern_construction)
     except ValueError as error:
         parser.error(str(error))
     try:
         spec = select_spec(args.part, args.family, args.depth_units, args.height_units,
-                           drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows)
+                           drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows,
+                           wall_pattern=args.wall_pattern, pattern_pitch=args.pattern_pitch,
+                           pattern_depth=args.pattern_depth, pattern_line_width=args.pattern_line_width,
+                           pattern_faces=args.pattern_faces, pattern_construction=args.pattern_construction)
     except ValueError as error:
         parser.error(str(error))
     if args.output is None:

@@ -31,11 +31,21 @@ const partDescriptions = {
   runner_slides: 'Slides follow depth; the same slides fit S, M and L at either height.',
 };
 const isActive = job => job && ['queued', 'running'].includes(job.status);
-const configurationName = config => `${config.family || 'S'}${config.depth_units || ''}${config.drawer_columns === 2 ? '²' : ''} · ${config.height_units || 1}F${config.drawer_rows === 2 ? ' · 4 drawers' : ''}`;
+const configurationName = config => [
+  `${config.family || 'S'}${config.depth_units || ''}${config.drawer_columns === 2 ? '²' : ''}`,
+  `${config.height_units || 1}F`, config.drawer_rows === 2 ? '4 drawers' : '',
+  ['set','module'].includes(config.part) ? {waffle:'Waffle', miura:'Miura-ori'}[config.wall_pattern] : '',
+  ['set','module'].includes(config.part) && config.wall_pattern !== 'plain' && config.pattern_construction === 'corrugated' ? 'Corrugated' : '',
+].filter(Boolean).join(' · ');
 const drawerFamily = config => config.drawer_columns === 2 ? 'S' : config.family;
 const drawerHeight = config => config.height_units / (config.drawer_rows || 1);
 const drawerCount = config => (config.drawer_columns || 1) * (config.drawer_rows || 1);
 const layoutCount = layout => layout.columns * (layout.rows || 1);
+const patternKeys = ['wall_pattern', 'pattern_pitch', 'pattern_depth', 'pattern_line_width', 'pattern_faces', 'pattern_construction'];
+const patternDefaults = {wall_pattern: 'plain', pattern_pitch: 14, pattern_depth: 1.7, pattern_line_width: 0.65, pattern_faces: 'all', pattern_construction: 'recessed'};
+const moduleSelected = () => ['set', 'module'].includes(state.selection.part);
+const defaultPattern = () => Object.fromEntries(patternKeys.map(key => [key, state.config.defaults[key] ?? patternDefaults[key]]));
+const requestConfiguration = () => moduleSelected() ? {...state.selection} : {...state.selection, ...defaultPattern(), wall_pattern: 'plain'};
 const svgIcon = name => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.classList.add('icon');
   const use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); use.setAttribute('href', `#i-${name}`); svg.append(use); return svg;
@@ -82,6 +92,7 @@ function optionButton(value, key, label, className) {
       state.selection.drawer_columns = 1; state.selection.drawer_rows = 1;
     }
     if (key === 'height_units' && value === 1) state.selection.drawer_rows = 1;
+    if (key === 'wall_pattern' && value === 'plain') Object.assign(state.selection, defaultPattern(), {wall_pattern: 'plain'});
     renderSelection(); showSelection();
   });
   return button;
@@ -108,6 +119,24 @@ function createControls(config) {
       const label = `${value} mm · ${index ? 'Original' : 'Current'}`;
       const button = optionButton(value, key, label, ''); button.textContent = label; $(target).append(button);
     }
+  }
+  for (const [values, key, target] of [
+    [config.wall_patterns || [{id:'plain', name:'Plain'}, {id:'waffle', name:'Waffle'}, {id:'miura', name:'Miura-ori'}], 'wall_pattern', 'wall-pattern-options'],
+    [config.pattern_faces || [{id:'all', name:'All outer walls'}, {id:'sides', name:'Sides only'}], 'pattern_faces', 'pattern-faces-options'],
+    [config.pattern_constructions || [{id:'recessed', name:'Recessed'}, {id:'corrugated', name:'Two-perimeter corrugated'}], 'pattern_construction', 'pattern-construction-options'],
+  ]) {
+    for (const value of values) {
+      const button = optionButton(value.id, key, value.name, ''); button.textContent = value.name; $(target).append(button);
+    }
+  }
+  for (const [name, id] of [['pitch', 'pattern-pitch'], ['depth', 'pattern-depth'], ['line_width', 'pattern-line-width']]) {
+    const input = $(id), settings = config.pattern_settings?.[name];
+    if (settings) { input.min = settings.min; input.max = settings.max; }
+    input.addEventListener('input', () => {
+      state.navigationVersion++; state.browsingSelection = true;
+      state.selection[`pattern_${name}`] = input.valueAsNumber;
+      renderSelection(); showSelection();
+    });
   }
   let commonStarted = false;
   for (const part of config.parts) {
@@ -166,7 +195,7 @@ function renderEnvelope(dimensions) {
   label(width/2,0,-17,`${width} mm`); label(width+25,depth/2,0,`${depth.toFixed(1)} mm`);
 }
 function renderSelection() {
-  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-floor-options','box_floor'], ['module-rear-options','module_rear']]) {
+  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-floor-options','box_floor'], ['module-rear-options','module_rear'], ['wall-pattern-options','wall_pattern'], ['pattern-faces-options','pattern_faces'], ['pattern-construction-options','pattern_construction']]) {
     for (const button of $(target).querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.value === String(state.selection[key])));
   }
   const dimensions = envelopeDimensions(), config = state.selection;
@@ -189,8 +218,41 @@ function renderSelection() {
     $('preview-title').textContent = configurationName(config);
     renderEnvelope(dimensions); setMetrics(dimensions);
   }
-  $('build-button').disabled = state.submitting || isActive(state.job);
+  renderPatternSettings();
+  $('build-button').disabled = state.submitting || isActive(state.job) || Boolean(patternError());
   $('build-button-text').textContent = state.submitting ? 'Starting build…' : isActive(state.job) ? 'Build in progress…' : config.part === 'set' ? 'Generate complete set' : `Generate ${names[config.part].toLowerCase()}`;
+}
+
+function patternError() {
+  if (!moduleSelected() || state.selection.wall_pattern === 'plain') return '';
+  for (const [key, id, label] of [['pattern_pitch', 'pattern-pitch', 'Pitch'], ['pattern_depth', 'pattern-depth', 'Depth'], ['pattern_line_width', 'pattern-line-width', 'Line width']]) {
+    const input = $(id), value = state.selection[key];
+    if (!Number.isFinite(value) || value < Number(input.min) || value > Number(input.max)) return `${label} must be between ${input.min} and ${input.max} mm.`;
+  }
+  const thickness = state.config.pattern_settings?.wall_thickness ?? 3;
+  if (state.selection.pattern_depth + 2 * state.selection.pattern_line_width > thickness + 1e-9) {
+    return `Depth plus two line widths must fit within the ${thickness} mm wall. Reduce depth or line width.`;
+  }
+  return '';
+}
+function renderPatternSettings() {
+  const enabled = moduleSelected() && state.selection.wall_pattern !== 'plain';
+  $('wall-pattern-field').hidden = !moduleSelected();
+  $('wall-pattern-settings').hidden = !enabled;
+  for (const [key, id] of [['pattern_pitch', 'pattern-pitch'], ['pattern_depth', 'pattern-depth'], ['pattern_line_width', 'pattern-line-width']]) {
+    const input = $(id); input.disabled = !enabled;
+    if (document.activeElement !== input) input.value = Number.isFinite(state.selection[key]) ? state.selection[key] : '';
+  }
+  const error = patternError();
+  $('wall-pattern-error').hidden = !error; $('wall-pattern-error').textContent = error;
+  for (const id of ['pattern-pitch', 'pattern-depth', 'pattern-line-width']) $(id).setAttribute('aria-invalid', String(Boolean(error)));
+  const web = Number.isFinite(state.selection.pattern_line_width) ? `${Number(2 * state.selection.pattern_line_width).toFixed(2)} mm` : 'two line widths';
+  const construction = state.selection.pattern_construction === 'corrugated'
+    ? `Thin facets target ${web} thickness perpendicular to each face.${state.selection.wall_pattern === 'miura' ? ' Miura depth limits the recess envelope; fold height is reduced to fit that thickness.' : ''}`
+    : `Recessed valleys retain a minimum ${web} web target, with thicker crests and ribs.`;
+  $('wall-pattern-hint').textContent = enabled
+    ? `For a 0.6 mm nozzle and 2 perimeters. ${construction} Pattern stays inside the existing wall; mating surfaces and mechanical lands retain full thickness. Verify perimeter paths in your slicer.`
+    : 'Original solid walls. Waffle and Miura-ori recess the wall while preserving mating surfaces.';
 }
 
 function partDescription(config) {
@@ -288,6 +350,10 @@ function matches(build, kind) {
   const c = build.configuration, s = state.selection;
   const keys = {module: ['family','depth_units','height_units','module_rear','drawer_columns'], box: ['family','depth_units','height_units','box_floor'], facade: ['family','height_units'], rails: ['family'], runner_guides: ['depth_units'], runner_slides: ['depth_units'], key: [], spring: [], runner_stop: [], facade_cap: [], key_cap: [], latch: []}[kind];
   const selected = kind === 'module' ? s : {...s, family: drawerFamily(s), height_units: drawerHeight(s)};
+  if (kind === 'module') {
+    if ((c.wall_pattern ?? 'plain') !== s.wall_pattern) return false;
+    if (s.wall_pattern !== 'plain' && !patternKeys.slice(1).every(key => (c[key] ?? state.config.defaults[key] ?? patternDefaults[key]) === s[key])) return false;
+  }
   return keys.every(key => (c[key] ?? state.config.defaults[key]) === selected[key]);
 }
 
@@ -359,7 +425,7 @@ function renderAssemblyDetails(scene) {
   selectInstance(state.selectedInstance);
 }
 async function showAssembly(preservePreview = false) {
-  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'module_rear', 'drawer_columns', 'drawer_rows'].map(key => [key, state.selection[key]])));
+  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'module_rear', 'drawer_columns', 'drawer_rows', ...patternKeys].map(key => [key, state.selection[key]])));
   const key = query.toString(), newSelection = !state.assemblyShowing || state.assemblyKey !== key;
   if (preservePreview && !newSelection && state.assemblyPending) return;
   state.assemblyController?.abort();
@@ -445,6 +511,15 @@ async function showAssembly(preservePreview = false) {
 }
 
 function showSelection(preservePreview = false) {
+  if (patternError()) {
+    leaveAssembly(); state.selectedArtifact = null; ++state.previewRequest;
+    $('artifact-panel').hidden = true; $('model-canvas').hidden = true; $('model-canvas').dataset.modelReady = 'false';
+    $('envelope').setAttribute('hidden', ''); $('viewer-help').hidden = true; $('reset-view').hidden = true;
+    $('preview-eyebrow').textContent = 'SELECTION'; $('preview-title').textContent = configurationName(state.selection);
+    $('preview-badge').textContent = 'Check settings'; $('selection-note').hidden = true;
+    $('viewer-message').hidden = false; $('viewer-message').textContent = 'Correct the wall pattern settings to preview or generate this configuration.';
+    return;
+  }
   if (state.selection.part === 'set') { showAssembly(preservePreview); return; }
   leaveAssembly();
   const kinds = state.selection.part === 'set' ? Object.keys(names).filter(k => k !== 'set') : [state.selection.part];
@@ -541,7 +616,7 @@ $('configuration-form').addEventListener('submit', async event => {
   event.preventDefault(); if (!state.selection || state.submitting || isActive(state.job) || $('build-button').disabled) return;
   state.submitting = true; renderSelection(); connectionError(null);
   try {
-    const job = await api('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.selection) });
+    const job = await api('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestConfiguration()) });
     state.jobNavigationVersion = state.navigationVersion; rememberJob(job.id); renderJob(job);
     announce(`Generating ${configurationName(job.configuration)}.`); pollJob(job.id);
   } catch (error) { connectionError(error); }
@@ -569,7 +644,7 @@ $('refresh-history').addEventListener('click', async () => {
 });
 async function initialize() {
   try {
-    state.config = await api('/api/config'); state.selection = { ...state.config.defaults };
+    state.config = await api('/api/config'); state.selection = { ...patternDefaults, ...state.config.defaults };
     createControls(state.config); renderSelection();
     await refreshHistory();
     const { jobs: allJobs } = await api('/api/jobs');

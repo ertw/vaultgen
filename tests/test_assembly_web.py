@@ -21,7 +21,8 @@ class AssemblyCacheTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def build(self, kind, *, legacy=False, floor=.8, family='S', columns=None, rows=None, height=1):
+    def build(self, kind, *, legacy=False, floor=.8, family='S', columns=None, rows=None, height=1,
+              pattern=None, pitch=14., depth=1.7, line_width=.65, faces='all', construction=None):
         self.serial += 1
         build_id = f'20261024T010000{self.serial:06d}Z-0123456789ab'
         directory = self.root / 'builds' / build_id
@@ -38,6 +39,11 @@ class AssemblyCacheTests(unittest.TestCase):
         if columns is not None: parameters['drawer_columns'] = columns
         if rows is not None: parameters['drawer_rows'] = rows
         if kind == 'box': parameters['box_floor'] = floor
+        if kind == 'module' and pattern is not None:
+            parameters.update(wall_pattern=pattern, pattern_pitch=pitch, pattern_depth=depth,
+                              pattern_line_width=line_width, pattern_faces=faces)
+            if construction is not None:
+                parameters['pattern_construction'] = construction
         (directory / 'resolved-parameters.json').write_text(json.dumps(parameters))
         reports, checksums = {}, {}
         for role in roles:
@@ -53,6 +59,35 @@ class AssemblyCacheTests(unittest.TestCase):
             passed=True,build_id=build_id,parts=reports,checksums=checksums,
             git={'commit':'current','dirty':False},source_hash='same-source')))
         return build_id
+
+    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    def test_pattern_module_cache_and_fit_receipts_match_every_geometry_parameter(self, _):
+        from dataclasses import replace
+        other_parts = [self.build(kind) for kind in ASSEMBLY_PARTS if kind != 'module']
+        plain = self.build('module')
+        waffle = self.build('module', pattern='waffle')
+        custom = self.build('module', pattern='miura', pitch=20, depth=1.4, line_width=.8, faces='sides',
+                            construction='corrugated')
+        config = Configuration(wall_pattern='miura', pattern_pitch=20, pattern_depth=1.4,
+                               pattern_line_width=.8, pattern_faces='sides', pattern_construction='corrugated')
+        for selected, expected in ((Configuration(), plain), (Configuration(wall_pattern='waffle'), waffle),
+                                   (config, custom)):
+            scene = self.files.assembly(selected)
+            self.assertTrue(scene['complete'])
+            self.assertEqual({i['build_id'] for i in scene['instances']}, {*other_parts, expected})
+        for values in ({'pattern_pitch': 21}, {'pattern_depth': 1.3},
+                       {'pattern_line_width': .7}, {'pattern_faces': 'all'}, {'wall_pattern': 'waffle'},
+                       {'pattern_construction': 'recessed'}):
+            scene = self.files.assembly(replace(config, **values))
+            self.assertFalse(scene['complete'])
+            self.assertEqual({item['kind'] for item in scene['missing']}, {'module'})
+        receipt = self.root / 'web/assemblies/pattern.json'
+        receipt.parent.mkdir(parents=True)
+        receipt.write_text(json.dumps(dict(configuration=config.as_dict(),
+            validation_signature=validation_signature(config), build_ids=[*other_parts, custom],
+            validation={'passed': True})))
+        self.assertTrue(self.files.assembly(config)['validation']['passed'])
+        self.assertIsNone(self.files.assembly(Configuration(wall_pattern='waffle'))['validation'])
 
     @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
     def test_complete_scene_pins_all_builds_and_requires_check_receipt(self, _):

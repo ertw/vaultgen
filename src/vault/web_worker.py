@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .generator import parse_configuration
+from .spec import pattern_parameters
 
 
 def main():
@@ -28,7 +29,8 @@ def main():
         else:
             spec = select_spec(part, config.family, config.depth_units, config.height_units,
                                box_floor=config.box_floor, module_rear=config.module_rear,
-                               drawer_columns=config.drawer_columns, drawer_rows=config.drawer_rows)
+                               drawer_columns=config.drawer_columns, drawer_rows=config.drawer_rows,
+                               **pattern_parameters(config))
             generate = build
         print(f'Preparing {"multicolor label" if part == "label" else spec.name}', flush=True)
         previous = args.output / 'latest' / spec.slug

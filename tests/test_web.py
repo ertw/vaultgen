@@ -140,11 +140,20 @@ class HTTPTests(unittest.TestCase):
         scene = json.loads(data)
         self.assertEqual(scene['name'], 'L6² · 2F · 4 drawers complete set')
         self.assertEqual(len(scene['missing']), 33)
+        status, data = self.request('GET', '/api/assembly?wall_pattern=miura&pattern_pitch=20&pattern_depth=1.4&pattern_line_width=0.8&pattern_faces=sides&pattern_construction=corrugated')
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(data)['configuration']['pattern_pitch'], 20.)
+        self.assertEqual(json.loads(data)['configuration']['wall_pattern'], 'miura')
+        self.assertEqual(json.loads(data)['configuration']['pattern_construction'], 'corrugated')
+        self.assertIn('corrugated', json.loads(data)['name'])
         for query in ('family=XL', 'family=S&family=L', 'depth_units=4.5', 'part=box',
                       'box_floor=nan', 'module_rear=3', 'unknown=1', 'drawer_columns=2',
                       'family=L&drawer_columns=3', 'family=L&drawer_columns=2.0',
                       'family=L&drawer_columns=2&drawer_rows=2', 'family=L&height_units=2&drawer_rows=2',
-                      'family=L&height_units=2&drawer_columns=2&drawer_rows=2.0'):
+                      'family=L&height_units=2&drawer_columns=2&drawer_rows=2.0',
+                      'wall_pattern=unknown', 'pattern_faces=front', 'pattern_pitch=nan',
+                      'wall_pattern=waffle&pattern_depth=2', 'pattern_line_width=0.3',
+                      'pattern_construction=solid'):
             self.assertEqual(self.request('GET', '/api/assembly?' + query)[0], 400)
 
     def test_multi_drawer_submission_and_catalog_agree(self):

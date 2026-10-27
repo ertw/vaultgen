@@ -89,7 +89,9 @@ class BuildFiles:
         definition = assembly_definition(configuration)
         repository = git_provenance(PROJECT_ROOT)
         builds = self.history(repository)
-        keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear', 'drawer_columns'),
+        from .spec import PATTERN_FIELDS
+        module_pattern_fields = PATTERN_FIELDS if configuration.wall_pattern != 'plain' else ('wall_pattern',)
+        keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear', 'drawer_columns', *module_pattern_fields),
                 'box': ('family', 'depth_units', 'height_units', 'box_floor'),
                 'facade': ('family', 'height_units'), 'rails': ('family',),
                 'runner_guides': ('depth_units',), 'runner_slides': ('depth_units',)}
@@ -144,7 +146,11 @@ class BuildFiles:
             warnings.append('This combination of cached parts has no passing assembly fit check. Generate a complete set to check it.')
         columns = '²' if configuration.drawer_columns == 2 else ''
         rows = ' · 4 drawers' if configuration.drawer_rows == 2 else ''
-        return {**definition, 'name': f'{configuration.family}{configuration.depth_units}{columns} · {configuration.height_units}F{rows} complete set',
+        from .spec import WALL_PATTERNS
+        pattern = f' · {WALL_PATTERNS[configuration.wall_pattern]}' if configuration.wall_pattern != 'plain' else ''
+        if pattern and configuration.pattern_construction == 'corrugated':
+            pattern += ' corrugated'
+        return {**definition, 'name': f'{configuration.family}{configuration.depth_units}{columns} · {configuration.height_units}F{rows}{pattern} complete set',
                 'instances': instances, 'missing': missing, 'warnings': list(dict.fromkeys(warnings)),
                 'complete': not missing, 'repository': repository, 'validation': validation}
 
@@ -169,9 +175,11 @@ class BuildFiles:
         if kind == 'box':
             config['box_floor'] = parameters.get('box_floor', 0.8)
         if kind == 'module':
+            from .spec import PATTERN_DEFAULTS
             config['module_rear'] = parameters.get('module_rear', 0.9)
             config['drawer_columns'] = parameters.get('drawer_columns', 1)
             config['drawer_rows'] = parameters.get('drawer_rows', 1)
+            config.update({key: parameters.get(key, value) for key, value in PATTERN_DEFAULTS.items()})
         def url(relative):
             return f'/files/{build_id}/{relative}' if relative in manifest['checksums'] else None
         parts = []
@@ -403,7 +411,7 @@ def handler(jobs):
                         for key in ('depth_units', 'height_units', 'drawer_columns', 'drawer_rows'):
                             if key in values:
                                 values[key] = int(values[key])
-                        for key in ('box_floor', 'module_rear'):
+                        for key in ('box_floor', 'module_rear', 'pattern_pitch', 'pattern_depth', 'pattern_line_width'):
                             if key in values:
                                 values[key] = float(values[key])
                         values.setdefault('part', 'set')

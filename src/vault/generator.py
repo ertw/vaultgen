@@ -1,7 +1,7 @@
 """Bounded generator requests shared by HTTP and the isolated CAD worker."""
 from dataclasses import dataclass, asdict
 
-from .spec import FAMILIES
+from .spec import FAMILIES, PATTERN_CONSTRUCTIONS, PATTERN_DEFAULTS, PATTERN_RANGES, WALL_PATTERNS, validate_wall_pattern
 
 # Keep request validation independent of the CAD runtime.
 ACCESSORY_PARTS = ('key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch')
@@ -24,8 +24,15 @@ class Configuration:
     module_rear: float = 0.9
     drawer_columns: int = 1
     drawer_rows: int = 1
+    wall_pattern: str = 'plain'
+    pattern_pitch: float = 14.0
+    pattern_depth: float = 1.7
+    pattern_line_width: float = 0.65
+    pattern_faces: str = 'all'
+    pattern_construction: str = 'recessed'
 
     def __post_init__(self):
+        validate_wall_pattern(self)
         for key, choices in (('box_floor', (0.8, 3.0)), ('module_rear', (0.9, 2.0))):
             value = getattr(self, key)
             if type(value) not in (int, float) or value not in choices:
@@ -105,6 +112,16 @@ def catalog():
             ],
             'parts': [{'id': key, 'name': value, 'common': key in ACCESSORY_PARTS} for key, value in PARTS.items()],
             'thicknesses': {'box_floor': [0.8, 3.0], 'module_rear': [0.9, 2.0]},
+            'wall_patterns': [{'id': key, 'name': value} for key, value in WALL_PATTERNS.items()],
+            'pattern_constructions': [{'id': key, 'name': value} for key, value in PATTERN_CONSTRUCTIONS.items()],
+            'pattern_faces': [{'id': 'all', 'name': 'All four long faces'},
+                              {'id': 'sides', 'name': 'Left and right sides'}],
+            'pattern_settings': {
+                **{key.removeprefix('pattern_'): {'min': bounds[0], 'max': bounds[1],
+                                                'default': PATTERN_DEFAULTS[key]}
+                   for key, bounds in PATTERN_RANGES.items()},
+                'wall_thickness': 3.0,
+            },
             'defaults': Configuration().as_dict()}
 
 

@@ -13,7 +13,7 @@ viewer to interpolate directly without changing its assembled transform.
 from __future__ import annotations
 
 from .generator import Configuration
-from .spec import DEFAULT_SPEC, ModuleSpec
+from .spec import DEFAULT_SPEC, ModuleSpec, pattern_parameters
 
 
 SCHEMA = 'vault-assembly/v1'
@@ -58,7 +58,8 @@ def assembly_definition(configuration: Configuration):
         raise TypeError('configuration must be a Configuration')
     spec = ModuleSpec(configuration.family, configuration.depth_units,
                       configuration.height_units, configuration.module_rear,
-                      configuration.drawer_columns, configuration.drawer_rows)
+                      configuration.drawer_columns, configuration.drawer_rows,
+                      **pattern_parameters(configuration))
     drawer_spec = ModuleSpec(configuration.drawer_family, configuration.depth_units,
                              configuration.drawer_height_units, configuration.module_rear)
     width_delta = (drawer_spec.width - DEFAULT_SPEC.width) / 2
@@ -155,7 +156,8 @@ def build_finished_components(configuration: Configuration):
     return {
         ('module', 'single'): build_module(
             spec=ModuleSpec(configuration.family, depth, configuration.height_units, configuration.module_rear,
-                            configuration.drawer_columns, configuration.drawer_rows), include_supports=False),
+                            configuration.drawer_columns, configuration.drawer_rows,
+                            **pattern_parameters(configuration)), include_supports=False),
         ('box', 'single'): build_box(
             spec=BoxSpec(family, depth, height, configuration.box_floor), include_supports=False),
         ('facade', 'single'): build_facade(spec=FacadeSpec(family, height)),

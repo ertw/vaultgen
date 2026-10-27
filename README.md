@@ -59,6 +59,29 @@ python -m vault build --part runner_slides --depth-units 7
 python -m vault build --family L --depth-units 6 --height-units 2 --drawer-columns 2
 ```
 
+Modules also offer **Waffle** and **Miura-ori** wall variants in the configurator:
+
+```bash
+python -m vault build --wall-pattern waffle
+python -m vault build --wall-pattern miura
+python -m vault build --wall-pattern waffle --pattern-construction corrugated
+python -m vault build --wall-pattern miura --pattern-construction corrugated
+python -m vault build --wall-pattern miura --pattern-pitch 20 \
+  --pattern-depth 1.4 --pattern-line-width 0.8 --pattern-faces sides
+```
+
+Choose **Recessed** for outer dimples with a **1.3 mm minimum web** at the default
+14 mm pitch and 1.7 mm depth, retaining the original inner surfaces. Choose
+**Two-perimeter corrugated** for paired relief on both sides of each patterned
+panel, targeting **1.3 mm normal facet thickness** for two 0.65 mm extrusion lines
+with a 0.6 mm nozzle. Both options stay inside the existing wall thickness and
+return to full thickness at connector roots, front lips, stopper lands and other
+protected features. Miura-ori uses a sharper zigzag crease relief; it is a rigid
+printed wall, not a folding mechanism. Patterns default to all four long faces;
+`--pattern-faces sides` limits them to the left and right walls. Verify perimeter
+paths in the slicer and test printed fit. See [pattern parameters and protected
+surfaces](docs/generator-geometry.md#patterned-module-walls).
+
 **L² multi-drawer modules** have two S-width bays inside the standard
 329.6 mm L envelope. Select **Two S drawers** with family L in the configurator,
 or pass `--drawer-columns 2` to the CLI. The generator offers depths 3–7 and
