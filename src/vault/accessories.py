@@ -154,7 +154,7 @@ def build_accessory(output,spec):
     from dataclasses import asdict
     import hashlib,json
     from ._build import run_build
-    from .reference import PROJECT_ROOT
+    from .project import PROJECT_ROOT
     from .exports import export_part_set
     if spec.accessory=='key':
         from .key_build import build_key

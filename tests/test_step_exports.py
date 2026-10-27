@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from build123d import Box, Pos, export_step
-from vault.__main__ import _export_into
+from vault.build import _export_into
 from vault.exports import check_step
 from vault.spec import DEFAULT_SPEC
 from vault.tessellation import load_model

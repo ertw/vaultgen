@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from vault import __main__ as cli
+from vault import __main__ as cli, build as builds
 from vault.assembly import assembly_definition, build_finished_components
 from vault.assembly_validation import definition_errors, validation_signature
 from vault.box import BoxSpec
@@ -49,7 +49,7 @@ class GridfinityConfigurationTests(unittest.TestCase):
         self.assertEqual(floorless, replace(closed, box_floor=0.))
         self.assertEqual(len({closed.slug, floorless.slug, replace(closed, box_floor=3).slug}), 3)
         for rear in ('plain', 'waffle', 'miura'):
-            selected = cli.select_spec('box', 'L', 6, 2, drawer_columns=2, drawer_rows=2,
+            selected = builds.select_spec('box', 'L', 6, 2, drawer_columns=2, drawer_rows=2,
                                        box_floor=0, box_variant='gridfinity', box_rear_pattern=rear)
             self.assertEqual(selected, BoxSpec('S', 6, 1, 0, 'gridfinity', rear))
 
@@ -88,21 +88,21 @@ class GridfinityConfigurationTests(unittest.TestCase):
                                                'include_supports': False})
 
     def test_selection_keeps_matching_drawer_sizes_and_other_part_identities(self):
-        plain = cli.select_spec('box')
+        plain = builds.select_spec('box')
         self.assertEqual(plain.slug, 's4_box_1f')
-        gridfinity = cli.select_spec('box', box_variant='gridfinity')
+        gridfinity = builds.select_spec('box', box_variant='gridfinity')
         self.assertEqual(gridfinity.slug, 's4_box_1f_gridfinity')
-        self.assertEqual(cli.part_kind(gridfinity), 'box')
+        self.assertEqual(builds.part_kind(gridfinity), 'box')
         self.assertEqual(gridfinity.box_variant, 'gridfinity')
-        four = cli.select_spec('box', 'L', 6, 2, drawer_columns=2, drawer_rows=2,
+        four = builds.select_spec('box', 'L', 6, 2, drawer_columns=2, drawer_rows=2,
                                box_floor=3., box_variant='gridfinity')
         self.assertEqual((four.family, four.depth_units, four.height_units, four.box_floor),
                          ('S', 6, 1, 3.))
-        self.assertNotEqual(four.slug, cli.select_spec('box', 'S', 6, 1,
+        self.assertNotEqual(four.slug, builds.select_spec('box', 'S', 6, 1,
                                                       box_variant='gridfinity').slug)
         for kind in ASSEMBLY_PARTS:
             if kind != 'box':
-                self.assertEqual(cli.select_spec(kind), cli.select_spec(kind, box_variant='gridfinity'))
+                self.assertEqual(builds.select_spec(kind), builds.select_spec(kind, box_variant='gridfinity'))
 
     def test_cli_passes_variant_to_the_checked_build_pipeline(self):
         with patch.object(cli, 'build') as build, patch('sys.argv', [
@@ -110,7 +110,7 @@ class GridfinityConfigurationTests(unittest.TestCase):
                 '--height-units', '2', '--box-variant', 'gridfinity', '--box-floor', '3']):
             cli.main()
         build.assert_called_once_with(cli.PROJECT_ROOT / 'out',
-                                      cli.select_spec('box', 'M', 5, 2, box_variant='gridfinity', box_floor=3.))
+                                      builds.select_spec('box', 'M', 5, 2, box_variant='gridfinity', box_floor=3.))
 
     def test_assembly_preserves_placements_and_separates_fit_receipts(self):
         for config in (Configuration(), Configuration('M', 3, 2),
@@ -159,7 +159,7 @@ class GridfinityCacheTests(unittest.TestCase):
             'git': {'commit': 'current', 'dirty': False}, 'source_hash': 'same-source'}))
         return build_id
 
-    @patch('vault.web.git_provenance', return_value={'commit': 'current', 'dirty': False})
+    @patch('vault.web_builds.git_provenance', return_value={'commit': 'current', 'dirty': False})
     def test_old_boxes_stay_plain_and_gridfinity_caches_never_replace_them(self, _):
         common = [self.save(kind) for kind in ASSEMBLY_PARTS if kind != 'box']
         plain = self.save('box')
@@ -182,7 +182,7 @@ class GridfinityCacheTests(unittest.TestCase):
         self.assertTrue(self.files.assembly(grid_config)['validation']['passed'])
         self.assertIsNone(self.files.assembly(Configuration())['validation'])
 
-    @patch('vault.web.git_provenance', return_value={'commit': 'current', 'dirty': False})
+    @patch('vault.web_builds.git_provenance', return_value={'commit': 'current', 'dirty': False})
     def test_floorless_and_closed_gridfinity_caches_do_not_replace_each_other(self, _):
         common = [self.save(kind) for kind in ASSEMBLY_PARTS if kind != 'box']
         thin = self.save('box', variant='gridfinity')

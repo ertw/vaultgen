@@ -9,7 +9,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from ._build import run_build, write_json
 from .label_config import LabelConfiguration, label_dimensions, label_layout
-from .reference import PROJECT_ROOT
+from .project import PROJECT_ROOT
 
 
 PRINT_NOTE = (

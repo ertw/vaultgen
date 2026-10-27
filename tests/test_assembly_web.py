@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from vault.generator import Configuration, ASSEMBLY_PARTS
 from vault.assembly_validation import validation_signature
-from vault.web import BuildFiles
+from vault.web_builds import BuildFiles
 
 
 class AssemblyCacheTests(unittest.TestCase):
@@ -65,7 +65,7 @@ class AssemblyCacheTests(unittest.TestCase):
             git={'commit':'current','dirty':False},source_hash='same-source')))
         return build_id
 
-    @patch('vault.web.git_provenance', return_value={'commit': 'current', 'dirty': False})
+    @patch('vault.web_builds.git_provenance', return_value={'commit': 'current', 'dirty': False})
     def test_box_rear_cache_and_receipts_preserve_independent_module_and_base_choices(self, _):
         from dataclasses import replace
         common = [self.build(kind) for kind in ASSEMBLY_PARTS if kind not in ('box', 'module')]
@@ -102,7 +102,7 @@ class AssemblyCacheTests(unittest.TestCase):
         self.assertFalse(mismatch['complete'])
         self.assertEqual({item['kind'] for item in mismatch['missing']}, {'box'})
 
-    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    @patch('vault.web_builds.git_provenance',return_value={'commit':'current','dirty':False})
     def test_pattern_module_cache_and_fit_receipts_match_every_geometry_parameter(self, _):
         from dataclasses import replace
         other_parts = [self.build(kind) for kind in ASSEMBLY_PARTS if kind != 'module']
@@ -131,7 +131,7 @@ class AssemblyCacheTests(unittest.TestCase):
         self.assertTrue(self.files.assembly(config)['validation']['passed'])
         self.assertIsNone(self.files.assembly(Configuration(wall_pattern='waffle'))['validation'])
 
-    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    @patch('vault.web_builds.git_provenance',return_value={'commit':'current','dirty':False})
     def test_complete_scene_pins_all_builds_and_requires_check_receipt(self, _):
         ids = [self.build(kind) for kind in ASSEMBLY_PARTS]
         scene = self.files.assembly(Configuration())
@@ -152,7 +152,7 @@ class AssemblyCacheTests(unittest.TestCase):
         self.assertIsNone(changed['validation'])
         self.assertTrue(any('fit check' in warning for warning in changed['warnings']))
 
-    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':True})
+    @patch('vault.web_builds.git_provenance',return_value={'commit':'current','dirty':True})
     def test_old_and_mismatched_meshes_are_missing_not_guessed(self, _):
         self.build('module',legacy=True)
         self.build('box',floor=3)
@@ -164,7 +164,7 @@ class AssemblyCacheTests(unittest.TestCase):
         self.assertTrue(any('Not generated' in i['reason'] for i in scene['missing'] if i['kind']=='box'))
         self.assertTrue(any('uncommitted' in w for w in scene['warnings']))
 
-    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    @patch('vault.web_builds.git_provenance',return_value={'commit':'current','dirty':False})
     def test_two_drawer_scene_reuses_s_parts_and_distinguishes_l_modules(self, _):
         drawer_builds = {kind: self.build(kind) for kind in ASSEMBLY_PARTS if kind != 'module'}
         single_module = self.build('module', family='L')
@@ -186,7 +186,7 @@ class AssemblyCacheTests(unittest.TestCase):
         self.assertEqual(self.files.describe(double_module)['configuration']['drawer_columns'], 2)
         self.assertEqual(self.files.describe(single_module)['configuration']['drawer_columns'], 1)
 
-    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    @patch('vault.web_builds.git_provenance',return_value={'commit':'current','dirty':False})
     def test_two_and_four_drawer_scenes_share_open_module_but_keep_matching_drawers(self, _):
         drawers = {kind: self.build(kind) for kind in ASSEMBLY_PARTS if kind != 'module'}
         shared_module = self.build('module', family='L', columns=2, height=2)
@@ -218,7 +218,7 @@ class AssemblyCacheTests(unittest.TestCase):
         self.assertTrue(self.files.assembly(four_configuration)['validation']['passed'])
         self.assertIsNone(self.files.assembly(Configuration(family='L', height_units=2, drawer_columns=2))['validation'])
 
-    @patch('vault.web.git_provenance',return_value={'commit':'current','dirty':False})
+    @patch('vault.web_builds.git_provenance',return_value={'commit':'current','dirty':False})
     def test_partitioned_history_is_not_used_as_the_shared_open_module(self, _):
         old = self.build('module', family='L', columns=2, rows=2, height=2)
         for rows in (1, 2):

@@ -17,6 +17,8 @@ include a multicolor 3MF and registered STL/STEP color components; see
 
 Run locally with `python -m vault.web` (loopback port 3941). See
 [deployment](deploy/README.md) and [generator behavior](docs/generator.md).
+The [architecture guide](docs/architecture.md) maps the components, build flow,
+storage boundaries and test coverage.
 
 The viewer catalog is declared in `partcad.json`, with explicit build bindings in
 `cad-builds.json`. Generated files under `out/` are optional previews and history;

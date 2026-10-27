@@ -66,7 +66,7 @@ def export_part_set(output, spec, parts, *, kind, print_note):
     from .tessellation import export_print_mesh, review_mesh
 
     from ._build import source_hashes, write_json
-    from .reference import PROJECT_ROOT
+    from .project import PROJECT_ROOT
     import time
 
     if not parts:

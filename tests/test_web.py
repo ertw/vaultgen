@@ -12,7 +12,9 @@ import zipfile
 from unittest.mock import patch
 
 from vault.generator import Configuration
-from vault.web import BuildFiles, Jobs, handler, freshness
+from vault.web import handler
+from vault.web_builds import BuildFiles, freshness
+from vault.web_jobs import Jobs
 
 
 class GeneratorTests(unittest.TestCase):
@@ -67,13 +69,76 @@ class GeneratorTests(unittest.TestCase):
             def capture(item):
                 snapshots.append(json.loads(json.dumps(item)))
                 save(item)
-            with patch.object(jobs, '_save', side_effect=capture), patch('vault.web.subprocess.Popen') as process:
+            with patch.object(jobs, '_save', side_effect=capture), patch('vault.web_jobs.subprocess.Popen') as process:
                 process.return_value.stdout = iter(['First part complete\n', 'Second part failed\n'])
                 process.return_value.wait.return_value = 1
                 jobs._work()
             terminal = [item for item in snapshots if item['status'] == 'failed']
             self.assertEqual(len(terminal), 1)
             self.assertEqual(terminal[0]['build_ids'], ['checked-earlier-part'])
+
+
+class BuildFilesTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.files = BuildFiles(self.temporary.name)
+
+    def test_runner_history_preserves_depth_without_inventing_a_width_family(self):
+        for i, kind in enumerate(('runner_guides', 'runner_slides')):
+            build_id = f'20261024T01000000000{i}Z-0123456789ab'
+            path = Path(self.temporary.name) / 'builds' / build_id
+            path.mkdir(parents=True)
+            (path / 'manifest.json').write_text(json.dumps({
+                'passed': True, 'build_id': build_id, 'checksums': {},
+                'parts': {f'x7_{kind}_left': {'kind': kind}},
+            }))
+            (path / 'resolved-parameters.json').write_text(json.dumps({
+                'depth_units': 7, 'part': f'x7_{kind}',
+            }))
+        history = self.files.history()
+        self.assertEqual({item['kind'] for item in history}, {'runner_guides', 'runner_slides'})
+        for item in history:
+            self.assertEqual(item['configuration'], {'depth_units': 7, 'part': item['kind']})
+
+    def test_universal_accessory_history_and_request_validation(self):
+        from vault.generator import ACCESSORY_PARTS
+        for i, kind in enumerate(ACCESSORY_PARTS):
+            build_id = f'20261024T01000000000{i}Z-0123456789ab'
+            path = Path(self.temporary.name) / 'builds' / build_id
+            path.mkdir(parents=True)
+            (path / 'manifest.json').write_text(json.dumps({
+                'passed': True, 'build_id': build_id, 'checksums': {}, 'parts': {},
+            }))
+            (path / 'resolved-parameters.json').write_text(json.dumps({
+                'part': 'snap_key' if kind == 'key' else kind,
+            }))
+            self.assertEqual(Configuration.parse({'part': kind}).parts, (kind,))
+        history = self.files.history()
+        self.assertEqual({item['kind'] for item in history}, set(ACCESSORY_PARTS))
+        for item in history:
+            self.assertEqual(item['configuration'], {'part': item['kind']})
+
+    def test_history_distinguishes_thickness_variants_and_legacy_defaults(self):
+        for i, (kind, key, value, suffix) in enumerate((
+                ('box', 'box_floor', None, ''), ('box', 'box_floor', 3, '_floor_3mm'),
+                ('module', 'module_rear', None, ''), ('module', 'module_rear', 2, '_rear_2mm'))):
+            build_id = f'20261024T01000000000{i}Z-0123456789ab'
+            path = Path(self.temporary.name) / 'builds' / build_id
+            path.mkdir(parents=True)
+            (path / 'manifest.json').write_text(json.dumps({
+                'passed': True, 'build_id': build_id, 'checksums': {}, 'parts': {}}))
+            parameters = dict(family='L', depth_units=6, height_units=2,
+                              part=f'l6_{kind}_2f{suffix}')
+            if value is not None:
+                parameters[key] = value
+            (path / 'resolved-parameters.json').write_text(json.dumps(parameters))
+        history = self.files.history()
+        self.assertEqual({b['configuration'].get('box_floor') for b in history if b['kind'] == 'box'}, {0.8, 3})
+        self.assertEqual({b['configuration'].get('module_rear') for b in history if b['kind'] == 'module'}, {0.9, 2})
+        self.assertEqual({b['configuration']['drawer_columns'] for b in history if b['kind'] == 'module'}, {1})
+        self.assertEqual({b['configuration']['drawer_rows'] for b in history if b['kind'] == 'module'}, {1})
+        self.assertTrue(all(b['freshness']['warning'] for b in history))
 
 
 class HTTPTests(unittest.TestCase):
@@ -198,62 +263,6 @@ class HTTPTests(unittest.TestCase):
                        {'family': 'L', 'drawer_columns': 2, 'drawer_rows': 2},
                        {'family': 'L', 'height_units': 2, 'drawer_columns': 2, 'drawer_rows': True}):
             self.assertEqual(self.request('POST', '/api/jobs', values)[0], 400)
-
-    def test_runner_history_preserves_depth_without_inventing_a_width_family(self):
-        for i, kind in enumerate(('runner_guides', 'runner_slides')):
-            build_id = f'20261024T01000000000{i}Z-0123456789ab'
-            path = Path(self.temporary.name) / 'builds' / build_id
-            path.mkdir(parents=True)
-            (path / 'manifest.json').write_text(json.dumps({
-                'passed': True, 'build_id': build_id, 'checksums': {},
-                'parts': {f'x7_{kind}_left': {'kind': kind}},
-            }))
-            (path / 'resolved-parameters.json').write_text(json.dumps({
-                'depth_units': 7, 'part': f'x7_{kind}',
-            }))
-        history = BuildFiles(self.temporary.name).history()
-        self.assertEqual({item['kind'] for item in history}, {'runner_guides', 'runner_slides'})
-        for item in history:
-            self.assertEqual(item['configuration'], {'depth_units': 7, 'part': item['kind']})
-
-    def test_universal_accessory_history_and_request_validation(self):
-        from vault.generator import ACCESSORY_PARTS
-        for i, kind in enumerate(ACCESSORY_PARTS):
-            build_id = f'20261024T01000000000{i}Z-0123456789ab'
-            path = Path(self.temporary.name) / 'builds' / build_id
-            path.mkdir(parents=True)
-            (path / 'manifest.json').write_text(json.dumps({
-                'passed': True, 'build_id': build_id, 'checksums': {}, 'parts': {},
-            }))
-            (path / 'resolved-parameters.json').write_text(json.dumps({
-                'part': 'snap_key' if kind == 'key' else kind,
-            }))
-            self.assertEqual(Configuration.parse({'part': kind}).parts, (kind,))
-        history = self.jobs.files.history()
-        self.assertEqual({item['kind'] for item in history}, set(ACCESSORY_PARTS))
-        for item in history:
-            self.assertEqual(item['configuration'], {'part': item['kind']})
-
-    def test_history_distinguishes_thickness_variants_and_legacy_defaults(self):
-        for i, (kind, key, value, suffix) in enumerate((
-                ('box', 'box_floor', None, ''), ('box', 'box_floor', 3, '_floor_3mm'),
-                ('module', 'module_rear', None, ''), ('module', 'module_rear', 2, '_rear_2mm'))):
-            build_id = f'20261024T01000000000{i}Z-0123456789ab'
-            path = Path(self.temporary.name) / 'builds' / build_id
-            path.mkdir(parents=True)
-            (path / 'manifest.json').write_text(json.dumps({
-                'passed': True, 'build_id': build_id, 'checksums': {}, 'parts': {}}))
-            parameters = dict(family='L', depth_units=6, height_units=2,
-                              part=f'l6_{kind}_2f{suffix}')
-            if value is not None:
-                parameters[key] = value
-            (path / 'resolved-parameters.json').write_text(json.dumps(parameters))
-        history = self.jobs.files.history()
-        self.assertEqual({b['configuration'].get('box_floor') for b in history if b['kind'] == 'box'}, {0.8, 3})
-        self.assertEqual({b['configuration'].get('module_rear') for b in history if b['kind'] == 'module'}, {0.9, 2})
-        self.assertEqual({b['configuration']['drawer_columns'] for b in history if b['kind'] == 'module'}, {1})
-        self.assertEqual({b['configuration']['drawer_rows'] for b in history if b['kind'] == 'module'}, {1})
-        self.assertTrue(all(b['freshness']['warning'] for b in history))
 
     def test_downloads_are_checked_and_cannot_expose_sources(self):
         build_id = '20261024T010000000000Z-0123456789ab'

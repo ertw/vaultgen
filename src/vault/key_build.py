@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 from ._build import run_build, write_json
-from .reference import PROJECT_ROOT
+from .project import PROJECT_ROOT
 
 
 PRINT_NOTE = (

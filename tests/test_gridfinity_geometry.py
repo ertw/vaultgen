@@ -44,15 +44,20 @@ class GridfinityGeometryTests(unittest.TestCase):
                      BoxSpec('L', 7, 2, 3, 'gridfinity')):
             plain = build_box(spec=replace(spec, box_variant='plain'))
             grid = build_box(spec=spec)
-            cls.cases.append((spec, plain, grid, audit_gridfinity(plain, grid, spec)))
+            cls.cases.append((spec, grid.label, audit_gridfinity(plain, grid, spec)))
+            # The assertions need only the label and numeric audit. Release
+            # native solids before building the next, potentially larger case.
+            del plain, grid
 
     def test_native_representative_drawers_retain_interfaces_and_accept_bins(self):
-        for spec, plain, grid, report in self.cases:
+        for spec, label, report in self.cases:
             with self.subTest(spec=spec):
                 self.assertTrue(report['passed'], report)
                 self.assertGreater(report['added_volume_mm3'], 1000)
-                self.assertIn('Gridfinity', grid.label)
+                self.assertIn('Gridfinity', label)
 
+
+class GridfinitySocketTests(unittest.TestCase):
     def test_nominal_socket_has_straight_and_chamfered_sections(self):
         cutter = socket_cutter()
         # Independent section expectations include the relieved bottom and

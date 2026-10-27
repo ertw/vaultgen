@@ -14,9 +14,9 @@ def main():
     parser.add_argument('--receipt', type=Path, required=True)
     args = parser.parse_args()
     config = parse_configuration(json.loads(args.configuration))
-    from .__main__ import build, select_spec
+    from .build import build, select_spec
     from ._build import source_hashes, source_digest, verify_files, git_provenance
-    from .reference import PROJECT_ROOT
+    from .project import PROJECT_ROOT
     digest = source_digest(source_hashes(PROJECT_ROOT))
     builds = []
     for part in config.parts:

@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from vault import __main__ as cli
+from vault import __main__ as cli, build as builds
 from vault.assembly import assembly_definition, build_finished_components
 from vault.assembly_validation import definition_errors, validation_signature
 from vault.box import BoxSpec
@@ -37,16 +37,16 @@ class BoxRearConfigurationTests(unittest.TestCase):
                          's4_box_1f_floor_3mm_gridfinity_rear_miura_corrugated')
 
     def test_select_spec_preserves_drawer_layout_and_ignores_unrelated_module_patterns(self):
-        selected = cli.select_spec('box', 'L', 6, 2, drawer_columns=2, drawer_rows=2,
+        selected = builds.select_spec('box', 'L', 6, 2, drawer_columns=2, drawer_rows=2,
                                    box_floor=3, box_variant='gridfinity', box_rear_pattern='waffle',
                                    wall_pattern='miura', pattern_pitch=20, pattern_depth=1.4,
                                    pattern_line_width=.8, pattern_construction='corrugated')
         self.assertEqual(selected, BoxSpec('S', 6, 1, 3, 'gridfinity', 'waffle'))
         for kind in (*ASSEMBLY_PARTS, 'key'):
             if kind != 'box':
-                self.assertEqual(cli.select_spec(kind), cli.select_spec(kind, box_rear_pattern='waffle'))
-        self.assertEqual(cli.select_spec('box', box_rear_pattern='miura'),
-                         cli.select_spec('box', box_rear_pattern='miura', wall_pattern='waffle', pattern_pitch=18))
+                self.assertEqual(builds.select_spec(kind), builds.select_spec(kind, box_rear_pattern='waffle'))
+        self.assertEqual(builds.select_spec('box', box_rear_pattern='miura'),
+                         builds.select_spec('box', box_rear_pattern='miura', wall_pattern='waffle', pattern_pitch=18))
 
     def test_cli_and_publication_record_rear_choice(self):
         with patch.object(cli, 'build') as build, patch('sys.argv', [
@@ -56,8 +56,8 @@ class BoxRearConfigurationTests(unittest.TestCase):
             cli.main()
         selected = BoxSpec('M', 5, 2, 3, 'gridfinity', 'miura')
         build.assert_called_once_with(cli.PROJECT_ROOT/'out', selected)
-        with patch.object(cli, 'run_build') as transaction:
-            cli.build(Path('/tmp/box-rear-publication-test'), selected)
+        with patch.object(builds, 'run_build') as transaction:
+            builds.build(Path('/tmp/box-rear-publication-test'), selected)
         parameters = transaction.call_args.kwargs['parameters']
         self.assertEqual(parameters['box_rear_pattern'], 'miura')
         self.assertEqual(parameters['part'], selected.slug)

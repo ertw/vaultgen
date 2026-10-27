@@ -3,7 +3,7 @@ import unittest
 from vault.accessories import (SpringDimensions, build_spring, build_facade_cap,
                                build_key_cap, build_runner_stop)
 from vault.generator import Configuration, ACCESSORY_PARTS
-from vault.__main__ import select_spec
+from vault.build import select_spec
 
 
 class AccessoryTests(unittest.TestCase):

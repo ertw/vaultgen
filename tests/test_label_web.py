@@ -12,7 +12,8 @@ import zipfile
 
 from vault.generator import Configuration, parse_configuration
 from vault.label_config import LabelConfiguration, label_dimensions, label_layout
-from vault.web import Jobs, handler
+from vault.web import handler
+from vault.web_jobs import Jobs
 
 
 def request_configuration(**changes):
@@ -269,6 +270,7 @@ class LabelHTTPTests(unittest.TestCase):
         self.assertEqual(self.request('GET', f'/files/{build_id}/../label.3mf')[0], 404)
         (self.root / 'builds' / build_id / 'label.3mf').write_bytes(b'changed')
         self.assertEqual(self.request('GET', build['three_mf_url'])[0], 409)
+        self.assertEqual(self.request('GET', build['bundle_url'])[0], 409)
 
     def test_saved_label_bundle_does_not_depend_on_a_job_record(self):
         build_id, config = self.label_build()
@@ -279,6 +281,7 @@ class LabelHTTPTests(unittest.TestCase):
         with zipfile.ZipFile(BytesIO(body)) as bundle:
             self.assertEqual(bundle.read('label/label.3mf'), b'checked multicolor assembly')
             self.assertEqual(json.loads(bundle.read('configuration.json')), config)
+        self.assertEqual(self.request('HEAD', build['bundle_url'])[:2], (200, b''))
         self.assertEqual(self.request('GET', '/api/builds/not-a-build/bundle.zip')[0], 404)
 
     def test_completed_bundle_includes_registered_colors_and_instructions(self):

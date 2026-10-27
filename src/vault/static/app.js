@@ -1,4 +1,5 @@
 import { STLViewer } from './stl-viewer.js';
+import { api, downloadLink, errorMessage, isActive } from './client.js';
 
 const $ = id => document.getElementById(id);
 const state = {
@@ -30,7 +31,6 @@ const partDescriptions = {
   runner_guides: 'Guides follow depth; the same guides fit S, M and L at either height.',
   runner_slides: 'Slides follow depth; the same slides fit S, M and L at either height.',
 };
-const isActive = job => job && ['queued', 'running'].includes(job.status);
 const configurationName = config => [
   `${config.family || 'S'}${config.depth_units || ''}${config.drawer_columns === 2 ? '²' : ''}`,
   `${config.height_units || 1}F`, config.drawer_rows === 2 ? '4 drawers' : '',
@@ -63,26 +63,9 @@ const element = (tag, className, text) => {
   if (text !== undefined) node.textContent = text; return node;
 };
 const announce = text => { $('announcement').textContent = text; };
-const errorMessage = error => error instanceof Error ? error.message : String(error);
 function connectionError(error) {
   $('connection-error').textContent = error ? errorMessage(error) : '';
   $('connection-error').hidden = !error;
-}
-async function api(path, options = {}) {
-  const response = await fetch(path, { cache: 'no-store', ...options });
-  if (response.status === 401) throw new Error('Session expired. Refresh to sign in; an existing build may still be running.');
-  if (!response.ok) {
-    let message = `Request failed (${response.status}).`;
-    try { const body = await response.json(); message = body.error || message; } catch { /* Keep the HTTP error. */ }
-    throw new Error(message);
-  }
-  return response.json();
-}
-function downloadLink(node, url) {
-  const valid = typeof url === 'string' && /^\/(?:files\/|api\/jobs\/)[^\s]*$/.test(url) && !url.includes('\\');
-  node.hidden = !valid;
-  if (valid) { node.href = url; node.setAttribute('download', ''); }
-  else node.removeAttribute('href');
 }
 function rememberJob(id) { try { localStorage.setItem('vault-active-job', id); } catch { /* Storage may be disabled. */ } }
 function rememberedJob() { try { return localStorage.getItem('vault-active-job'); } catch { return null; } }

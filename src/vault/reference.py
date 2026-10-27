@@ -6,7 +6,8 @@ not depend on this file or on trimesh.
 from pathlib import Path
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+from .project import PROJECT_ROOT
+
 SOURCE = PROJECT_ROOT / 'original_files/01. DRAWERS/01. S Families/S4/Modules/S4 Module 1f.stl'
 # Preserve the original source's sub-millimetre offsets. Modelling coordinates:
 # X = width, Y = drawer travel (closed back at 0), Z = sleeve height.

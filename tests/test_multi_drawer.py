@@ -5,7 +5,7 @@ from io import StringIO
 import unittest
 from unittest.mock import patch
 
-from vault import __main__ as cli
+from vault import __main__ as cli, build as builds
 from vault.drawer import DrawerLayout
 from vault.model import build_module, print_orientation
 from vault.shell import ShellDimensions
@@ -28,8 +28,8 @@ class MultiDrawerSelectionTests(unittest.TestCase):
     def test_matching_parts_reuse_s_drawer_identities(self):
         for part in ('box', 'facade', 'rails', 'runner_guides', 'runner_slides'):
             with self.subTest(part=part):
-                self.assertEqual(cli.select_spec(part, 'L', 6, 2, drawer_columns=2),
-                                 cli.select_spec(part, 'S', 6, 2))
+                self.assertEqual(builds.select_spec(part, 'L', 6, 2, drawer_columns=2),
+                                 builds.select_spec(part, 'S', 6, 2))
         with patch.object(cli, 'build') as build:
             with patch('sys.argv', ['vault', 'build', '--family', 'L', '--depth-units', '6',
                                     '--height-units', '2', '--drawer-columns', '2']):
@@ -53,21 +53,21 @@ class MultiDrawerSelectionTests(unittest.TestCase):
         tall = replace(spec, drawer_rows=1)
         self.assertEqual(spec.slug, tall.slug)
         self.assertEqual(spec.name, tall.name)
-        self.assertEqual(cli.select_spec('module', 'L', 6, 2, drawer_columns=2, drawer_rows=2), tall)
+        self.assertEqual(builds.select_spec('module', 'L', 6, 2, drawer_columns=2, drawer_rows=2), tall)
         self.assertEqual(spec.drawer_origins, ((-82.4, 0), (82.4, 0), (-82.4, 48), (82.4, 48)))
         self.assertEqual(DrawerLayout(spec).spec, ModuleSpec('S', 6, 1))
         for part in ('box', 'facade', 'rails', 'runner_guides', 'runner_slides'):
-            self.assertEqual(cli.select_spec(part, 'L', 6, 2, drawer_columns=2, drawer_rows=2),
-                             cli.select_spec(part, 'S', 6, 1))
+            self.assertEqual(builds.select_spec(part, 'L', 6, 2, drawer_columns=2, drawer_rows=2),
+                             builds.select_spec(part, 'S', 6, 1))
         for changes in ({'family': 'S'}, {'drawer_columns': 1}, {'height_units': 1},
                         {'height_units': 4}, {'drawer_rows': True}, {'drawer_rows': 2.0}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 replace(spec, **changes)
 
     def test_direct_module_builds_share_configuration_hash_and_alias(self):
-        with patch.object(cli, 'run_build') as run_build:
+        with patch.object(builds, 'run_build') as run_build:
             for rows in (1, 2):
-                cli.build(cli.PROJECT_ROOT / 'out',
+                builds.build(cli.PROJECT_ROOT / 'out',
                           ModuleSpec('L', 6, 2, drawer_columns=2, drawer_rows=rows))
         first, second = run_build.call_args_list
         self.assertEqual(first.args[:2], second.args[:2])

@@ -47,10 +47,13 @@ class FinishedPartTests(unittest.TestCase):
                 self.assertTrue(self.finished_box.is_inside((side * 64, 36, 23.5 + tier)))
 
     def test_finished_shapes_retain_configured_original_thicknesses(self):
-        self.assertTrue(self.finished_module.is_inside((0, 1.9, 23.5)))
-        self.assertFalse(self.finished_module.is_inside((0, 2.1, 23.5)))
-        self.assertTrue(self.finished_box.is_inside((0, 60, 7.9)))
-        self.assertFalse(self.finished_box.is_inside((0, 60, 8.1)))
+        for state, module, box in (('printable', self.module, self.box),
+                                   ('finished', self.finished_module, self.finished_box)):
+            with self.subTest(state=state):
+                self.assertTrue(module.is_inside((0, 1.9, 23.5)))
+                self.assertFalse(module.is_inside((0, 2.1, 23.5)))
+                self.assertTrue(box.is_inside((0, 60, 7.9)))
+                self.assertFalse(box.is_inside((0, 60, 8.1)))
 
     def test_cad_transform_uses_the_same_column_major_coordinates_as_viewer(self):
         from build123d import Solid

@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from vault import __main__ as build_cli, assembly_validation
+from vault import build as build_api, assembly_validation
 from vault.generator import Configuration, ASSEMBLY_PARTS
 from vault.spec import PATTERN_DEFAULTS
 from vault.web_worker import main
@@ -80,8 +80,8 @@ class AssemblyWorkerTests(unittest.TestCase):
         with ExitStack() as stack:
             stack.enter_context(patch.object(sys, 'argv', argv))
             stack.enter_context(patch.dict(sys.modules, {'build123d': SimpleNamespace(import_step=self.import_step)}))
-            stack.enter_context(patch.object(build_cli, 'select_spec', self.select_spec))
-            stack.enter_context(patch.object(build_cli, 'build', side_effect=self.build))
+            stack.enter_context(patch.object(build_api, 'select_spec', self.select_spec))
+            stack.enter_context(patch.object(build_api, 'build', side_effect=self.build))
             stack.enter_context(patch('vault._build.source_hashes', return_value={'source.py': 'stable-source'}))
             stack.enter_context(patch.object(assembly_validation, 'validate_assembly', self.validate))
             stack.enter_context(redirect_stdout(io.StringIO()))
@@ -108,68 +108,42 @@ class AssemblyWorkerTests(unittest.TestCase):
             self.assertEqual(call.kwargs, {'box_floor': 3., 'box_variant': 'plain', 'box_rear_pattern': 'plain', 'module_rear': 2.,
                                           'drawer_columns': 1, 'drawer_rows': 1, **PATTERN_DEFAULTS})
 
-    def test_pattern_settings_are_preserved_in_selection_and_fit_receipt(self):
-        self.configuration = Configuration(wall_pattern='miura', pattern_pitch=20,
-                                           pattern_depth=1.4, pattern_line_width=.8,
-                                           pattern_faces='sides', pattern_construction='corrugated')
+    def assert_configuration_preserved(self, configuration):
+        self.configuration = configuration
         self.run_worker()
+        values = configuration.as_dict()
+        axes = tuple(values.pop(key) for key in ('family', 'depth_units', 'height_units'))
+        values.pop('part')
         for call in self.select_spec.call_args_list:
-            self.assertEqual(call.kwargs['wall_pattern'], 'miura')
-            self.assertEqual(call.kwargs['pattern_pitch'], 20)
-            self.assertEqual(call.kwargs['pattern_depth'], 1.4)
-            self.assertEqual(call.kwargs['pattern_line_width'], .8)
-            self.assertEqual(call.kwargs['pattern_faces'], 'sides')
-            self.assertEqual(call.kwargs['pattern_construction'], 'corrugated')
-        self.assertEqual(self.read_assembly_receipt()['configuration'], self.configuration.as_dict())
+            self.assertEqual(call.args[1:], axes)
+            self.assertEqual(call.kwargs, values)
+        self.assertEqual(self.read_assembly_receipt()['configuration'], configuration.as_dict())
+        self.assertEqual(len(self.build_ids), 12)
+
+    def test_pattern_settings_are_preserved_in_selection_and_fit_receipt(self):
+        self.assert_configuration_preserved(Configuration(
+            wall_pattern='miura', pattern_pitch=20, pattern_depth=1.4, pattern_line_width=.8,
+            pattern_faces='sides', pattern_construction='corrugated'))
 
     def test_gridfinity_variant_is_preserved_in_selection_and_fit_receipt(self):
-        self.configuration = Configuration(box_variant='gridfinity')
-        self.run_worker()
-        for call in self.select_spec.call_args_list:
-            self.assertEqual(call.kwargs['box_variant'], 'gridfinity')
-        self.assertEqual(self.read_assembly_receipt()['configuration']['box_variant'], 'gridfinity')
+        self.assert_configuration_preserved(Configuration(box_variant='gridfinity'))
 
     def test_floorless_gridfinity_is_preserved_in_selection_and_fit_receipt(self):
-        self.configuration = Configuration(box_variant='gridfinity', box_floor=0,
-                                           box_rear_pattern='miura')
-        self.run_worker()
-        for call in self.select_spec.call_args_list:
-            self.assertEqual(call.kwargs['box_variant'], 'gridfinity')
-            self.assertEqual(call.kwargs['box_floor'], 0)
-            self.assertEqual(call.kwargs['box_rear_pattern'], 'miura')
-        self.assertEqual(self.read_assembly_receipt()['configuration'], self.configuration.as_dict())
+        self.assert_configuration_preserved(Configuration(
+            box_variant='gridfinity', box_floor=0, box_rear_pattern='miura'))
 
     def test_box_rear_and_module_patterns_remain_independent_in_worker(self):
-        self.configuration = Configuration(box_variant='gridfinity', box_rear_pattern='waffle',
-                                           wall_pattern='miura', pattern_pitch=20,
-                                           pattern_depth=1.4, pattern_line_width=.8,
-                                           pattern_construction='corrugated')
-        self.run_worker()
-        for call in self.select_spec.call_args_list:
-            self.assertEqual(call.kwargs['box_rear_pattern'], 'waffle')
-            self.assertEqual(call.kwargs['box_variant'], 'gridfinity')
-            self.assertEqual(call.kwargs['wall_pattern'], 'miura')
-            self.assertEqual(call.kwargs['pattern_pitch'], 20)
-        self.assertEqual(self.read_assembly_receipt()['configuration'], self.configuration.as_dict())
+        self.assert_configuration_preserved(Configuration(
+            box_variant='gridfinity', box_rear_pattern='waffle', wall_pattern='miura',
+            pattern_pitch=20, pattern_depth=1.4, pattern_line_width=.8,
+            pattern_construction='corrugated'))
 
     def test_double_drawer_layout_is_preserved_in_selection_and_fit_receipt(self):
-        self.configuration = Configuration('L', 6, 2, 'set', 3., 2., drawer_columns=2)
-        self.run_worker()
-        for call in self.select_spec.call_args_list:
-            self.assertEqual(call.args[1:], ('L', 6, 2))
-            self.assertEqual(call.kwargs['drawer_columns'], 2)
-        self.assertEqual(self.read_assembly_receipt()['configuration']['drawer_columns'], 2)
-        self.assertEqual(len(self.build_ids), 12)
+        self.assert_configuration_preserved(Configuration('L', 6, 2, 'set', 3., 2., drawer_columns=2))
 
     def test_four_drawer_layout_is_preserved_in_selection_and_fit_receipt(self):
-        self.configuration = Configuration('L', 6, 2, 'set', 3., 2., drawer_columns=2, drawer_rows=2)
-        self.run_worker()
-        for call in self.select_spec.call_args_list:
-            self.assertEqual(call.args[1:], ('L', 6, 2))
-            self.assertEqual(call.kwargs['drawer_columns'], 2)
-            self.assertEqual(call.kwargs['drawer_rows'], 2)
-        self.assertEqual(self.read_assembly_receipt()['configuration']['drawer_rows'], 2)
-        self.assertEqual(len(self.build_ids), 12)
+        self.assert_configuration_preserved(Configuration(
+            'L', 6, 2, 'set', 3., 2., drawer_columns=2, drawer_rows=2))
 
     def test_failed_fit_publishes_failed_audit_and_preserves_all_build_receipts(self):
         with self.assertRaisesRegex(RuntimeError, 'Assembly fit checks failed'):
@@ -210,7 +184,7 @@ class SharedModuleCacheTests(unittest.TestCase):
         self.source_files = {'source.py': 'current-common-open-module'}
         self.digest = source_digest(self.source_files)
         self.revision = {'commit': 'current', 'dirty': False}
-        spec = build_cli.select_spec('module', 'L', 6, 2, drawer_columns=2)
+        spec = build_api.select_spec('module', 'L', 6, 2, drawer_columns=2)
         latest = self.output / 'latest' / spec.slug
         latest.parent.mkdir(parents=True)
         latest.symlink_to(self.cached)
@@ -228,7 +202,7 @@ class SharedModuleCacheTests(unittest.TestCase):
         argv = ['vault.web_worker', '--configuration', json.dumps(config.as_dict()),
                 '--output', str(self.output), '--receipt', str(receipt)]
         with patch.object(sys, 'argv', argv), \
-                patch.object(build_cli, 'build', return_value=self.output / 'builds' / 'fresh-module') as build, \
+                patch.object(build_api, 'build', return_value=self.output / 'builds' / 'fresh-module') as build, \
                 patch('vault._build.source_hashes', return_value=self.source_files), \
                 patch('vault._build.git_provenance', return_value=revision), \
                 redirect_stdout(io.StringIO()):

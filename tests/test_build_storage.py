@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from vault import __main__ as cli
+from vault import build as builds
 from vault.spec import DEFAULT_SPEC
 
 
@@ -23,23 +23,23 @@ class StorageTests(unittest.TestCase):
                         'files': {f'{spec.slug}.step': hashlib.sha256(data).hexdigest()}}
 
             try:
-                with patch.object(cli, 'PROJECT_ROOT', root), patch.object(cli, '_build_into', export):
-                    first = cli.build(root / 'out')
-                    second = cli.build(root / 'out')
+                with patch.object(builds, 'PROJECT_ROOT', root), patch.object(builds, '_build_into', export):
+                    first = builds.build(root / 'out')
+                    second = builds.build(root / 'out')
                     self.assertNotEqual(first, second)
-                    self.assertEqual(cli.selected_build(root / 'out', DEFAULT_SPEC), second)
+                    self.assertEqual(builds.selected_build(root / 'out', DEFAULT_SPEC), second)
                     self.assertEqual(json.loads((first / 'manifest.json').read_text())['schema'], 'cad-build-v1')
-                    with patch.object(cli, '_build_into', side_effect=ValueError('geometry failed')):
+                    with patch.object(builds, '_build_into', side_effect=ValueError('geometry failed')):
                         with self.assertRaises(ValueError):
-                            cli.build(root / 'out')
+                            builds.build(root / 'out')
                     def rejected(stage, spec):
                         report = export(stage, spec)
                         report['print_step_roundtrip']['passed'] = False
                         return report
-                    with patch.object(cli, '_build_into', rejected):
+                    with patch.object(builds, '_build_into', rejected):
                         with self.assertRaisesRegex(ValueError, 'STEP validation'):
-                            cli.build(root / 'out')
-                    self.assertEqual(cli.selected_build(root / 'out', DEFAULT_SPEC), second)
+                            builds.build(root / 'out')
+                    self.assertEqual(builds.selected_build(root / 'out', DEFAULT_SPEC), second)
                     self.assertEqual((root / 'out/latest-successful').resolve(), second)
             finally:
                 for path in root.rglob('*'):

@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from build123d import Compound, Solid, import_step
-from vault import __main__ as cli
+from vault import __main__ as cli, build as builds
 from vault.geared_rails import D, SPEC
 
 
@@ -18,8 +18,9 @@ class GearedRailBuildTests(unittest.TestCase):
             with patch('sys.argv', ['vault', 'build', '--part', 'rails']):
                 cli.main()
             build.assert_called_once_with(cli.PROJECT_ROOT / 'out', SPEC)
-            self.assertEqual(cli.part_kind(SPEC), 'rail')
-            build.reset_mock()
+            self.assertEqual(builds.part_kind(SPEC), 'rail')
+        with patch.object(builds, 'build') as build:
+            # Keep the existing cad-tooling adapter entry point available.
             cli.build_preview(SPEC.slug)
             build.assert_called_once_with(cli.PROJECT_ROOT / 'out', SPEC)
 
@@ -32,8 +33,8 @@ class GearedRailBuildTests(unittest.TestCase):
             build.assert_not_called()
 
     def test_saved_parameters_include_rail_dimensions(self):
-        with patch.object(cli, 'run_build') as transaction:
-            cli.build(Path('/tmp/vault-rail-parameters'), SPEC)
+        with patch.object(builds, 'run_build') as transaction:
+            builds.build(Path('/tmp/vault-rail-parameters'), SPEC)
         configuration = transaction.call_args.kwargs['parameters']
         self.assertEqual(configuration['part'], SPEC.slug)
         self.assertEqual(configuration['geared_rails'], asdict(D))
@@ -48,7 +49,7 @@ class GearedRailBuildTests(unittest.TestCase):
             root = Path(directory)
             with patch('vault.geared_rails.build_gear_rail', side_effect=rail):
                 with patch('vault.render.render_review'):
-                    manifest, viewer = cli._export_rails(root)
+                    manifest, viewer = builds._export_rails(root)
             self.assertTrue(manifest['step_roundtrip']['passed'])
             self.assertEqual(manifest['solids'], 2)
             self.assertEqual({p['name'] for p in viewer['components']},
@@ -75,7 +76,7 @@ class GearedRailBuildTests(unittest.TestCase):
             root = Path(directory)
             with patch('vault.geared_rails.build_gear_rail', return_value=disconnected):
                 with self.assertRaisesRegex(ValueError, 'one valid solid'):
-                    cli._export_rails(root)
+                    builds._export_rails(root)
             self.assertFalse(list(root.glob('*.step')))
 
 

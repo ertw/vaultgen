@@ -1,11 +1,11 @@
 import { STLViewer } from './stl-viewer.js';
+import { api, downloadLink as link, errorMessage, isActive as active } from './client.js';
 
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const state = { config: null, font: null, draft: null, layouts: [], errors: [], job: null, submitting: false,
   builds: [], selected: null, viewer: null, view: 'face', pollTimer: null, modelRequest: 0, draftVersion: 0,
   submittedVersion: 0, completedJob: null, rememberedSecond: { text: 'M3 / M4 / M5', size: 4, color: '#d9a56a' } };
-const active = job => job && ['queued', 'running'].includes(job.status);
 const el = (tag, className, value) => { const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; };
 const svg = (tag, attrs = {}) => { const node = document.createElementNS(NS, tag); for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value); return node; };
 const validColor = value => /^#[a-f\d]{6}$/i.test(value || '');
@@ -17,18 +17,7 @@ function familyDefinition(design = state.draft) {
 }
 function familyDescription(design, recordedDimensions) { const family = familyDefinition(design); return `${family.id} facade · ${(recordedDimensions || family.dimensions).width_mm} mm label`; }
 function storage(key, value) { try { if (value !== undefined) localStorage.setItem(key, JSON.stringify(value)); else return JSON.parse(localStorage.getItem(key)); } catch { return null; } }
-function errorMessage(error) { return error instanceof Error ? error.message : String(error); }
 function connectionError(error) { $('connection-error').hidden = !error; $('connection-error').textContent = error ? errorMessage(error) : ''; }
-async function api(path, options = {}) {
-  const response = await fetch(path, { cache: 'no-store', ...options });
-  if (response.status === 401) throw new Error('Session expired. Refresh to sign in; your existing build may still be running.');
-  if (!response.ok) { let message = `Request failed (${response.status}).`; try { message = (await response.json()).error || message; } catch { /* Retain HTTP error. */ } throw new Error(message); }
-  return response.json();
-}
-function link(node, url) {
-  const valid = typeof url === 'string' && /^\/(?:files\/|api\/)[^\s]*$/.test(url) && !url.includes('\\');
-  node.hidden = !valid; if (valid) { node.href = url; node.setAttribute('download', ''); } else node.removeAttribute('href');
-}
 
 // Same ink-bound layout as label_config.label_layout. The paths are the very
 // same locally bundled contours used to construct the native CAD faces.

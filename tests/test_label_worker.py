@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from vault import __main__ as build_cli
+from vault import build as build_api
 from vault._build import source_digest
 from vault.label_config import LabelConfiguration
 from vault.web_worker import main
@@ -51,8 +51,8 @@ class LabelWorkerTests(unittest.TestCase):
             stack.enter_context(patch.object(sys, 'argv', argv))
             stack.enter_context(patch.dict(sys.modules, {
                 'vault.label_build': SimpleNamespace(build_label=self.generate)}))
-            drawer_build = stack.enter_context(patch.object(build_cli, 'build'))
-            drawer_spec = stack.enter_context(patch.object(build_cli, 'select_spec'))
+            drawer_build = stack.enter_context(patch.object(build_api, 'build'))
+            drawer_spec = stack.enter_context(patch.object(build_api, 'select_spec'))
             stack.enter_context(patch('vault._build.source_hashes',
                 **({'side_effect': source_values} if source_values is not None
                    else {'return_value': self.sources})))

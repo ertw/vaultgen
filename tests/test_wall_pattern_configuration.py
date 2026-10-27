@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from vault import __main__ as cli
+from vault import __main__ as cli, build as builds
 from vault.assembly import assembly_definition, build_finished_components
 from vault.assembly_validation import validation_signature
 from vault.generator import Configuration, catalog
@@ -50,9 +50,9 @@ class PatternConfigurationTests(unittest.TestCase):
         self.assertEqual(len({spec.slug for spec in variants}), len(variants))
         self.assertEqual(replace(base, pattern_pitch=20).slug, replace(base, pattern_pitch=20.).slug)
         for kind in ('box', 'facade', 'rails', 'runner_guides', 'runner_slides', 'key'):
-            self.assertEqual(cli.select_spec(kind, wall_pattern='waffle'), cli.select_spec(kind))
-            self.assertEqual(cli.select_spec(kind, wall_pattern='waffle', pattern_construction='corrugated'),
-                             cli.select_spec(kind))
+            self.assertEqual(builds.select_spec(kind, wall_pattern='waffle'), builds.select_spec(kind))
+            self.assertEqual(builds.select_spec(kind, wall_pattern='waffle', pattern_construction='corrugated'),
+                             builds.select_spec(kind))
 
     def test_cli_propagates_parameters_and_rejects_invalid_values_before_build(self):
         argv = ['vault', 'build', '--wall-pattern', 'miura', '--pattern-pitch', '20',
@@ -71,8 +71,8 @@ class PatternConfigurationTests(unittest.TestCase):
     def test_publication_records_custom_pattern_and_preserves_shared_module_rows(self):
         spec = ModuleSpec('L', 6, 2, drawer_columns=2, drawer_rows=2,
                           wall_pattern='miura', pattern_pitch=20, pattern_construction='corrugated')
-        with patch.object(cli, 'run_build') as transaction:
-            cli.build(Path('/tmp/pattern-publication-test'), spec)
+        with patch.object(builds, 'run_build') as transaction:
+            builds.build(Path('/tmp/pattern-publication-test'), spec)
         parameters = transaction.call_args.kwargs['parameters']
         self.assertEqual(parameters['wall_pattern'], 'miura')
         self.assertEqual(parameters['pattern_construction'], 'corrugated')
