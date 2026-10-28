@@ -355,17 +355,24 @@ python tools/check_drawer_bins.py --build out/builds/<build-id>
 
 Key, spring, latch, runner stop, facade cap and key cap fit all offered size selections;
 changing family, depth or height does not change their cache identity. The key
-uses the existing two-piece snap-fit gear and handle. Print one of each. Print
+is a single piece with an integrated drive pinion. Print one per drawer. Print
 one spring, two runner stops per populated tier, a cap for each facade screw
 counterbore, and one key cap if desired. Each choice exports checked STL and
 STEP through immutable build storage. Complete sets contain twelve build groups
-and sixteen STL files; quantities reuse the same files.
+and fifteen STL files; quantities reuse the same files.
 
 The latch retreats its entire planar outline by 0.10 mm and reduces its
 4.5 mm thickness by 0.15 mm, easing the fit without scaling attachment spacing.
-Its flexible arms, snap hooks and double countersunk finger opening remain.
+Its rounded through-opening extends the finger aperture along the central
+tongue, following its perimeter to remove material. A larger straight aperture
+with a small lower chamfer replaces the deep double countersink, and the upper
+edges are rounded. The vertical profiles of the flexible arms, slots, snap
+hooks and detents are retained, along with the chamfered V seat. The bed face
+stays flat and the print height remains 4.35 mm.
 Print it flat and test insertion, retention and restoring force before making
-more. The spring now uses nominal dimensions with no added fit relief: the
+more. Removed CAD volume does not predict filament or print-time savings:
+the extra opening perimeter can offset reduced infill, so compare the same
+slicer profile. The spring now uses nominal dimensions with no added fit relief: the
 clearance request applies to the latch. Earlier spring builds remain immutable.
 Caps print closed-face down; runner stops print flange down.
 
@@ -374,5 +381,7 @@ The universal accessories appear below the main size-dependent parts under
 
 The accessories regularize small source blends. Cap seated-pose collision checks
 and sampled source comparisons are recorded in `research/accessories.json`;
-run `python tools/check_accessories.py` to reproduce them. These diagnostics do
-not certify spring, latch or stop installation, insertion motion, retention, or printed fit.
+run `python tools/check_accessories.py` to audit the current checkout. The latch's
+enlarged opening intentionally differs from the purchased reference; historical
+source agreement does not apply to that opening. These diagnostics do not certify
+spring, latch or stop installation, insertion motion, retention, or printed fit.

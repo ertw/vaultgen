@@ -44,7 +44,7 @@ def main():
     key_cap=build_key_cap().rotate(Axis.X,180).translate((0,0,35.517))
     checks={'facade_cap_overlap_mm3':overlap(facade,cap),
             'key_cap_overlap_mm3':overlap(build_handle_blank(),key_cap)}
-    report={'limits':'Sampled deviations include regularized blends and intentional latch relief. No reference-equivalence or printed-fit acceptance is implied. Cap checks cover only the stated seated poses, not insertion or retention. Runner stop, spring and latch installation are not certified.',
+    report={'limits':'Sampled deviations include regularized blends, intentional latch relief, the enlarged latch opening and rounded upper edges. No reference-equivalence or printed-fit acceptance is implied. Cap checks cover only the stated seated poses, not insertion or retention. Runner stop, spring and latch installation are not certified.',
             'latch_construction_sha256':hashlib.sha256((PROJECT_ROOT/'src/vault/latch.py').read_bytes()).hexdigest(),
             'construction_sha256':hashlib.sha256((PROJECT_ROOT/'src/vault/accessories.py').read_bytes()).hexdigest(),
             'parts':rows,'interfaces':checks}

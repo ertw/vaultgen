@@ -513,17 +513,36 @@ Runner and geared-rail sets share `exports.export_part_set`, which checks each
 solid, each print/model STEP round-trip, watertight STL, and the combined STEP's
 part count and names. Identical parts receive independent STEP shapes so both
 left/right component names survive export. A complete generator set has twelve
-build groups and sixteen STL files; repeated tier quantities reuse those files.
+build groups and fifteen STL files; repeated tier quantities reuse those files.
 
 ## Universal accessories
 
 `accessories.py` constructs the spring, runner stop, facade cap and key cap from
 native arcs, extrusions, lofts and fillets. `key.py` / `key_build.py` supply the
-existing snap-fit key. CLI selectors are `key`, `spring`, `runner_stop`,
+single-piece key with an integrated drive pinion. CLI selectors are `key`, `spring`, `runner_stop`,
 `facade_cap`, `key_cap`, and `latch`; these have no family/depth/height dependencies.
 `latch.py` uses native symmetric curves for the underside latch.
 `LatchDimensions` records explicit outline and thickness relief (0.10 and
-0.15 mm). Setting both to zero provides the nominal comparison.
+0.15 mm), giving a default print thickness of 4.35 mm. Setting both to zero
+removes that fit relief while retaining the lightened opening.
+The rounded through-window extends the enlarged finger aperture along the
+central tongue, following its perimeter with native editable curves. Rounded
+upper edges (R0.5) and a 0.3 mm lower opening chamfer replace the deep double
+countersink. The bed face stays flat at Z=0 and the print height stays 4.35 mm.
+Small detents and insertion tips retain R0.15 blends, with the diagonal
+insertion leads tapering into the main radius in one native fillet operation.
+`LatchDimensions.top_fillet_radius=0` disables the upper round, including for
+research fits with larger outline relief whose tiny insertion tips cannot
+accept the default radius. Offset curves are converted to native splines
+before extrusion; volume guards, STEP round trips and watertight print-mesh
+checks remain in force. Small rounded junctions can require finer tessellation.
+The midsection profiles of the outer perimeter, flexible arms, slots, hooks and
+detents are preserved, along with the 1.5 mm V-seat chamfers.
+The opening intentionally differs from the purchased reference, so historical
+latch source-comparison results do not validate this change. Test printed
+insertion, retention and restoring force, and compare slicer filament use and
+time with the same profile; removing volume adds perimeter without reducing
+the part's layer count.
 `SpringDimensions` now defaults to zero relief; the spring is nominal.
 Reference meshes are used only by the diagnostic tool, never by construction.
 

@@ -53,6 +53,12 @@ def _tessellate(module, mesh_path, deflection=.05):
     from .mesh_cleanup import close_micro_triangles
     close_micro_triangles(mesh)
     if not mesh.is_watertight or not mesh.is_winding_consistent or mesh.volume <= 0:
+        # Small fillets can create sliver faces that the coarse mesh cannot
+        # resolve. Retry with finer chords, retaining every topology check.
+        if deflection > .01:
+            return _tessellate(module, mesh_path, deflection=.01)
+        if deflection > .0025:
+            return _tessellate(module, mesh_path, deflection=.0025)
         raise ValueError('Review tessellation is not a closed, consistently oriented positive-volume mesh')
     from .exports import precise_volume
     volume = precise_volume(module)

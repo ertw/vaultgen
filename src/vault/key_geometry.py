@@ -279,5 +279,5 @@ def build_handle_blank():
 
 
 def build_key_blank():
-    """Reconstructed one-piece exterior, before the new snap joint is applied."""
+    """Complete single-piece key with its integrated drive pinion."""
     return _solid(build_gear_blank().fuse(build_handle_blank()))

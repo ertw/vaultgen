@@ -1,7 +1,7 @@
 {
-  "limits": "Sampled deviations include regularized blends and intentional latch relief. No reference-equivalence or printed-fit acceptance is implied. Cap checks cover only the stated seated poses, not insertion or retention. Runner stop, spring and latch installation are not certified.",
-  "latch_construction_sha256": "66445d68da1f25c5ca76c610ba0f03f0ee868a1a4443c3d91aca69783d9e59b8",
-  "construction_sha256": "982f182f9444cae09a46957f91d35ceda562f8ae0f2cd99fcc2f0dbb2ec1e1f2",
+  "limits": "Sampled deviations include regularized blends, intentional latch relief, the enlarged latch opening and rounded upper edges. No reference-equivalence or printed-fit acceptance is implied. Cap checks cover only the stated seated poses, not insertion or retention. Runner stop, spring and latch installation are not certified.",
+  "latch_construction_sha256": "514b85d5322df08af1507077530764e80b14b86f9454ad7ebff29b31cb542564",
+  "construction_sha256": "d223396ba95091309015eb9d6429b46cda62b500b86c4f112f745e5832e5ad45",
   "parts": {
     "Springs.stl": {
       "source_sha256": "55f2736227703b6e37b0e5beb844019f067e6a7732fd7ae7d0dfc95ba73e1a2c",
@@ -91,15 +91,15 @@
         -4.499413967132568
       ],
       "source_volume_mm3": 10114.237829828975,
-      "native_volume_mm3": 9494.117295772468,
+      "native_volume_mm3": 8221.580090424766,
       "sampled_deviation": {
         "source_to_native": {
-          "max_mm": 0.2906638165332146,
-          "p95_mm": 0.1943387112409636
+          "max_mm": 7.062191890987012,
+          "p95_mm": 1.4357636220783119
         },
         "native_to_source": {
-          "max_mm": 0.27955427457076903,
-          "p95_mm": 0.16943620295308623
+          "max_mm": 2.239831579005513,
+          "p95_mm": 0.2964467393467203
         }
       }
     }

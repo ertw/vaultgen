@@ -165,7 +165,7 @@ def build_accessory(output,spec):
     config={'part':spec.slug}
     if spec.accessory=='spring': config['spring_dimensions']=asdict(SpringDimensions())
     if spec.accessory=='latch': config['latch_dimensions']=asdict(LatchDimensions())
-    notes={'latch':'Print flat. Latch outline relieved 0.10 mm and thickness reduced 0.15 mm for an easier fit. Test insertion and retention before use.',
+    notes={'latch':'Print flat. Extended finger opening, 0.5 mm upper rounds with smaller detent and tip blends, and a small lower opening chamfer. Latch outline relieved 0.10 mm and thickness reduced 0.15 mm for an easier fit. Test insertion, retention and restoring force before use.',
            'spring':'Print flat. Nominal spring dimensions; no added fit relief.',
            'runner_stop':'Print flange down. Print two per populated runner tier.',
            'facade_cap':'Print closed face down. Repeat for each facade screw counterbore.',

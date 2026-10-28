@@ -458,5 +458,9 @@ The generator includes **Key**, **Spring**, **Runner stop**, **Facade cap**,
 **Key cap**, and **Latch** individually and in complete-set downloads. For CLI builds use
 `python -m vault build --part spring` (or `key`, `runner_stop`, `facade_cap`,
 `key_cap`, `latch`). The latch has 0.10 mm outline relief and 0.15 mm thickness relief
-for a slightly looser fit. The key retains its existing two-piece snap joint.
+for a slightly looser fit. Its rounded finger opening extends along the central
+tongue to remove material, with rounded upper edges and a small lower opening
+chamfer replacing the deep double countersink. Print the latch flat and test
+insertion, retention and restoring force; compare filament use and print time
+in the slicer. The key prints as a single piece with its integrated drive pinion.
 See [accessory print quantities and validation limits](docs/generator.md#universal-accessories).
