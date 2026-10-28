@@ -137,8 +137,11 @@ def catalog():
 
 
 def parse_configuration(value):
-    """Dispatch independent label jobs without changing complete drawer sets."""
+    """Dispatch independent editors without changing complete drawer sets."""
     if isinstance(value, dict) and value.get('part') == 'label':
         from .label_config import LabelConfiguration
         return LabelConfiguration.parse(value)
+    if isinstance(value, dict) and value.get('part') == 'gridfinity_bins':
+        from .bin_config import BinConfiguration
+        return BinConfiguration.parse(value)
     return Configuration.parse(value)

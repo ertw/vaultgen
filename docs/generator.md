@@ -270,6 +270,87 @@ Runtime data lives under `out/web/`; successful artifacts remain under
 `out/builds/`. Both are ignored by Git. Deployment is documented in
 [`deploy/README.md`](../deploy/README.md).
 
+## Gridfinity containers
+
+Open **Gridfinity** at `/gridfinity` to design removable containers for a drawer
+with the Gridfinity box base. This editor selects its drawer size independently
+of the Parts tab: S has 3 columns, M 5 and L 6, with one 42 mm row per depth unit
+(3–7). Choose 1F or 2F; for L² modules, select the individual S drawer size.
+
+The layout starts filled. **Paint cells** toggles squares by click, touch or drag;
+edge-connected squares share one floor and cavity. Separate painted regions
+become separate printable containers. **Dividers** paints internal lines between
+selected cells, creating fixed separators inside a container. **Erase** removes
+cells or dividers; removing a cell also removes its unsupported dividers.
+**Fill drawer**, **Clear layout**, **Clear dividers** and **Undo** support quick
+experiments. Keyboard users can focus cells or dividers and press Space or Enter;
+arrow keys move between cells. A full layout expands with the drawer size; a
+partial layout keeps cells inside the resized grid. Undo restores clipped cells.
+
+Full drawer means all whole Gridfinity cells, leaving the drawer's existing
+peripheral margins. Plain and Miura-ori apply to both sides and separators. The
+perimeter choice targets one 0.65 mm extrusion line or two lines (1.30 mm) for a
+0.6 mm nozzle. Straight painted divider runs merge into continuous walls. Miura
+folds blend into thin webs at actual connections, without thick pads at ordinary
+grid boundaries or interruptions opposite dividers that do not reach a wall.
+Container heights are 28 mm for 1F and 77 mm for 2F, including the
+feet. There is no stacking lip or magnet pocket. Inspect slicer paths and compare
+printed samples for fit and stiffness before producing a full drawer.
+
+Generation uses the same persistent job queue, revision checks, immutable build
+storage, checked downloads and bounded same-origin JSON submission as Parts and
+Labels. Drafts and the current job survive reloads. Generated 3D previews use a
+container selector; viewing a saved build leaves the drawing unchanged. Each
+container downloads separately as base-down STL and STEP, or together in a ZIP
+with the configuration recording its original grid placement. The layout is a
+schematic; generate to inspect the actual feet and wall facets.
+
+The request uses `part: "gridfinity_bins"`, `family`, `depth_units`,
+`height_units`, `cells: [[x,y], ...]`, `dividers: [{"axis":"x","x":1,"y":0}, ...]`,
+`wall_pattern: "plain" | "miura"`, and `wall_perimeters: 1 | 2`. Coordinates start
+at the rear-left cell. An `x` divider is vertical at grid line x along cell row y;
+a `y` divider is horizontal at line y along column x. Both adjacent cells must
+be selected. Omitting cells selects the full grid; an explicit empty drawing is
+rejected. The server rejects unknown fields, duplicates and out-of-grid values.
+
+```bash
+source .local-env
+python -m vault.bin_build --configuration containers.json
+python tools/check_gridfinity_bins.py
+```
+
+### Drawer-fit boxes
+
+Choose **Drawer-fit box** on the same page to create removable organizers for a
+plain Vault drawer. Planning cells stretch over its usable cavity: S has three
+columns, M four and L six, with one row per selected depth unit. For example,
+S4 has a 3 × 4 drawing and M5 has a 4 × 5 drawing. Cells display their actual
+proportions; the drawing keeps the same full/partial footprints, dividers and undo.
+The front lock space remains clear.
+
+Select the existing drawer's **0.8 mm** or **3 mm** floor. This sets the container
+height to leave 1 mm below the drawer rim. These boxes have a 1.2 mm flat floor,
+a relieved lower edge for the drawer's floor fillet, and 0.25 mm nominal clearance
+at their perimeter and beneath their base. They fit the plain drawer rather than
+the Gridfinity socket base.
+
+**Apply balanced design** selects two-perimeter Miura walls with thin blended
+connections. The folds add depth to the wall section while the flat, supported
+floor and absence of feet limit base material and layers. One-perimeter Miura and
+plain walls remain available for comparison. Generated results show measured CAD
+material volume, clear compartment height and wall/base thickness. Print time
+depends on the slicer profile; loaded strength and printed fit need physical tests.
+
+Requests retain `part: "gridfinity_bins"` and add `container_type: "drawer"` and
+`drawer_floor: 0.8 | 3`. Existing drawings that omit the type retain Gridfinity
+behavior and their configuration identities. Floor and wall choices, recovery,
+history and checksummed downloads use the existing shared queue.
+
+```bash
+python -m vault.bin_build --configuration drawer-boxes.json
+python tools/check_drawer_bins.py --build out/builds/<build-id>
+```
+
 ## Universal accessories
 
 Key, spring, latch, runner stop, facade cap and key cap fit all offered size selections;

@@ -98,6 +98,85 @@ its feet 0.25 mm above the floor. A deliberately displaced bin must collide
 with a socket wall. `--plain-step` and `--gridfinity-step`, with a single
 `--case`, audit saved solids and record their input checksums.
 
+## Gridfinity containers
+
+`bin_config.py` defines the bounded drawer drawing; `bin.py` constructs it with
+native rounded wires, extrusions, ruled lofts and planar faces. No purchased
+geometry is used. Each edge-connected region receives a continuous floor and
+outer walls; disconnected regions are exported as separate solids. Internal
+selected edges become permanent separators. Concave footprints and holes retain
+their boundary walls. Grid cells use the same 42 mm pitch as the drawer sockets.
+
+Nominal feet have a 35.6 mm rounded-square bottom (R0.8), an 0.8 mm lower chamfer,
+a 37.2 mm / R1.6 vertical section up to Z=2.6, and an upper chamfer to 41.5 mm /
+R3.75 at Z=4.75. The continuous floor reaches Z=7.0 mm. Total heights are 28 mm
+(1F) and 77 mm (2F), chosen to clear even the 3 mm-floor drawer. Full-grid bins
+occupy the grid footprint with 0.25 mm edge clearance; the drawer's margins are
+preserved. Feet remain unscaled across families, heights and wall variants.
+
+Plain walls target 0.65 or 1.30 mm thickness. Miura-ori uses paired native facets
+on both sides, with 14 mm pattern pitch and 1.3 mm relief. Face separation
+compensates for slope to target the selected normal wall thickness. Collinear
+painted divider edges merge into continuous runs. The fold amplitude blends into
+thin webs at actual T/X and boundary connections; a divider that stops short of
+an outer wall does not interrupt that wall's pattern. Ordinary grid boundaries
+receive no joint pads.
+
+Joint blends span 7 mm along each adjoining run, and the pattern fades into thin
+floor and top edges over 3.5 mm. The blend surfaces use native triangular facets;
+normal thickness checks allow 0.02 mm deviation from the selected target. Rounded
+corners retain thin walls. Outer folds extend inward, preserving the external
+footprint and mating feet. These are rigid printed walls; stiffness and slicer
+perimeter counts require physical/slicer comparison.
+
+`python tools/check_gridfinity_bins.py` audits native containers in their actual
+drawer grid placement. It checks collision and vertical clearance; the geometry
+tests cover connectedness, selected footprints, separators and wall variants.
+Use `--build out/builds/<build-id>` to check the exact exported print STEPs with
+their recorded transforms back into drawer coordinates. The report records input
+checksums and samples horizontal sections at actual T/X junctions above the floor.
+`python -m vault.bin_build --configuration containers.json` uses the normal
+immutable part-set pipeline: each solid and boundary shell, STEP round trip and
+watertight print mesh must pass before publication. Individual print files move
+each bin onto the bed, while recorded cell coordinates retain drawer placement.
+These checks do not establish printed fit, loaded behavior or stiffness.
+
+### Drawer-fit containers
+
+`BinConfiguration(container_type='drawer')` reuses the cell editor for removable
+boxes inside a plain native drawer. The logical grid uses S=3, M=4 and L=6 columns
+and the selected depth as rows. Independent X/Y pitches divide the real cavity
+dimensions; geometry is constructed at those dimensions rather than scaling a
+Gridfinity part. Full nominal widths are 127.2 / 216.4 / 292.0 mm. Nominal depth
+is `172.8 + 42 × (depth_units − 4)` mm. Exposed outlines inset by 0.25 mm, with
+R3.25 corners, a 1.2 mm floor and a 0.75 mm bottom-edge chamfer.
+
+Native box coordinates use the same lower-left planning-grid frame as the editor.
+Placement in the plain drawer is `(-width/2, 5.3, 5 + drawer_floor + 0.25)`.
+The front edge stops at Y=`177.85 + depth_delta`, clear of the center lock opening.
+Height leaves 1 mm below the drawer rim: 35.45 / 83.45 mm for its 0.8 mm floor,
+or 33.25 / 81.25 mm for its 3 mm floor. No Gridfinity feet are constructed.
+
+The balanced preset uses 1.30 mm Miura walls, 1.3 mm relief and the same thin
+merged-run junctions as the corrected Gridfinity version. Whole fold counts fit
+each planning-cell pitch near a nominal 14 mm; vertical fold rows fit the wall
+height near 7 mm. Outer corner attachments end on fold stations, and the folded
+surface starts just inside the floor so the union has a real overlap. This avoids
+tiny clipped facets at corners and the floor. Rims fade over one fold row, keeping
+the transition gentle enough for both wall thicknesses. Native blend sampling adapts to keep the
+0.02 mm sampled normal-thickness tolerance and positive offset-triangle area.
+The preset balances a thin supported floor,
+folded wall section and usable space; it does not compute loaded strength or
+printer-specific time. Exports record actual material volume and compartment
+height for comparing variants.
+
+`tools/check_drawer_bins.py` audits exact native plain-drawer collisions, vertical
+clearance, footless floors, missing-cell topology, sampled normal thickness and
+actual T/X junction sections above the floor. `--build` restores checked print
+STEP files using their recorded transforms and pins its report to their checksums.
+The normal immutable export checks still require valid solids, STEP round trips
+and watertight meshes.
+
 ## Patterned box rear walls
 
 `BoxSpec(box_rear_pattern='waffle')` and

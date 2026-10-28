@@ -53,6 +53,9 @@ def handler(jobs):
                 if path == '/api/labels/config':
                     from .label_config import label_catalog
                     return self.send(200, label_catalog())
+                if path == '/api/gridfinity/config':
+                    from .bin_config import bin_catalog
+                    return self.send(200, bin_catalog())
                 if path == '/api/assembly':
                     query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
                     if any(len(values) != 1 for values in query.values()):
@@ -97,9 +100,10 @@ def handler(jobs):
                     return self.send(200, data, mime,
                                      Path(relative).name if not relative.endswith('.png') else None)
                 relative = ('index.html' if path == '/' else 'labels.html'
-                            if path in ('/labels', '/labels/') else path.removeprefix('/static/'))
+                            if path in ('/labels', '/labels/') else 'gridfinity.html'
+                            if path in ('/gridfinity', '/gridfinity/') else path.removeprefix('/static/'))
                 file = STATIC / relative
-                if (path not in ('/', '/labels', '/labels/') and not path.startswith('/static/')) or not file.resolve().is_relative_to(STATIC.resolve()):
+                if (path not in ('/', '/labels', '/labels/', '/gridfinity', '/gridfinity/') and not path.startswith('/static/')) or not file.resolve().is_relative_to(STATIC.resolve()):
                     raise FileNotFoundError('Unknown page')
                 return self.send(200, file.read_bytes(), mimetypes.guess_type(file.name)[0] or 'application/octet-stream')
             except (OSError, KeyError, IndexError):
@@ -139,8 +143,8 @@ def handler(jobs):
                 return self.send(415, {'error': 'Use application/json'})
             try:
                 length = int(self.headers.get('Content-Length', '0'))
-                if not 0 < length <= 4096:
-                    return self.send(413, {'error': 'Request must contain at most 4096 bytes'})
+                if not 0 < length <= 8192:
+                    return self.send(413, {'error': 'Request must contain at most 8192 bytes'})
                 value = json.loads(self.rfile.read(length))
                 config = parse_configuration(value)
                 return self.send(202, jobs.submit(config))

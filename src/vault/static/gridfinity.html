@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111315">
+  <title>Gridfinity · Vault generator</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/gridfinity.css">
+  <script type="module" src="/static/gridfinity.js"></script>
+</head>
+<body>
+  <header class="site-header"><h1><a href="/">Vault generator</a></h1><nav class="generator-navigation" aria-label="Generator"><a href="/">Parts</a><a href="/labels">Labels</a><a href="/gridfinity" aria-current="page">Gridfinity</a><a class="library-link" href="https://cad.erik.cl/" target="_blank" rel="noreferrer">CAD library ↗</a></nav></header>
+  <main>
+    <div class="bin-intro"><p class="eyebrow">DRAWER ORGANIZATION</p><h2>Your drawer. Your compartments.</h2><p>Paint a footprint, draw dividers, and make room for what belongs together.</p></div>
+    <div class="workspace bin-workspace">
+      <section class="configurator panel" aria-labelledby="configure-title">
+        <div class="panel-heading"><h2 id="configure-title">Container settings</h2></div>
+        <form id="bin-form">
+          <fieldset><legend>Container type</legend><div class="segmented" id="bin-type-options"></div><p id="type-hint" class="dimension-hint"></p></fieldset>
+          <fieldset><legend>Drawer size <span id="size-grid-hint" class="field-hint">42 mm grid</span></legend><div class="family-options" id="bin-family-options"></div><p class="dimension-hint">For L² modules, select the S drawer size.</p></fieldset>
+          <fieldset><legend>Depth <span class="field-unit">units</span></legend><div class="segmented" id="bin-depth-options"></div></fieldset>
+          <fieldset><legend>Drawer height</legend><div class="segmented" id="bin-height-options"></div><p id="height-hint" class="dimension-hint"></p></fieldset>
+          <fieldset id="drawer-floor-setting" hidden><legend>Existing drawer floor</legend><div class="segmented" id="bin-floor-options"></div><p class="dimension-hint">Match the floor in your plain Vault drawer to use the available headroom.</p></fieldset>
+          <fieldset><legend>Sides &amp; dividers</legend><div class="segmented" id="bin-pattern-options"></div><p id="pattern-hint" class="dimension-hint"></p></fieldset>
+          <fieldset><legend>Wall perimeters <span class="field-hint">0.6 mm nozzle</span></legend><div class="segmented" id="bin-perimeter-options"></div><p id="perimeter-hint" class="dimension-hint"></p></fieldset>
+          <div id="balanced-design" class="balanced-design" hidden><button id="apply-balanced-design" class="text-button" type="button">Apply balanced design ↗</button><p class="dimension-hint">Miura-ori, two perimeter walls, and thin blended joints. A starting point for stiffness, material use, and print time.</p></div>
+          <div class="config-summary"><div><strong id="bin-summary">Loading grid…</strong><span id="bin-count"></span></div></div>
+          <p id="validation-message" role="status" aria-live="polite"></p>
+          <button id="generate-bins" class="button button-primary" type="submit" disabled><span id="generate-text">Generate containers</span><span aria-hidden="true">→</span></button>
+          <p class="dimension-hint generation-hint">Checked STL + STEP for each container.</p>
+        </form>
+        <p id="connection-error" class="error-message" role="alert" hidden></p>
+        <button id="retry-jobs" class="text-button" type="button" hidden>Retry build recovery ↻</button>
+      </section>
+      <section class="preview panel bin-editor" aria-labelledby="editor-title">
+        <div class="preview-heading"><div><p class="eyebrow">TOP VIEW</p><h2 id="editor-title">Paint your drawer</h2></div><span id="grid-badge" class="badge">42 mm cells</span></div>
+        <div class="bin-view-tabs"><button type="button" id="layout-view" class="artifact-tab" aria-pressed="true">Layout editor</button><button type="button" id="model-view" class="artifact-tab" aria-pressed="false" disabled>Generated 3D</button><button type="button" id="reset-bin-view" class="text-button" hidden>Reset view ↺</button></div>
+        <div id="layout-panel">
+          <div class="paint-toolbar" role="group" aria-label="Drawing tools"><button type="button" data-tool="cells" class="artifact-tab" aria-pressed="true">▦ Paint cells</button><button type="button" data-tool="dividers" class="artifact-tab" aria-pressed="false">┼ Dividers</button><button type="button" data-tool="erase" class="artifact-tab" aria-pressed="false">⌫ Erase</button><button id="undo-layout" type="button" class="text-button" disabled>Undo ↶</button></div>
+          <p id="tool-hint" class="dimension-hint">Click or drag across squares. Joined squares make one container.</p>
+          <div class="grid-stage"><span class="drawer-edge">CLOSED BACK</span><svg id="drawer-grid" viewBox="-8 -8 208 272" role="group" aria-label="Drawer container layout" aria-describedby="tool-hint"></svg><span class="drawer-edge drawer-front">DRAWER FRONT ↓</span></div>
+          <div class="layout-actions"><button type="button" id="fill-drawer" class="text-button">Fill drawer</button><button type="button" id="clear-layout" class="text-button">Clear layout</button><button type="button" id="clear-dividers" class="text-button">Clear dividers</button><span id="footprint-size"></span></div>
+          <p id="layout-note" class="layout-note">Each colored region is one removable container. Paint lines between selected cells to add fixed dividers. Empty cells leave space for other bins.</p>
+        </div>
+        <div id="model-panel" hidden><div class="bin-model-controls"><label for="preview-part">Container</label><select id="preview-part"></select></div><div class="bin-viewport"><canvas id="bin-model" tabindex="0" aria-label="Generated container in 3D. Drag to orbit, scroll to zoom, or use arrow keys."></canvas><div id="model-message" class="viewer-message" role="status" hidden></div></div><p id="model-caption" class="layout-note"></p></div>
+        <div id="bin-downloads" class="artifact-panel" hidden><div class="artifact-top"><div><span class="eyebrow">GENERATED CONTAINERS</span><p id="artifact-name"></p></div><a id="download-zip" class="button button-dark">STL + STEP ZIP ↓</a></div><p id="design-metrics" class="dimension-hint" hidden></p><p id="artifact-freshness" class="dimension-hint" hidden></p><p id="draft-note" class="dimension-hint" hidden>The layout has changed. Generate to apply your edits.</p><div id="part-downloads"></div></div>
+      </section>
+    </div>
+    <section id="bin-job-panel" class="job-panel panel" aria-labelledby="job-title" hidden><div class="job-heading"><span id="job-indicator" class="job-indicator"></span><div><h2 id="job-title">Generating containers</h2><p id="job-description"></p></div><span id="job-status" class="badge"></span></div><p id="job-error" class="error-message" role="alert" hidden></p><button id="view-job-result" class="text-button" type="button" hidden>View generated containers →</button><details id="job-log-details"><summary>Build log</summary><pre id="job-log" aria-label="Build output"></pre></details></section>
+    <p class="bin-guidance"><strong id="guidance-title">Made for the Vault Gridfinity base.</strong> <span id="guidance-detail">Full drawer fills all whole grid cells.</span> Print base down; use a 0.65 mm extrusion width with your 0.6 mm nozzle. Inspect perimeter paths and compare your test prints for fit and stiffness.</p>
+    <section class="history-section" aria-labelledby="history-title"><div class="section-heading"><h2 id="history-title">Recent containers</h2><button id="refresh-bins" class="text-button" type="button">Refresh ↺</button></div><div id="bin-history" class="history-list"><p class="empty-history">No containers generated yet.</p></div></section>
+  </main><div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>

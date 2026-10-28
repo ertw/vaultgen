@@ -15,6 +15,20 @@ the shared font outlines live and the checked 3D part after generation. Download
 include a multicolor 3MF and registered STL/STEP color components; see
 [label behavior and print notes](docs/generator.md#labels).
 
+The **Gridfinity** editor paints drawer containers on the matching 42 mm grid.
+Fill the drawer or select a partial footprint; joined cells form a container,
+separate regions produce individual bins, and painted internal lines add fixed
+dividers. Choose plain or Miura-ori sides and dividers, with one or two
+perimeters targeting 0.65 or 1.30 mm walls for a 0.6 mm nozzle. Each container
+has checked STL and STEP downloads. See [container behavior](docs/generator.md#gridfinity-containers)
+and [geometry and fit limits](docs/generator-geometry.md#gridfinity-containers).
+
+The same page also creates **Drawer-fit boxes** for plain Vault drawers. Its
+planning cells stretch across the available cavity, using 3/4/6 columns for
+S/M/L, with a flat base and no Gridfinity feet. Choose the existing drawer floor
+and apply the balanced Miura preset, or compare the available wall variants.
+Generated results include actual CAD material volume and clear compartment height.
+
 Run locally with `python -m vault.web` (loopback port 3941). See
 [deployment](deploy/README.md) and [generator behavior](docs/generator.md).
 The [architecture guide](docs/architecture.md) maps the components, build flow,
@@ -112,8 +126,9 @@ python -m vault build --part box --box-variant gridfinity
 ```
 
 The sockets rise 5 mm above the selected 0.8 or 3 mm closed floor. Exterior
-dimensions, runners, lock passages and print orientation stay the same. Bins
-and magnets are not included. See [Gridfinity geometry and fit checks](docs/generator-geometry.md#gridfinity-boxes).
+dimensions, runners, lock passages and print orientation stay the same. Create
+matching bins in the separate **Gridfinity** tab; magnets are not included.
+See [Gridfinity geometry and fit checks](docs/generator-geometry.md#gridfinity-boxes).
 Choose **Floorless** under Box floor with the Gridfinity base to open each
 cell bottom. The grid and its perimeter support the drawer and bins; the
 socket height and profiles match the 0.8 mm-floor option. On the CLI, use

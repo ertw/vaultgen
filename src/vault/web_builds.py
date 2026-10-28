@@ -149,6 +149,7 @@ class BuildFiles:
         kind = ('key' if part == 'snap_key' else
                 part if part in ACCESSORY_PARTS else
                 'label' if part.endswith('_label') else
+                'gridfinity_bins' if 'gridfinity_configuration' in parameters else
                 'runner_guides' if part.endswith('_runner_guides') else
                 'runner_slides' if part.endswith('_runner_slides') else
                 'rails' if part.endswith('_geared_rails') else
@@ -159,6 +160,8 @@ class BuildFiles:
         config['part'] = kind
         if kind == 'label':
             config = parameters['label_configuration']
+        if kind == 'gridfinity_bins':
+            config = parameters['gridfinity_configuration']
         if kind == 'box':
             config['box_floor'] = parameters.get('box_floor', 0.8)
             config['box_variant'] = parameters.get('box_variant', 'plain')
@@ -182,13 +185,16 @@ class BuildFiles:
                           'print_note': details.get('print_note', ''),
                           'color': details.get('color'), 'role': details.get('role'),
                           'stl_url': url(f'stl/{name}.stl'),
-                          'step_url': url(f'{name}_print.step')})
+                          'step_url': url(f'{name}_print.step'),
+                          'print_step_url': url(f'{name}_print.step')})
         return {'freshness': freshness(manifest, repository if repository is not None else git_provenance(PROJECT_ROOT)),
                 'source_hash': manifest.get('source_hash'),
                 'legacy_partitioned_module': kind == 'module' and '_2_rows_module_' in part,
                 'id': build_id, 'name': manifest.get('name', part), 'kind': kind,
                 'configuration': config, 'parts': parts, 'step_url': url(f'{part}.step'),
                 'label_dimensions': manifest.get('label_dimensions') if kind == 'label' else None,
+                'gridfinity_layout': manifest.get('gridfinity_layout') if kind == 'gridfinity_bins' else None,
+                'design_metrics': manifest.get('design_metrics') if kind == 'gridfinity_bins' else None,
                 'three_mf_url': url(manifest.get('multicolor_3mf')),
                 'bundle_url': f'/api/builds/{build_id}/bundle.zip',
                 'instructions_url': url(manifest.get('print_instructions')),
@@ -202,7 +208,7 @@ class BuildFiles:
             try:
                 item = self.describe(path.name, repository)
                 config = item['configuration']
-                if (config['part'] in ('label', 'key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch') or ((config.get('family') in ('S', 'M', 'L')
+                if (config['part'] in ('label', 'gridfinity_bins', 'key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch') or ((config.get('family') in ('S', 'M', 'L')
                      or (config['part'] in ('runner_guides', 'runner_slides') and 'family' not in config))
                         and config.get('height_units', 1) in (1, 2)
                         and config.get('depth_units', 4) in range(3, 8)
@@ -219,7 +225,7 @@ class BuildFiles:
     def write_bundle(self, archive, builds, configuration):
         """Write a print ZIP, verifying every included immutable artifact."""
         print_plan = None
-        if configuration.get('part') != 'label':
+        if configuration.get('part') not in ('label', 'gridfinity_bins'):
             try:
                 config = Configuration.parse(configuration)
                 print_plan = {'schema': 'vault-print-plan/v1', 'configuration': config.as_dict(),

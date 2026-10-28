@@ -92,3 +92,22 @@ nix develop path:/home/ertw/src/cad/cad-tooling -c \
 Label API and worker changes require the usual job-drained service restart.
 The shared label-font JSON is cached by the Python configuration module, so
 changing it also requires a restart as well as fresh label builds.
+
+The Gridfinity container editor at `/gridfinity` has an equivalent fixture-based
+check for painting, dividers, size changes, wall variants, job recovery, downloads
+and desktop/mobile layout. It never submits real CAD work:
+
+```bash
+nix develop path:/home/ertw/src/cad/cad-tooling -c \
+  /home/ertw/src/cad/cad-tooling/.venv/bin/python tools/browser_gridfinity.py
+```
+
+Its API and worker changes also require the job-drained service restart. Use
+`python -m vault.bin_build --configuration containers.json` for a checked native
+container build, and `python tools/check_gridfinity_bins.py` for drawer interface
+checks. Successful CAD checks do not certify printed fit or stiffness.
+
+The same editor's Drawer-fit box mode uses the shared queue and build pipeline.
+Use `tools/check_drawer_bins.py --build out/builds/<build-id>` for its plain-drawer
+interface checks. `browser_gridfinity.py` covers both container types, floor
+selection, the balanced preset, saved layouts and generated material metrics.

@@ -169,7 +169,7 @@ pre { background: var(--background); color: #cad3dc; border: 1px solid var(--bor
 }
 @media (max-width: 760px) {
   .site-header, main { width: calc(100% - 32px); }
-  .site-header { padding: 18px 0; }
+  .site-header { padding: 18px 0; flex-wrap: wrap; gap: 12px; }
   h1 { font-size: 18px; }
   main { padding-top: 18px; }
   .workspace { grid-template-columns: 1fr; gap: 16px; }

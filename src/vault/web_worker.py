@@ -26,6 +26,10 @@ def main():
             from .label_build import build_label
             spec = config
             generate = build_label
+        elif part == 'gridfinity_bins':
+            from .bin_build import build_bins
+            spec = config
+            generate = build_bins
         else:
             spec = select_spec(part, config.family, config.depth_units, config.height_units,
                                box_floor=config.box_floor, box_variant=config.box_variant,

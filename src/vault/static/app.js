@@ -562,7 +562,7 @@ function formatDate(value) {
 }
 async function refreshHistory() {
   const { builds: allBuilds, repository } = await api('/api/builds');
-  const builds = allBuilds.filter(build => build.kind !== 'label');
+  const builds = allBuilds.filter(build => !['label', 'gridfinity_bins'].includes(build.kind));
   state.builds = builds; state.repository = repository;
   if (state.browsingSelection) showSelection(true);
   else if (state.selectedArtifact) renderFreshness(builds.find(b => b.id === state.selectedArtifact.build.id) || state.selectedArtifact.build);
@@ -654,7 +654,7 @@ async function initialize() {
     createControls(state.config); renderSelection();
     await refreshHistory();
     const { jobs: allJobs } = await api('/api/jobs');
-    const jobs = allJobs.filter(job => job.configuration.part !== 'label');
+    const jobs = allJobs.filter(job => !['label', 'gridfinity_bins'].includes(job.configuration.part));
     const stored = rememberedJob();
     const job = jobs.find(item => item.id === stored) || jobs.find(isActive);
     if (job) { rememberJob(job.id); renderJob(job); if (isActive(job)) pollJob(job.id); }
