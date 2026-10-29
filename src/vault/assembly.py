@@ -58,8 +58,8 @@ def assembly_definition(configuration: Configuration):
     Each drawer has one box/facade and repeats runner pairs on every tier;
     its two geared rails remain at the bottom lock. Rails are shown at
     zero locking travel (unlocked), the insertion pose in the fit checks.
-    Facade caps use the documented screw seats. Accessories without checked
-    installation poses use a labeled layout in front of the drawer instead.
+    Accessories use the lock, screw, stopper-slot and connector-bank datums.
+    Their installed display poses do not certify snap retention or motion.
     """
     if not isinstance(configuration, Configuration):
         raise TypeError('configuration must be a Configuration')
@@ -77,7 +77,7 @@ def assembly_definition(configuration: Configuration):
 
     def add(identifier, kind, component, label, group, rotation=IDENTITY_ROTATION,
             translation=(0, 0, 0), explode=(0, 0, 0), **metadata):
-        displacement = drawer_explode if group in ('drawer', 'accessories') else (0, 0, 0)
+        displacement = drawer_explode if group == 'drawer' else (0, 0, 0)
         instances.append({
             'id': identifier, 'kind': kind, 'component': component, 'label': label,
             'group': group, 'parent': group,
@@ -116,28 +116,36 @@ def assembly_definition(configuration: Configuration):
                        rotation=((1, 0, 0), (0, 0, -1), (0, 1, 0)),
                        translation=(x, spec.depth + 10, z), explode=(0, 80, 0))
 
-        # This is an inventory layout, not an inferred installation pose. Its
-        # fixed spacing is independent of mesh/print bounds. Stacked drawers
-        # have separate rows, with every loose part resting on the same plane.
-        row = (bay - 1) // configuration.drawer_columns
-        layout_y = spec.depth + 110 + row * 180
+        # The key's native shaft is +Z. Its Z=18.4 shoulder seats at the
+        # facade's Y=10 front face; the lock stays on the bottom tier.
+        add_drawer('key', 'key', 'key', 'Key with drive pinion', 'drawer',
+                   rotation=((1, 0, 0), (0, 0, 1), (0, -1, 0)),
+                   translation=(0, spec.depth - 8.4, 23.5), explode=(0, 100, 0))
+        # Compose the native cap's +180° X / Z=35.517 seated pose with
+        # the key transform, retaining their shared horizontal handle axis.
+        add_drawer('key_cap', 'key_cap', 'single', 'Key cap', 'drawer',
+                   rotation=((1, 0, 0), (0, 0, -1), (0, 1, 0)),
+                   translation=(0, spec.depth + 27.117, 23.5), explode=(0, 125, 0))
+        # Register each native fork arc to the fixed ±51.45 lock screw axes.
+        # Its 5.155 mm fork seats against the facade's Y=5.75 pocket floor.
+        spring_fork_x = 13.099159946236556
+        for index, side in enumerate((-1, 1), start=1):
+            add_drawer(f'spring_{index}', 'spring', 'single', f'Spring {index}', 'drawer',
+                       rotation=((side, 0, 0), (0, 0, 1), (0, -side, 0)),
+                       translation=(side * (51.45 - spring_fork_x), spec.depth + .595, 23.5),
+                       explode=(side * 20, 50, 0), side=side)
 
-        def add_loose(identifier, kind, label, x, y, **metadata):
-            add_drawer(identifier, kind, 'key' if kind == 'key' else 'single',
-                       label, 'accessories', translation=(x, y, -elevation),
-                       placement='layout', **metadata)
-
-        add_loose('key', 'key', 'Key · loose part', -30, layout_y)
-        add_loose('key_cap', 'key_cap', 'Key cap · loose part', 30, layout_y)
-        for index, x in enumerate((-30, 30), start=1):
-            add_loose(f'spring_{index}', 'spring', f'Spring {index} · loose part',
-                      x, layout_y + 50)
-        for tier in range(1, drawer_spec.height_units + 1):
+        # The stop's native +Z stem points inward from each bay's side face.
+        # Module inversion maps its native slot Z=23.5009 to Z=23.4991.
+        for tier, offset in enumerate(drawer_spec.tier_offsets, start=1):
             for side, name in ((-1, 'left'), (1, 'right')):
-                add_loose(f'runner_stop_{name}_{tier}', 'runner_stop',
-                          f'{name.title()} runner stop · tier {tier} · loose part',
-                          side * 65, layout_y + 42 + (tier - 1) * 26,
-                          tier=tier, side=side)
+                add_drawer(f'runner_stop_{name}_{tier}', 'runner_stop', 'single',
+                           f'{name.title()} runner stop · tier {tier}', 'shell',
+                           rotation=((0, 0, -side), (0, 1, 0), (side, 0, 0)),
+                           translation=(side * drawer_spec.half_width,
+                                        spec.depth / 2 + 28.50005, 23.4991 + offset),
+                           explode=(side * (lateral_explode + 25), 0, (tier - 1) * 25),
+                           tier=tier, side=side)
 
         # Proper rotations preserve rail handedness. Each drawer's bottom lock
         # retains its own nose datums; a second bay only translates the drawer.
@@ -164,26 +172,25 @@ def assembly_definition(configuration: Configuration):
                                explode=(side * lateral_explode, 0, (tier - 1) * 25),
                                tier=tier, side=side)
 
-    # Latches attach to module connector banks, independently of the number
-    # of drawers. Keep their unverified installation poses out of the shell.
+    # Latch hook arc centers at native Y=34.0533015629 register to the closed-back
+    # bridge lobes at Y=60.481. Turn the print face toward the underside skin,
+    # like the housing; each bank has one latch regardless of drawer count.
     for bank, center in enumerate(spec.bank_centers, start=1):
-        add(f'latch_{bank}', 'latch', 'single', f'Latch · bank {bank} · loose part',
-            'accessories', translation=(center, spec.depth + 220, 0),
-            placement='layout', bank=bank)
+        add(f'latch_{bank}', 'latch', 'single', f'Latch · bank {bank}', 'shell',
+            rotation=((-1, 0, 0), (0, 1, 0), (0, 0, -1)),
+            translation=(center, 60.481 - 34.0533015629, 0), explode=(0, 0, -35), bank=bank)
 
     return {
         'schema': SCHEMA, 'units': 'mm', 'coordinates': 'installed-drawer',
         'matrix_order': 'column-major', 'configuration': configuration.as_dict(),
         'rail_travel_mm': 0, 'validation_scope': 'drawer_components',
-        'groups': [{'id': 'shell', 'label': 'Module and fixed guides'},
-                   {'id': 'drawer', 'label': 'Drawer and attached parts'},
-                   {'id': 'accessories', 'label': 'Loose accessories · installation not checked'}],
+        'groups': [{'id': 'shell', 'label': 'Module and fixed hardware'},
+                   {'id': 'drawer', 'label': 'Drawer and attached parts'}],
         'instances': instances,
         'omissions': ['Screws'],
         'notes': ['Finished parts: module webs and box runner sheets removed.',
                   'Geared rails shown unlocked at zero locking travel.',
-                  'Loose accessories are laid out in front of the drawer; their installation is not checked.',
-                  'Facade caps use the documented screw seats; accessory fit is outside the drawer fit check.',
+                  'Accessories are shown installed; their fit and retention are outside the drawer fit check.',
                   'Exploded spacing illustrates components; it is not a disassembly path.'],
     }
 

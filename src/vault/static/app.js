@@ -17,13 +17,15 @@ const names = {
   key: 'Key', spring: 'Spring', runner_stop: 'Runner stop', facade_cap: 'Facade cap', key_cap: 'Key cap', latch: 'Latch',
   rails: 'Geared rails', runner_guides: 'Runner guides', runner_slides: 'Runner slides',
 };
-// Preview-only material roles; keep server metadata and print previews unchanged.
+// Preview palette; exported multicolor parts retain their named filament roles.
 const assemblyColorRoles = {
   module: 'primary', facade: 'primary', runner_guides: 'primary', facade_cap: 'primary', key_cap: 'primary',
   box: 'secondary', runner_slides: 'secondary', key: 'secondary',
   rails: 'highlight', spring: 'highlight', runner_stop: 'highlight', latch: 'highlight',
 };
 const assemblyColor = instance => $(`assembly-${assemblyColorRoles[instance.kind] || 'primary'}-color`).value;
+const materialColor = material => $(`assembly-${material.role}-color`).value;
+const previewMaterials = instance => instance.material_meshes?.length ? instance.material_meshes : [{mesh_url: instance.mesh_url}];
 const partDescriptions = {
   set: 'Module, box, facade, geared rails, runner guides, runner slides, key, spring, latch, runner stops and caps.',
   module: 'The outside shell, sized by family, depth and height.',
@@ -328,20 +330,28 @@ async function selectArtifact(index, userAction = false) {
   if (part.print_bbox_mm?.length === 3) setMetrics(part.print_bbox_mm);
   downloadLink($('stl-download'), part.stl_url);
   downloadLink($('step-download'), part.step_url || build.step_url);
+  downloadLink($('three-mf-download'), build.three_mf_url);
   $('envelope').setAttribute('hidden', ''); $('model-canvas').hidden = true;
   $('model-canvas').dataset.modelReady = 'false';
   $('viewer-message').hidden = false; $('viewer-message').textContent = 'Loading model…';
   $('viewer-help').hidden = true; $('reset-view').hidden = true;
   try {
     if (!part.stl_url?.startsWith('/files/')) throw new Error('This build has no preview mesh. Download STEP to inspect the solid.');
-    const response = await fetch(part.stl_url);
-    if (!response.ok) throw new Error(response.status === 401 ? 'Sign in again to load this preview.' : 'The preview could not be loaded. Download files below or retry this part.');
-    const bytes = await response.arrayBuffer();
+    const urls = part.material_meshes?.length ? part.material_meshes.map(material => material.print_url) : [part.stl_url];
+    const buffers = await Promise.all(urls.map(async url => {
+      if (!url?.startsWith('/files/')) throw new Error('Print material mesh unavailable; rebuild this part.');
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(response.status === 401 ? 'Sign in again to load this preview.' : 'The preview could not be loaded. Download files below or retry this part.');
+      return response.arrayBuffer();
+    }));
     if (request !== state.previewRequest) return;
     $('model-canvas').hidden = false;
     state.viewer ||= new STLViewer($('model-canvas'));
     state.viewer.onSelect = null;
-    const dimensions = state.viewer.load(bytes); setMetrics(dimensions);
+    const dimensions = part.material_meshes?.length
+      ? state.viewer.loadScene(part.material_meshes.map((material, i) => ({id: material.name, bytes: buffers[i],
+        color: materialColor(material), transform: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1], explode: [0,0,0]})), {assembly: false})
+      : state.viewer.load(buffers[0]); setMetrics(dimensions);
     $('viewer-message').hidden = true; $('viewer-help').hidden = false; $('reset-view').hidden = false;
     $('model-canvas').dataset.modelReady = 'true';
   } catch (error) {
@@ -413,6 +423,9 @@ function setExplosion(value) {
 function updateAssemblyColors() {
   if (!state.assemblyShowing || !state.assembly) return;
   const colors = Object.fromEntries(state.assembly.instances.map(instance => [instance.id, assemblyColor(instance)]));
+  for (const instance of state.assembly.instances) for (const material of instance.material_meshes || []) {
+    colors[`${instance.id}:${material.name}`] = materialColor(material);
+  }
   state.viewer?.setColors(colors);
   for (const row of $('assembly-instances').children) {
     row.querySelector('.instance-color').style.backgroundColor = colors[row.dataset.instance];
@@ -497,18 +510,19 @@ async function showAssembly(preservePreview = false) {
   $('artifact-description').textContent = 'Printable downloads · select a part below to inspect its print orientation.';
   $('print-note').textContent = 'Complete set includes drawer parts and accessories. Accessory placement and retention are not fit checked. Print downloads retain required sacrificial supports.';
   downloadLink($('stl-download'), null); downloadLink($('step-download'), null);
+  downloadLink($('three-mf-download'), null);
   renderFreshness();
   try {
     const response = await api(`/api/assembly?${query}`, { signal: controller.signal });
     if (request !== state.assemblyRequest) return;
     if (response.repository) state.repository = response.repository;
     const scene = { ...response, instances: response.instances || [], missing: response.missing || [] };
-    const signature = JSON.stringify(scene.instances.map(({ id, mesh_url, transform, explode, color }) => ({ id, mesh_url, transform, explode, color })));
+    const signature = JSON.stringify(scene.instances.map(({ id, mesh_url, material_meshes, transform, explode, color }) => ({ id, mesh_url, material_meshes, transform, explode, color })));
     $('preview-title').textContent = scene.name || `${configurationName(state.selection)} assembly`;
     if (signature === state.assemblySignature && state.assembly) {
       state.assembly = scene; renderAssemblyDetails(scene); return;
     }
-    const urls = [...new Set(scene.instances.map(instance => instance.mesh_url))];
+    const urls = [...new Set(scene.instances.flatMap(instance => previewMaterials(instance).map(material => material.mesh_url)))];
     const fetched = await Promise.allSettled(urls.map(async url => {
       if (typeof url !== 'string' || !/^\/files\/[^\s]*$/.test(url) || url.includes('\\')) throw new Error('Finished assembly mesh unavailable; rebuild this part.');
       const mesh = await fetch(url, { signal: controller.signal });
@@ -518,15 +532,19 @@ async function showAssembly(preservePreview = false) {
     if (request !== state.assemblyRequest) return;
     const loaded = [], missing = [...scene.missing];
     for (const instance of scene.instances) {
-      const result = fetched[urls.indexOf(instance.mesh_url)];
-      if (result.status === 'fulfilled') loaded.push({ ...instance, bytes: result.value });
-      else missing.push({ kind: instance.kind, label: instance.label, reason: errorMessage(result.reason) });
+      const materials = previewMaterials(instance).map(material => ({...material, result: fetched[urls.indexOf(material.mesh_url)]}));
+      const failed = materials.find(material => material.result.status !== 'fulfilled');
+      if (failed) missing.push({kind: instance.kind, label: instance.label, reason: errorMessage(failed.result.reason)});
+      else loaded.push({...instance, meshes: materials.map(({result, ...material}) => ({...material, bytes: result.value}))});
     }
-    const available = { ...scene, instances: loaded.map(({ bytes, ...instance }) => instance), missing, complete: scene.complete && !missing.length };
+    const available = { ...scene, instances: loaded.map(({ meshes, ...instance }) => instance), missing, complete: scene.complete && !missing.length };
     if (loaded.length) {
       $('model-canvas').hidden = false;
       state.viewer ||= new STLViewer($('model-canvas'));
-      const dimensions = state.viewer.loadScene(loaded.map(instance => ({ ...instance, color: assemblyColor(instance) }))); setMetrics(dimensions);
+      const dimensions = state.viewer.loadScene(loaded.flatMap(({meshes, ...instance}) => meshes.map(material => ({
+        ...instance, bytes: material.bytes, color_key: material.name ? `${instance.id}:${material.name}` : instance.id,
+        color: material.role ? materialColor(material) : assemblyColor(instance),
+      })))); setMetrics(dimensions);
       state.viewer.onSelect = selectInstance;
       state.viewer.setExplosion(Number($('explosion').value) / 100);
       for (const id of state.hiddenInstances) state.viewer.setVisible(id, false);

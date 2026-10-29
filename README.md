@@ -315,8 +315,10 @@ extrusions and booleans, without loading the source mesh. It retains the
 164.8 × 47 × 10 mm envelope, rear pockets, flat-sided screw bosses at
 X=±51.45 / Z=23.5, 4.4 mm screw clearances, 10 mm counterbores, shaped finger
 opening and shallow front-side recess. Curved blends are reconstructed
-approximations. Small molded branding and front indexing marks are omitted,
-consistent with the project's unbranded models. Run
+approximations. Small molded branding and front indexing grooves are omitted.
+Native lock/unlock icons are flush 0.6 mm inlays beside the bottom-tier lock,
+assigned to the secondary material. Facade builds include a registered multicolor
+3MF; the ordinary single-color STL retains the same exterior. Run
 `python tools/measure_facade.py` for a sampled, bidirectional source comparison;
 its report includes the intended changes rather than hiding them. A successful
 CAD export establishes solid validity, not exact source equivalence.

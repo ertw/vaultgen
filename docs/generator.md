@@ -201,15 +201,16 @@ Assembly previews use explicit native-coordinate transforms from
 The module's native underside is rotated down into the installed drawer frame;
 the box stays upright with its floor below its contents. Print orientations
 and immutable component meshes retain their original coordinates.
-Facade caps sit in the documented screw seats. Keys, key caps, springs, runner
-stops and latches are laid out in front of the drawer, explicitly labeled as
-loose parts because their installed poses are not verified. Only screws are
-omitted. S scenes have 18/26 instances for 1F/2F; M has 20/28 and L has 21/29.
+Facade caps sit in the documented screw seats. Keys and their caps occupy the
+front lock, with the spring pair seated behind each facade. Runner stops occupy
+the module's side slots, and latches sit on its underside connector banks.
+Only screws are omitted. S scenes have 18/26 instances for 1F/2F; M has 20/28 and L has 21/29.
 L² has 35/51 instances with two drawers, or 67 with four S1F drawers.
 Each drawer has two springs and a left/right runner pair on every tier;
 latch quantities follow the module's connector banks, independently of drawer count.
 The drawer group moves forward while the explosion separates its facade,
-rails, slides and caps. Loose parts move forward to stay clear of the drawer.
+rails, slides, key, springs and caps. Runner stops and latches separate from
+the module with the fixed hardware.
 Exploded positions illustrate the parts; they do not certify a disassembly path.
 Accessory build IDs are pinned separately from the six groups covered by the
 drawer fit check. A changed accessory build also invalidates the scene's receipt;
@@ -433,3 +434,19 @@ run `python tools/check_accessories.py` to audit the current checkout. The latch
 enlarged opening intentionally differs from the purchased reference; historical
 source agreement does not apply to that opening. These diagnostics do not certify
 spring, latch or stop installation, insertion motion, retention, or printed fit.
+
+### Facade lock markings
+
+New facade builds include native lock and unlock icons as flush 0.6 mm inlays.
+The body uses **Primary** and both icons use **Secondary** in the complete-set
+view. These parts move, highlight and hide together as one facade. The markings
+stay beside the bottom-tier lock across S/M/L and both heights.
+
+Choose **Download 3MF** from a generated facade, or use its 3MF in the complete
+ZIP. Open it as one multipart object and assign the named primary and secondary
+materials to your filaments. Both icons share the secondary material slot.
+Keep the supplied print orientation and registration. The ZIP also includes
+registered color STEP files and printing notes; the ordinary STL is a
+single-color alternative with the same exterior. Existing builds are immutable
+and must be regenerated to include markings. Preview palette edits remain local
+to the page; assign the desired filament colors in the slicer.

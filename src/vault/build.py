@@ -59,6 +59,7 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
     print_stl = output / 'stl' / f'{stem}.stl'
     export_print_mesh(printable, print_stl)
     assembly_mesh = None
+    material_exports = {}
     if finished is not None:
         print('Exporting finished assembly preview…', flush=True)
         from .exports import export_assembly_mesh, translation_matrix
@@ -71,6 +72,9 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
                            [1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1])
         assembly_mesh = export_assembly_mesh(output, stem, finished, component='single',
                                              print_to_native=print_to_native)
+        if part_kind(spec) == 'facade':
+            from .facade_build import export_facade_materials
+            material_exports = export_facade_materials(output, spec, module, print_to_native)
     print('Rendering exported geometry…', flush=True)
     render_review(mesh, output / 'review')
     bbox = module.bounding_box()
@@ -114,7 +118,13 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted(output.glob(f'{stem}*'))
         },
+        **material_exports,
     }
+    if material_exports:
+        from .facade_build import PRINT_NOTE
+        manifest['print_orientation'] += ' ' + PRINT_NOTE
+        (output / 'printing.txt').write_text(manifest['print_orientation'] + '\n')
+        manifest['print_instructions'] = 'printing.txt'
     if isinstance(spec, ModuleSpec) and spec.wall_pattern != 'plain':
         manifest['print_orientation'] += (
             f' Corrugated patterned facets target {2 * spec.pattern_line_width:g} mm normal thickness '
@@ -199,6 +209,7 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
         }
         manifest.update(viewer='viewer.json', status='Completed CAD build', parts={spec.slug: {
             'assembly_mesh': manifest.get('assembly_mesh'),
+            'materials': manifest.get('materials', {}),
             'kind': part_kind(spec), 'print_note': manifest.get('print_orientation', ''),
             'print_bbox_mm': manifest.get('print_bbox_mm', []),
         }})

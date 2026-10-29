@@ -398,9 +398,10 @@ Labels editor, choose S labels for these S facades.
 height 2F and two columns. Boxes and facades then resolve to S1F; the module
 stays 2F. The print plan calls for four copies of each box, facade and geared
 rail, and four left/right runner pairs in total. The assembly preview includes
-33 drawer components plus 34 accessory instances (67 total). Facade caps use
-the screw seats; the other accessories are laid out separately with unverified
-installation poses. Drawer components retain their own drawer identity and
+33 drawer components plus 34 accessory instances (67 total). Accessories use
+explicit installed poses, with springs and lock hardware repeated per drawer,
+runner stops per tier and latches per module connector bank.
+Drawer components retain their own drawer identity and
 explicit (X,Z) placement.
 
 The supplied L² module references cover depths 3–7 and 1F/2F/4F. The web
@@ -593,8 +594,9 @@ the part's layer count.
 Reference meshes are used only by the diagnostic tool, never by construction.
 
 Accessory native frames are print frames, not installed drawer poses. The
-complete-set view places facade caps at the shared screw axes; other accessories
-appear in a labeled loose-part layout in front of the drawer. These display
+complete-set view places facade caps at the shared screw axes, keys and caps
+in the front locks, spring pairs behind the facades, runner stops in the side
+slots, and latches on the underside connector banks. These installed
 transforms are explicit in `assembly.py`, independent of print bounds. All
 accessories remain outside drawer fit validation, and complete-set receipts
 pin their immutable build IDs separately. Quantities include two springs per
@@ -602,3 +604,32 @@ drawer and one latch per module connector bank.
 The cap interface diagnostic checks a facade screw cap at (51.45, 10, 23.5)
 after a +90° X rotation, and a key cap at Z=35.517 after a 180° X rotation.
 These are geometric seated-pose checks, not insertion or snap retention tests.
+
+`python tools/check_accessory_assembly.py --case S4:1` checks the installed
+accessory datums and reports native intersections separately from the drawer
+fit receipt. Repeat `--case` for other configurations, including `L6x2x2:2`.
+The key shoulder registers to the facade's front face, spring forks to the
+lock screw axes and pocket floors, stopper flanges to the side openings,
+and latch hooks to the underside bridge lobes. The preview uses undeformed
+parts: intersections involving the spring fingers, key indexing tab and teeth,
+latch arms, and stopper snap stems remain unresolved fit observations.
+Registration does not certify spring deflection, gear motion, snap retention,
+or printed fit, and does not relax the six-group drawer audit.
+
+## Facade lock inlays
+
+`facade_markings.py` constructs closed/open padlock profiles with native lines,
+arcs and rounded rectangles; no purchased geometry or measured profile is read.
+Their centers are (X,Z) = (−27,32) and (−27,15) mm in the shared facade datum.
+The inlays occupy Y = 9.4–10 mm, flush with the front. The primary body is cut
+by the two inlays; their union preserves the existing single-solid envelope,
+lock opening, screw axes and seating surfaces. The 0.8 mm shell retains 0.2 mm
+of primary skin behind the inlays.
+
+Each material passes native validity, STEP round-trip and watertight mesh checks.
+The checked 3MF contains one registered object with three components and two
+material slots: primary body and secondary lock/unlock icons. Color STEP files
+and print meshes share the facade's rigid print transform without recentering.
+Assembly fit receipts continue to use the complete finished solid; the color
+meshes only divide its appearance. Preview meshes remain outside print ZIPs.
+CAD and export checks do not establish printed adhesion or small-feature quality.

@@ -76,6 +76,37 @@ class AssemblyCacheTests(unittest.TestCase):
         path.write_text(json.dumps(record))
 
     @patch('vault.web_builds.git_provenance', return_value={'commit': 'current', 'dirty': False})
+    def test_registered_facade_materials_keep_one_instance_and_checked_urls(self, _):
+        build_id = self.build('facade')
+        directory = self.root / 'builds' / build_id
+        manifest_path = directory / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        materials = {}
+        for name, role in [('body', 'primary'), ('locked', 'secondary'), ('unlocked', 'secondary')]:
+            native = f'preview/assembly/{name}.stl'
+            printable = f'preview/materials/{name}.stl'
+            for relative in (native, printable):
+                path = directory / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'checked material')
+                manifest['checksums'][relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+            materials[name] = {'role': role, 'print_path': printable, 'assembly_mesh': {
+                'schema': 'vault-assembly-mesh/v1', 'coordinates': 'native', 'finished': True, 'path': native}}
+        manifest['parts']['single']['materials'] = materials
+        manifest_path.write_text(json.dumps(manifest))
+        scene = self.files.assembly(Configuration())
+        self.assertEqual(len(scene['instances']), 1)
+        facade = scene['instances'][0]
+        self.assertEqual(facade['id'], 'facade')
+        self.assertEqual([m['role'] for m in facade['material_meshes']], ['primary', 'secondary', 'secondary'])
+        for material in facade['material_meshes']:
+            self.assertEqual(self.files.artifact(build_id, material['mesh_url'].split(f'/{build_id}/')[1]),
+                             b'checked material')
+        del manifest['checksums']['preview/materials/locked.stl']
+        manifest_path.write_text(json.dumps(manifest))
+        self.assertEqual(self.files.describe(build_id)['parts'][0]['material_meshes'], [])
+
+    @patch('vault.web_builds.git_provenance', return_value={'commit': 'current', 'dirty': False})
     def test_facade_floor_cache_keeps_legacy_default_and_exact_fit_receipt(self, _):
         common = [self.build(kind) for kind in (*ASSEMBLY_PARTS, *ACCESSORY_PARTS) if kind != 'facade']
         legacy = self.build('facade')

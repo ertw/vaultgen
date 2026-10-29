@@ -164,7 +164,7 @@ export class STLViewer {
       const positionBuffer = gl.createBuffer(), normalBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer); gl.bufferData(gl.ARRAY_BUFFER, mesh.positions, gl.STATIC_DRAW);
       gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer); gl.bufferData(gl.ARRAY_BUFFER, normalsFor(mesh.positions), gl.STATIC_DRAW);
-      return { id: mesh.id, color: rgb(mesh.color), offset: mesh.offset, low: mesh.low, high: mesh.high, count: mesh.positions.length / 3, positionBuffer, normalBuffer, visible: true };
+      return { id: mesh.id, colorKey: mesh.color_key || mesh.id, color: rgb(mesh.color), offset: mesh.offset, low: mesh.low, high: mesh.high, count: mesh.positions.length / 3, positionBuffer, normalBuffer, visible: true };
     });
     this.count = totalVertices; this.explosion = 0; this.selected = null;
     // Assembly front is +Y. Print previews retain their original camera angle.
@@ -179,9 +179,9 @@ export class STLViewer {
     this.meshes = []; this.count = 0; this.render();
   }
   setExplosion(value) { this.explosion = Math.max(0, Math.min(1, Number(value) || 0)); this.render(); }
-  setVisible(id, visible) { const mesh = this.meshes.find(item => item.id === id); if (mesh) { mesh.visible = visible; this.render(); } }
+  setVisible(id, visible) { for (const mesh of this.meshes) if (mesh.id === id) mesh.visible = visible; this.render(); }
   setColors(colors) {
-    for (const mesh of this.meshes) if (Object.hasOwn(colors, mesh.id)) mesh.color = rgb(colors[mesh.id]);
+    for (const mesh of this.meshes) if (Object.hasOwn(colors, mesh.colorKey)) mesh.color = rgb(colors[mesh.colorKey]);
     this.render();
   }
   select(id) { this.selected = id; this.render(); }

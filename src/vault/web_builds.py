@@ -101,6 +101,7 @@ class BuildFiles:
                 continue
             used[build['id']] = build
             instances.append({**item, 'mesh_url': part['assembly_url'],
+                              'material_meshes': part.get('material_meshes', []),
                               'build_id': build['id'], 'freshness': build['freshness']})
         for build in used.values():
             warnings.extend(build['freshness']['reasons'])
@@ -188,7 +189,21 @@ class BuildFiles:
             assembly = details.get('assembly_mesh') or {}
             assembly_ok = (assembly.get('schema') == 'vault-assembly-mesh/v1'
                            and assembly.get('coordinates') == 'native' and assembly.get('finished') is True)
+            materials = []
+            for material_name, material in details.get('materials', {}).items():
+                metadata = material.get('assembly_mesh', {})
+                if (material.get('role') in ('primary', 'secondary')
+                        and metadata.get('schema') == 'vault-assembly-mesh/v1'
+                        and metadata.get('coordinates') == 'native' and metadata.get('finished') is True
+                        and url(metadata.get('path')) and url(material.get('print_path'))):
+                    materials.append({'name': material_name, 'role': material['role'],
+                                      'mesh_url': url(metadata['path']),
+                                      'print_url': url(material['print_path'])})
+            # A partial material set cannot replace the complete preview.
+            if len(materials) != len(details.get('materials', {})):
+                materials = []
             parts.append({'assembly_mesh': assembly if assembly_ok else {},
+                          'material_meshes': materials,
                           'assembly_url': url(assembly.get('path')) if assembly_ok else None,
                           'name': name, 'print_bbox_mm': details.get('print_bbox_mm', []),
                           'print_note': details.get('print_note', ''),

@@ -46,21 +46,31 @@ def _check_step(shape, path):
     return restored, report
 
 
-def _write_3mf(path, meshes, colors):
+def _write_3mf(path, meshes, colors, *, name='Vault label — print face down',
+               application='Vaultgen native labels', material_roles=None):
     """3MF core base materials and a single multipart assembly/build item."""
+    assembly_name = name
     ET.register_namespace('', NS)
     tag = lambda name: f'{{{NS}}}{name}'
     model = ET.Element(tag('model'), {'unit':'millimeter', '{http://www.w3.org/XML/1998/namespace}lang':'en-US'})
-    ET.SubElement(model,tag('metadata'),{'name':'Application'}).text = 'Vaultgen native labels'
+    ET.SubElement(model,tag('metadata'),{'name':'Application'}).text = application
     resources = ET.SubElement(model,tag('resources'))
     materials = ET.SubElement(resources,tag('basematerials'),{'id':'1'})
+    roles = material_roles or {name: name for name in meshes}
+    palette = {}
+    for part_name in meshes:
+        role = roles[part_name]
+        if role in palette and palette[role] != colors[part_name]:
+            raise ValueError('One material role cannot have multiple colors')
+        palette[role] = colors[part_name]
+    for role, color in palette.items():
+        ET.SubElement(materials,tag('base'),{'name':f'{role} {color}', 'displaycolor':color.upper()+'FF'})
     object_ids = []
     for index,(name,mesh) in enumerate(meshes.items()):
-        color = colors[name]
-        ET.SubElement(materials,tag('base'),{'name':f'{name} {color}', 'displaycolor':color.upper()+'FF'})
         object_id = str(index+2)
         object_ids.append(object_id)
-        obj = ET.SubElement(resources,tag('object'),{'id':object_id,'type':'model','name':name,'pid':'1','pindex':str(index)})
+        obj = ET.SubElement(resources,tag('object'),{'id':object_id,'type':'model','name':name,'pid':'1',
+                                                   'pindex':str(list(palette).index(roles[name]))})
         element = ET.SubElement(obj,tag('mesh'))
         vertices = ET.SubElement(element,tag('vertices'))
         triangles = ET.SubElement(element,tag('triangles'))
@@ -69,7 +79,7 @@ def _write_3mf(path, meshes, colors):
         for triangle in mesh.faces:
             ET.SubElement(triangles,tag('triangle'),dict(zip(('v1','v2','v3'),map(str,triangle))))
     assembly_id = str(len(meshes)+2)
-    assembly = ET.SubElement(resources,tag('object'),{'id':assembly_id,'type':'model','name':'Vault label — print face down'})
+    assembly = ET.SubElement(resources,tag('object'),{'id':assembly_id,'type':'model','name':assembly_name})
     components = ET.SubElement(assembly,tag('components'))
     for object_id in object_ids:
         ET.SubElement(components,tag('component'),{'objectid':object_id})
@@ -87,10 +97,10 @@ def _write_3mf(path, meshes, colors):
         package.writestr('[Content_Types].xml',types)
         package.writestr('_rels/.rels',relationships)
         package.writestr('3D/3dmodel.model',ET.tostring(model,encoding='utf-8',xml_declaration=True))
-    return _check_3mf(path,meshes,colors)
+    return _check_3mf(path,meshes,colors,material_roles=roles)
 
 
-def _check_3mf(path, meshes, colors):
+def _check_3mf(path, meshes, colors, *, material_roles=None):
     """Read back every packed mesh and check registration/material identities."""
     import numpy as np
     import trimesh
@@ -102,7 +112,9 @@ def _check_3mf(path, meshes, colors):
     resources = root.find(q('resources'))
     objects = resources.findall(q('object'))
     materials = resources.find(q('basematerials')).findall(q('base'))
-    if len(materials) != len(meshes) or len(objects) != len(meshes)+1:
+    roles = material_roles or {name: name for name in meshes}
+    palette = dict((roles[name], colors[name]) for name in meshes)
+    if len(materials) != len(palette) or len(objects) != len(meshes)+1:
         raise ValueError('3MF lost colors or components')
     assembly = objects[-1]
     components = assembly.find(q('components')).findall(q('component'))
@@ -112,6 +124,7 @@ def _check_3mf(path, meshes, colors):
             or any('transform' in c.attrib for c in components+items)):
         raise ValueError('3MF must preserve one registered multipart label')
     for index, ((name, expected), obj) in enumerate(zip(meshes.items(), objects)):
+        material_index = list(palette).index(roles[name])
         element = obj.find(q('mesh'))
         vertices = [[float(v.get(a)) for a in ('x','y','z')] for v in element.find(q('vertices'))]
         faces = [[int(v.get(a)) for a in ('v1','v2','v3')] for v in element.find(q('triangles'))]
@@ -119,10 +132,11 @@ def _check_3mf(path, meshes, colors):
         if (not restored.is_watertight or not restored.is_winding_consistent or restored.volume <= 0
                 or not np.allclose(restored.vertices,expected.vertices,atol=1e-8,rtol=0)
                 or not np.array_equal(restored.faces,expected.faces)
-                or obj.get('name') != name or obj.get('pid') != '1' or obj.get('pindex') != str(index)
-                or materials[index].get('displaycolor') != colors[name].upper()+'FF'):
+                or obj.get('name') != name or obj.get('pid') != '1' or obj.get('pindex') != str(material_index)
+                or materials[material_index].get('displaycolor') != colors[name].upper()+'FF'
+                or materials[material_index].get('name') != f'{roles[name]} {colors[name]}'):
             raise ValueError(f'3MF component/material round-trip failed: {name}')
-    return {'passed':True,'colors':len(meshes),'registered_components':len(meshes),'build_items':1}
+    return {'passed':True,'colors':len(materials),'registered_components':len(meshes),'build_items':1}
 
 
 def _export_label(output, config):

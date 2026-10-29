@@ -62,16 +62,26 @@ accessories = [
     ('key_cap','Key cap','key_cap',(8,32,4),(0,55,0)),
 ]
 for identifier,label,kind,placement,explode in accessories:
+    placement_transform = transform(*placement)
+    if identifier == 'spring_right':
+        # Shared mesh downloads must retain each instance's own installed
+        # rotation. This synthetic opposite-facing pair exercises a half turn.
+        placement_transform[5] = placement_transform[10] = -1
     scene['instances'].append(dict(id=identifier,label=label,kind=kind,component='single',
         group='shell' if kind in {'runner_stop','latch'} else 'drawer',mesh_url=f'/files/test/{kind}.stl',
-        transform=transform(*placement),explode=explode,color='#8ba9c1',build_id=f'{kind}-build',freshness=freshness))
+        transform=placement_transform,explode=explode,color='#8ba9c1',build_id=f'{kind}-build',freshness=freshness))
+scene['instances'].append(dict(id='facade', label='Facade', kind='facade', group='drawer',
+    mesh_url='/files/test/facade.stl', transform=transform(12,22,0), explode=[0,35,0],
+    build_id='facade-build', freshness=freshness, material_meshes=[
+        dict(name=name, role=role, mesh_url=f'/files/test/facade_{name}.stl')
+        for name,role in [('body','primary'),('locked','secondary'),('unlocked','secondary')]]))
 instance_count = len(scene['instances'])
 builds = [dict(id='rails-build',kind='rails',name='S geared rails',configuration=dict(family='S'),
                created_at='2026-10-24T00:00:00Z',freshness=freshness,
                parts=[dict(name='rails',stl_url='/files/test/rail.stl',step_url='/files/test/rail.step',print_bbox_mm=[10,10,10])])]
 default_palette = dict(primary='#f2f0eb',secondary='#303030',highlight='#e7a6bd')
 palette = default_palette.copy()
-kind_roles = dict(module='primary',box='secondary',rails='highlight',key='secondary',
+kind_roles = dict(facade='primary',module='primary',box='secondary',rails='highlight',key='secondary',
                   spring='highlight',latch='highlight',runner_stop='highlight',facade_cap='primary',key_cap='primary')
 instance_roles = {instance['id']:kind_roles[instance['kind']] for instance in scene['instances']}
 
@@ -131,12 +141,14 @@ STLViewer.prototype.loadScene=function(...args){
             picker = page.locator(f'#assembly-{role}-color')
             expect(picker).to_have_attribute('type','color')
             expect(picker).to_have_value(color)
-        for instance in page.evaluate('testViewer.meshes.map(({id,color})=>({id,color}))'):
-            color = palette[instance_roles[instance['id']]]
+        for instance in page.evaluate('testViewer.meshes.map(({id,color,colorKey})=>({id,color,colorKey}))'):
+            role = 'secondary' if instance['colorKey'] in ('facade:locked','facade:unlocked') else instance_roles[instance['id']]
+            color = palette[role]
             channels = [int(color[index:index+2],16) for index in (1,3,5)]
             assert all(abs(value-channel/255) < 1e-6 for value,channel in zip(instance['color'],channels)), instance
             swatch = page.locator(f'.assembly-instance[data-instance="{instance["id"]}"] .instance-color')
-            expect(swatch).to_have_css('background-color',f'rgb({channels[0]}, {channels[1]}, {channels[2]})')
+            swatch_channels = [int(palette[instance_roles[instance['id']]][index:index+2],16) for index in (1,3,5)]
+            expect(swatch).to_have_css('background-color',f'rgb({swatch_channels[0]}, {swatch_channels[1]}, {swatch_channels[2]})')
 
     def assert_palette_bounds():
         controls = page.locator('#assembly-colors')
@@ -172,12 +184,19 @@ STLViewer.prototype.loadScene=function(...args){
     assert requests.count('/files/test/rail.stl') == 1, 'Repeated instances should share a mesh request'
     for kind in accessory_meshes:
         assert requests.count(f'/files/test/{kind}.stl') == 1, f'{kind} instances should share a mesh request'
-    assert page.evaluate('testViewer.meshes.length') == instance_count
+    assert page.evaluate('testViewer.meshes.length') == instance_count + 2
+    facade_row = page.locator('.assembly-instance[data-instance="facade"]')
+    facade_row.locator('input').uncheck()
+    assert page.evaluate('testViewer.meshes.filter(m=>m.id==="facade").every(m=>!m.visible)')
+    facade_row.locator('input').check()
+    assert page.evaluate('testViewer.meshes.filter(m=>m.id==="facade").every(m=>m.visible)')
     expect(page.locator('#metric-width')).to_have_text('32 mm')
     # First/third triangles begin on native Z=0/Z=10. Renderer Y is assembly
     # up: native module Z must descend while native box Z must ascend.
     orientation = page.evaluate('Object.fromEntries(["module","box"].map(id=>[id,sceneVertexBuffers[id][19]-sceneVertexBuffers[id][1]]))')
     assert orientation['module'] < 0 < orientation['box'], orientation
+    spring_orientation = page.evaluate('Object.fromEntries(["spring_left","spring_right"].map(id=>[id,sceneVertexBuffers[id][19]-sceneVertexBuffers[id][1]]))')
+    assert spring_orientation['spring_right'] < 0 < spring_orientation['spring_left'], spring_orientation
     camera = page.evaluate('[testViewer.yaw,testViewer.pitch,testViewer.zoom,testViewer.fitDistance]')
     loads = page.evaluate('sceneLoads')
     meshes_requested = len([path for path in requests if path.startswith('/files/')])
@@ -190,6 +209,13 @@ STLViewer.prototype.loadScene=function(...args){
         assert any(abs(value) > 0 for value in offset), f'{identifier} needs an exploded placement'
     assert page.evaluate('[testViewer.yaw,testViewer.pitch,testViewer.zoom,testViewer.fitDistance]') == camera
     assert page.locator('#model-canvas').screenshot() != assembled_image, 'Exploding must visibly change mesh placements'
+    page.locator('#assemble-view').click()
+    expect(page.locator('#explosion-value')).to_have_text('0%')
+    assert page.evaluate('testViewer.explosion') == 0
+    assert page.evaluate('[testViewer.yaw,testViewer.pitch,testViewer.zoom,testViewer.fitDistance]') == camera
+    assert page.locator('#model-canvas').screenshot() == assembled_image, 'Assembled must restore every installed accessory pose'
+    assert page.evaluate('sceneLoads') == loads
+    assert len([path for path in requests if path.startswith('/files/')]) == meshes_requested
     page.locator('#explode-view').click()
     assert page.evaluate('testViewer.fitDistance') != camera[-1], 'Endpoint action should fit its current pose'
     camera = page.evaluate('[testViewer.yaw,testViewer.pitch,testViewer.zoom,testViewer.fitDistance]')
@@ -334,4 +360,4 @@ STLViewer.prototype.loadScene=function(...args){
         page.locator('#part-options button[data-value="latch"]').click()
     assert not errors, errors
     browser.close()
-print('Assembly browser checks passed: six accessory groups, transforms, shared meshes, explode, visibility, picking, provenance, scoped fit status, palette defaults and edits, print color isolation, refresh stability, missing parts, response races, partial failures, mobile layout')
+print('Assembly browser checks passed: six accessory groups, rotated accessory transforms, shared meshes, explode and assembled restoration, visibility, picking, provenance, scoped fit status, palette defaults and edits, print color isolation, refresh stability, missing parts, response races, partial failures, mobile layout')
