@@ -129,7 +129,7 @@ The sockets rise 5 mm above the selected 0.8 or 3 mm closed floor. Exterior
 dimensions, runners, lock passages and print orientation stay the same. Create
 matching bins in the separate **Gridfinity** tab; magnets are not included.
 See [Gridfinity geometry and fit checks](docs/generator-geometry.md#gridfinity-boxes).
-Choose **Floorless** under Box floor with the Gridfinity base to open each
+Choose **Floorless** under Box bottom with the Gridfinity base to open each
 cell bottom. The grid and its perimeter support the drawer and bins; the
 socket height and profiles match the 0.8 mm-floor option. On the CLI, use
 `--box-variant gridfinity --box-floor 0`. Floorless is available only with
@@ -333,6 +333,17 @@ screw clearances. Physical fit has not been tested.
 The facade's curved surfaces can require finer mesh resolution: tessellation
 now retries at 0.01 mm if the default 0.05 mm mesh exceeds the existing 0.1%
 CAD-volume tolerance. STEP remains independent of the mesh resolution.
+
+Choose **Minimum floor → 0.8 mm** for a shelled facade, or build it with
+`python -m vault build --part facade --facade-floor 0.8`. The rear cavities
+retain a thin front skin and reinforcement around the lock, perimeter and screw
+mounts, with the original exterior and mating profiles. The new variant exports
+front-down so its rear cavities open upward. **Default** keeps the original
+facade. The same control selects a box's 0.8 or 3 mm floor; it appears only for
+relevant parts and complete sets. **Perimeters → 0.9 mm / Default** selects the
+module rear's 0.9 or 2 mm thickness and appears only for modules and sets.
+See [generator options](docs/generator.md#generator-builds) and
+[facade geometry](docs/generator-geometry.md#shelled-facades).
 
 ## S4 Box 1F
 

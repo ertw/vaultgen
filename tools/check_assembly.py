@@ -61,6 +61,7 @@ def configuration_label(configuration):
         layout = ' (2×2 drawers)'
     return (f"{configuration.family}{configuration.depth_units}{layout} {configuration.height_units}F "
             f"floor={configuration.box_floor:g} rear={configuration.module_rear:g} "
+            f"facade_floor={configuration.facade_floor} "
             f"box={configuration.box_variant} box_rear={configuration.box_rear_pattern} "
             f"pattern={configuration.wall_pattern}/{configuration.pattern_construction}")
 
@@ -106,6 +107,8 @@ def main():
     parser.add_argument('--box-variant', choices=('plain', 'gridfinity'), default='plain')
     parser.add_argument('--box-floor', type=float, choices=(0., .8, 3.),
                         help='Override the box floor for every case; 0 requires --box-variant gridfinity')
+    parser.add_argument('--facade-floor', choices=('0.8', 'default'), default='default',
+                        help='Use the shelled 0.8 mm facade or the original facade')
     parser.add_argument('--box-rear-pattern', choices=('plain', 'waffle', 'miura'), default='plain')
     parser.add_argument('--wall-pattern', choices=('plain', 'waffle', 'miura'), default='plain')
     parser.add_argument('--pattern-construction', choices=('recessed', 'corrugated'), default='recessed')
@@ -117,6 +120,7 @@ def main():
     pattern_settings = {key: getattr(args, key) for key in PATTERN_DEFAULTS}
     pattern_settings['box_variant'] = args.box_variant
     pattern_settings['box_rear_pattern'] = args.box_rear_pattern
+    pattern_settings['facade_floor'] = .8 if args.facade_floor == '0.8' else 'default'
     if args.box_floor is not None:
         pattern_settings['box_floor'] = args.box_floor
     try:
@@ -154,7 +158,8 @@ def main():
         "limitations": "Closed rigid assembled pose only. Positive exploded-view offsets are "
                        "illustrative, not collision-certified paths. Module mouth webs and box "
                        "runner-channel sheets are removed; printing meshes retain them. "
-                       "Lock, pinion, screws, and runner stoppers are omitted. Geometry cases "
+                       "Accessory installation and fit are outside the native audit; accessories "
+                       "are visible in the complete-set view. Screws are omitted. Geometry cases "
                        "are exactly those listed; definition coverage does not imply native "
                        "solid collision coverage for other configurations. No physical print-fit qualification.",
     }

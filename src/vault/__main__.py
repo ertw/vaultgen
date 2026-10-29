@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .build import build, build_preview, select_spec, selected_build
 from .project import PROJECT_ROOT
-from .spec import DEFAULT_SPEC, FAMILIES, ModuleSpec
+from .spec import DEFAULT_SPEC, FAMILIES, NEW_PATTERN_CONSTRUCTION, ModuleSpec
 
 
 def main():
@@ -23,13 +23,15 @@ def main():
                         help='Plain box rear or a two-perimeter corrugated waffle/Miura rear wall')
     parser.add_argument('--box-floor', type=float, choices=(0., .8, 3.), default=.8,
                         help='Box floor thickness in mm; 0 selects Floorless and requires --box-variant gridfinity')
+    parser.add_argument('--facade-floor', choices=('0.8', 'default'), default='default',
+                        help='0.8 mm shelled facade floor or the default rear pocket structure')
     parser.add_argument('--drawer-columns', type=int, choices=(1, 2), default=1,
                         help='Two columns create an L² module for two S drawers (family L only)')
     parser.add_argument('--drawer-rows', type=int, choices=(1, 2), default=1,
                         help='Two rows with two columns create four S1F drawers in an L 2F module')
     parser.add_argument('--wall-pattern', choices=('plain', 'waffle', 'miura'), default='plain')
-    parser.add_argument('--pattern-construction', choices=('recessed', 'corrugated'), default='recessed',
-                        help='Outer recesses or a thin corrugated wall inside the original wall envelope')
+    parser.add_argument('--pattern-construction', choices=('recessed', 'corrugated'), default=NEW_PATTERN_CONSTRUCTION,
+                        help='Thin corrugated wall (default) or outer-only recesses inside the original wall envelope')
     parser.add_argument('--pattern-pitch', type=float, default=14.0, help='Pattern cell pitch, 8–40 mm')
     parser.add_argument('--pattern-depth', type=float, default=1.7, help='Pattern relief within the existing wall, 0.2–2 mm')
     parser.add_argument('--pattern-line-width', type=float, default=0.65,
@@ -54,6 +56,7 @@ def main():
         spec = select_spec(args.part, args.family, args.depth_units, args.height_units,
                            box_variant=args.box_variant, box_floor=args.box_floor,
                            box_rear_pattern=args.box_rear_pattern,
+                           facade_floor=.8 if args.facade_floor == '0.8' else 'default',
                            drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows,
                            wall_pattern=args.wall_pattern, pattern_pitch=args.pattern_pitch,
                            pattern_depth=args.pattern_depth, pattern_line_width=args.pattern_line_width,

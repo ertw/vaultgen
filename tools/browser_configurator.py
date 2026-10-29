@@ -15,6 +15,8 @@ if not args.chromium:
     parser.error('Pass --chromium or add Chromium to PATH')
 
 STATIC = Path(__file__).resolve().parents[1] / 'src/vault/static'
+output = STATIC.parents[2] / 'out/web-review'
+output.mkdir(parents=True, exist_ok=True)
 mesh = bytes(80) + struct.pack('<I', 1) + struct.pack('<12fH', 0,0,1, 0,0,0, 10,0,0, 0,10,0, 0)
 def build(kind, config, name):
     return dict(id=name, kind=kind, name=name, configuration=dict(part=kind, **config),
@@ -28,6 +30,7 @@ builds += [build(kind, {}, kind) for kind in ('key','spring','runner_stop','faca
 builds += [build('module', dict(family='L', depth_units=6, height_units=2, drawer_columns=2), 'L6² Module 2F'),
            build('box', dict(family='S', depth_units=6, height_units=2, box_floor=3), 'S6 box thick'),
            build('facade', dict(family='S', height_units=2), 'S2F facade'),
+           build('facade', dict(family='S', height_units=2, facade_floor=0.8), 'S2F shelled facade'),
            build('rails', dict(family='S'), 'S geared rails'),
            build('box', dict(family='S', depth_units=6, height_units=1, box_floor=3), 'S6 1F box thick'),
            build('facade', dict(family='S', height_units=1), 'S1F facade')]
@@ -76,6 +79,8 @@ with sync_playwright() as p:
                                        drawer_rows=int(query['drawer_rows']),
                                        box_floor=float(query['box_floor']), box_variant=query['box_variant'],
                                        box_rear_pattern=query['box_rear_pattern'],
+                                       facade_floor=float(query['facade_floor']) if query['facade_floor'] != 'default' else 'default',
+                                       module_rear=float(query['module_rear']),
                                        wall_pattern=query['wall_pattern'], pattern_pitch=float(query['pattern_pitch']),
                                        pattern_depth=float(query['pattern_depth']), pattern_line_width=float(query['pattern_line_width']),
                                        pattern_faces=query['pattern_faces'], pattern_construction=query['pattern_construction'])
@@ -103,8 +108,12 @@ with sync_playwright() as p:
         request.fulfill(body=file.read_bytes(),content_type=mime)
     page.route('**/*',route)
     page.goto('http://vault.test/')
-    expect(page.locator('#box-floor-options button')).to_have_count(3)
-    expect(page.locator('#box-floor-options button[data-value="0"]')).to_be_hidden()
+    expect(page.locator('#minimum-floor-options button')).to_have_text(['0.8 mm', 'Default'])
+    expect(page.locator('#perimeters-options button')).to_have_text(['0.9 mm', 'Default'])
+    expect(page.locator('#minimum-floor-options button[data-value="0.8"]')).to_have_attribute('aria-pressed', 'true')
+    expect(page.locator('#minimum-floor-field')).to_be_visible()
+    expect(page.locator('#perimeters-field')).to_be_visible()
+    expect(page.locator('#box-bottom-options button[data-value="floorless"]')).to_be_hidden()
     expect(page.locator('#box-variant-options button')).to_have_count(2)
     expect(page.locator('#box-variant-options button[data-value="plain"]')).to_have_attribute('aria-pressed','true')
     expect(page.locator('#box-rear-pattern-options button')).to_have_count(3)
@@ -120,39 +129,50 @@ with sync_playwright() as p:
     expect(page.locator('#repository-status')).to_have_count(0)
     expect(page.locator('.preview-status-row .revision-status')).to_have_count(1)
     expect(page.locator('#build-freshness')).to_contain_text('⚠ Uncommitted changes')
+    assert assembly_queries[-1]['facade_floor'] == '0.8'
+    assert assembly_queries[-1]['box_floor'] == '0.8'
     for target,value in [('family','L'),('depth','6'),('height','2'),('part','rails')]:
         page.locator(f'#{target}-options button[data-value="{value}"]').click()
     expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true')
     expect(page.locator('#preview-title')).to_have_text('L geared rails')
+    expect(page.locator('#minimum-floor-field')).to_be_hidden()
+    expect(page.locator('#perimeters-field')).to_be_hidden()
     assert 'different commit' in page.locator('#build-freshness').get_attribute('title')
     page.locator('#part-options button[data-value="module"]').click()
     expect(page.locator('#box-variant-field')).to_be_hidden()
     expect(page.locator('#box-rear-pattern-field')).to_be_hidden()
+    expect(page.locator('#minimum-floor-field')).to_be_hidden()
+    expect(page.locator('#perimeters-field')).to_be_visible()
+    expect(page.locator('#perimeters-hint')).to_contain_text('module rear wall')
     expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
     expect(page.locator('#model-canvas')).to_be_hidden()
     expect(page.locator('#artifact-panel')).to_be_hidden()
     page.locator('#part-options button[data-value="box"]').click()
+    expect(page.locator('#minimum-floor-field')).to_be_visible()
+    expect(page.locator('#perimeters-field')).to_be_hidden()
     expect(page.locator('#preview-title')).to_have_text('L6 box thin')
-    page.locator('#box-floor-options button[data-value="3"]').click()
+    page.locator('#minimum-floor-options button[data-value="default"]').click()
     expect(page.locator('#preview-title')).to_have_text('L6 box thick')
     page.locator('#box-variant-options button[data-value="gridfinity"]').click()
-    expect(page.locator('#box-floor-options button[data-value="0"]')).to_be_visible()
+    expect(page.locator('#box-bottom-options button[data-value="floorless"]')).to_be_visible()
     expect(page.locator('#preview-title')).to_have_text('L6 Gridfinity box thick')
     expect(page.locator('#configuration-name')).to_have_text('L6 · 2F · Gridfinity')
     expect(page.locator('#box-variant-hint')).to_contain_text('6 × 6 Gridfinity grid inside each box')
     expect(page.locator('#box-variant-hint')).to_contain_text('42 mm pitch')
     expect(page.locator('#box-variant-hint')).to_contain_text('Adds 5 mm above the selected floor')
-    expect(page.locator('#box-floor-options button[data-value="3"]')).to_have_attribute('aria-pressed','true')
-    page.locator('#box-floor-options button[data-value="0.8"]').click()
+    expect(page.locator('#minimum-floor-options button[data-value="default"]')).to_have_attribute('aria-pressed','true')
+    page.locator('#minimum-floor-options button[data-value="0.8"]').click()
     expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
     page.locator('#box-variant-options button[data-value="plain"]').click()
     expect(page.locator('#preview-title')).to_have_text('L6 box thin')
-    page.locator('#box-floor-options button[data-value="3"]').click()
+    page.locator('#minimum-floor-options button[data-value="default"]').click()
     expect(page.locator('#preview-title')).to_have_text('L6 box thick')
     page.locator('#depth-options button[data-value="7"]').click()
     expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
     for kind in ('key','spring','runner_stop','facade_cap','key_cap', 'latch'):
         page.locator(f'#part-options button[data-value="{kind}"]').click()
+        expect(page.locator('#minimum-floor-field')).to_be_hidden()
+        expect(page.locator('#perimeters-field')).to_be_hidden()
         expect(page.locator('#preview-title')).to_have_text(kind)
         expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true')
     page.locator('#depth-options button[data-value="6"]').click()
@@ -165,11 +185,38 @@ with sync_playwright() as p:
         page.locator(f'#part-options button[data-value="{kind}"]').click()
         expect(page.locator('#preview-title')).to_have_text(name)
         expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true')
+    page.locator('#part-options button[data-value="facade"]').click()
+    expect(page.locator('#minimum-floor-field')).to_be_visible()
+    expect(page.locator('#perimeters-field')).to_be_hidden()
+    expect(page.locator('#minimum-floor-hint')).to_contain_text('facade shell')
+    # Missing facade_floor on historical builds means the original facade,
+    # even though the generic control initially selects the new 0.8 mm shell.
+    page.locator('#minimum-floor-options button[data-value="0.8"]').click()
+    expect(page.locator('#preview-title')).to_have_text('S2F shelled facade')
+    page.locator('.configurator').screenshot(path=str(output / 'facade-controls-desktop.png'))
+    page.set_viewport_size({'width':390,'height':844})
+    page.locator('.configurator').screenshot(path=str(output / 'facade-controls-mobile.png'))
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+    page.set_viewport_size({'width':1440,'height':1150})
+    page.locator('#depth-options button[data-value="7"]').click()
+    expect(page.locator('#preview-title')).to_have_text('S2F shelled facade')
+    page.locator('#minimum-floor-options button[data-value="default"]').click()
+    expect(page.locator('#preview-title')).to_have_text('S2F facade')
+    page.locator('#depth-options button[data-value="6"]').click()
+    page.locator('#part-options button[data-value="module"]').click()
+    page.locator('#perimeters-options button[data-value="2"]').click()
+    expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
+    page.locator('#perimeters-options button[data-value="0.9"]').click()
+    expect(page.locator('#preview-title')).to_have_text('L6² Module 2F')
     page.locator('#part-options button[data-value="set"]').click()
-    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(25)
+    expect(page.locator('#minimum-floor-field')).to_be_visible()
+    expect(page.locator('#perimeters-field')).to_be_visible()
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(51)
     expect(page.locator('#part-hint')).to_contain_text('Print 4 pairs')
     expect(page.locator('#preview-title')).to_have_text('L6² · 2F complete set')
     assert assembly_queries[-1]['drawer_columns'] == '2'
+    assert assembly_queries[-1]['facade_floor'] == 'default'
+    assert assembly_queries[-1]['box_floor'] == '3'
     page.locator('#family-options button[data-value="M"]').click()
     expect(page.locator('#drawer-layout-options button[data-value="1"]')).to_have_attribute('aria-pressed','true')
     expect(page.locator('#drawer-layout-options button[data-value="2"]')).to_be_disabled()
@@ -181,9 +228,7 @@ with sync_playwright() as p:
     expect(page.locator('#preview-title')).to_have_text('L6 box thick')
     page.locator('#drawer-layout-options button[data-value="2"]').click()
     page.locator('#part-options button[data-value="set"]').click()
-    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(25)
-    output = STATIC.parents[2] / 'out/web-review'
-    output.mkdir(parents=True, exist_ok=True)
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(51)
     page.screenshot(path=str(output / 'multi-drawer-desktop.png'), full_page=True)
     page.set_viewport_size({'width':390,'height':844})
     page.screenshot(path=str(output / 'multi-drawer-mobile.png'), full_page=True)
@@ -191,7 +236,7 @@ with sync_playwright() as p:
     page.set_viewport_size({'width':1440,'height':1150})
     page.locator('#drawer-layout-options button[data-value="4"]').click()
     expect(page.locator('#configuration-name')).to_have_text('L6² · 2F · 4 drawers')
-    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(33)
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(67)
     expect(page.locator('#part-hint')).to_contain_text('four S1F boxes')
     expect(page.locator('#drawer-layout-hint')).to_contain_text('shared open L2F module')
     assert assembly_queries[-1]['drawer_rows'] == '2'
@@ -208,10 +253,12 @@ with sync_playwright() as p:
     expect(page.locator('#part-hint')).to_contain_text('Fits two S2F drawers or four S1F drawers')
     page.locator('#wall-pattern-options button[data-value="waffle"]').click()
     expect(page.locator('#wall-pattern-settings')).to_be_visible()
+    expect(page.locator('#pattern-construction-options button[data-value="corrugated"]')).to_have_attribute('aria-pressed','true')
+    page.locator('#pattern-construction-options button[data-value="recessed"]').click()
     expect(page.locator('#preview-title')).to_have_text('L6 waffle module')
-    expect(page.locator('#wall-pattern-hint')).to_contain_text('0.6 mm nozzle and 2 perimeters')
+    expect(page.locator('#wall-pattern-hint')).to_contain_text('minimum 1.30 mm web')
     expect(page.locator('#pattern-construction-options button[data-value="recessed"]')).to_have_attribute('aria-pressed','true')
-    expect(page.locator('#wall-pattern-hint')).to_contain_text('Recessed valleys')
+    expect(page.locator('#wall-pattern-hint')).to_contain_text('does not produce a two-perimeter wall')
     page.locator('#pattern-construction-options button[data-value="corrugated"]').click()
     expect(page.locator('#preview-title')).to_have_text('L6 corrugated waffle module')
     expect(page.locator('#configuration-name')).to_contain_text('Corrugated')
@@ -250,6 +297,7 @@ with sync_playwright() as p:
     expect(page.locator('#wall-pattern-settings')).to_be_hidden()
     expect(page.locator('#preview-title')).to_have_text('L6² Module 2F')
     page.locator('#wall-pattern-options button[data-value="miura"]').click()
+    page.locator('#pattern-construction-options button[data-value="recessed"]').click()
     expect(page.locator('#pattern-line-width')).to_have_value('0.65')
     page.locator('#pattern-pitch').fill('16')
     page.locator('#pattern-depth').fill('1.4')
@@ -257,7 +305,7 @@ with sync_playwright() as p:
     page.locator('#pattern-faces-options button[data-value="sides"]').click()
     expect(page.locator('#preview-title')).to_have_text('L6 Miura module')
     page.locator('#part-options button[data-value="set"]').click()
-    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(33)
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(67)
     expect(page.locator('#configuration-name')).to_contain_text('Miura-ori')
     assert {key: assembly_queries[-1][key] for key in ('wall_pattern', 'pattern_pitch', 'pattern_depth', 'pattern_line_width', 'pattern_faces')} == {
         'wall_pattern':'miura', 'pattern_pitch':'16', 'pattern_depth':'1.4', 'pattern_line_width':'0.7', 'pattern_faces':'sides'}
@@ -269,7 +317,7 @@ with sync_playwright() as p:
     expect(page.locator('#preview-title')).to_have_text('L6 corrugated Miura module')
     expect(page.locator('#wall-pattern-hint')).to_contain_text('fold height is reduced')
     page.locator('#part-options button[data-value="set"]').click()
-    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(33)
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(67)
     assert assembly_queries[-1]['pattern_construction'] == 'corrugated' and assembly_queries[-1]['pattern_faces'] == 'all'
     page.screenshot(path=str(output / 'wall-pattern-desktop.png'), full_page=True)
     page.set_viewport_size({'width':390,'height':844})
@@ -278,7 +326,7 @@ with sync_playwright() as p:
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
     page.set_viewport_size({'width':1440,'height':1150})
     page.locator('#wall-pattern-options button[data-value="plain"]').click()
-    expect(page.locator('#pattern-construction-options button[data-value="recessed"]')).to_have_attribute('aria-pressed','true')
+    expect(page.locator('#pattern-construction-options button[data-value="corrugated"]')).to_have_attribute('aria-pressed','true')
     page.locator('#part-options button[data-value="module"]').click()
     page.locator('#depth-options button[data-value="7"]').click()
     page.locator('#drawer-layout-options button[data-value="2"]').click()
@@ -303,7 +351,7 @@ with sync_playwright() as p:
     page.locator('#family-options button[data-value="L"]').click()
     page.locator('#drawer-layout-options button[data-value="4"]').click()
     page.locator('#part-options button[data-value="set"]').click()
-    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(33)
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(67)
     page.screenshot(path=str(output / 'four-drawer-desktop.png'), full_page=True)
     page.set_viewport_size({'width':390,'height':844})
     page.screenshot(path=str(output / 'four-drawer-mobile.png'), full_page=True)
@@ -327,8 +375,8 @@ with sync_playwright() as p:
     page.locator('#family-options button[data-value="L"]').click()
     page.locator('#drawer-layout-options button[data-value="4"]').click()
     page.locator('#part-options button[data-value="set"]').click()
-    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(33)
-    expect(page.locator('#box-floor-options button[data-value="3"]')).to_have_attribute('aria-pressed','true')
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(67)
+    expect(page.locator('#minimum-floor-options button[data-value="default"]')).to_have_attribute('aria-pressed','true')
     page.screenshot(path=str(output / 'gridfinity-mobile.png'), full_page=True)
     page.locator('#box-variant-field').screenshot(path=str(output / 'gridfinity-controls-mobile.png'))
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
@@ -345,9 +393,9 @@ with sync_playwright() as p:
     expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
     page.locator('#box-variant-options button[data-value="gridfinity"]').click()
     expect(page.locator('#preview-title')).to_have_text('S6 1F Gridfinity miura rear box')
-    page.locator('#box-floor-options button[data-value="0.8"]').click()
+    page.locator('#minimum-floor-options button[data-value="0.8"]').click()
     expect(page.locator('#viewer-message')).to_contain_text('not been generated yet')
-    page.locator('#box-floor-options button[data-value="3"]').click()
+    page.locator('#minimum-floor-options button[data-value="default"]').click()
     expect(page.locator('#preview-title')).to_have_text('S6 1F Gridfinity miura rear box')
     page.locator('#box-rear-pattern-options button[data-value="plain"]').click()
     expect(page.locator('#preview-title')).to_have_text('S6 1F Gridfinity box thick')
@@ -360,24 +408,37 @@ with sync_playwright() as p:
     expect(page.locator('#preview-title')).to_have_text('L6 corrugated waffle module')
     page.locator('#part-options button[data-value="box"]').click()
     expect(page.locator('#preview-title')).to_have_text('S6 1F Gridfinity miura rear box')
-    page.locator('#box-floor-options button[data-value="0"]').click()
+    page.locator('#box-bottom-options button[data-value="floorless"]').click()
     expect(page.locator('#preview-title')).to_have_text('S6 1F Floorless Gridfinity miura rear box')
+    expect(page.locator('#minimum-floor-field')).to_be_hidden()
     expect(page.locator('#box-variant-hint')).to_contain_text('Open cell bottoms; bins rest on the grid')
-    # A plain box cannot retain a floorless selection when changing base.
+    page.locator('#box-bottom-options button[data-value="closed"]').click()
+    expect(page.locator('#preview-title')).to_have_text('S6 1F Gridfinity miura rear box')
+    expect(page.locator('#minimum-floor-options button[data-value="default"]')).to_have_attribute('aria-pressed','true')
+    page.locator('#box-bottom-options button[data-value="floorless"]').click()
+    # A plain box restores the chosen closed floor when changing base.
     page.locator('#box-variant-options button[data-value="plain"]').click()
-    expect(page.locator('#box-floor-options button[data-value="0"]')).to_be_hidden()
-    expect(page.locator('#box-floor-options button[data-value="0.8"]')).to_have_attribute('aria-pressed','true')
+    expect(page.locator('#box-bottom-options button[data-value="floorless"]')).to_be_hidden()
+    expect(page.locator('#minimum-floor-options button[data-value="default"]')).to_have_attribute('aria-pressed','true')
     page.locator('#box-variant-options button[data-value="gridfinity"]').click()
-    page.locator('#box-floor-options button[data-value="0"]').click()
+    page.locator('#box-bottom-options button[data-value="floorless"]').click()
     expect(page.locator('#preview-title')).to_have_text('S6 1F Floorless Gridfinity miura rear box')
     page.locator('#part-options button[data-value="set"]').click()
     expect(page.locator('#configuration-name')).to_contain_text('Waffle · Corrugated · Gridfinity · Floorless · Miura-ori rear')
     assert assembly_queries[-1]['box_rear_pattern'] == 'miura'
     assert assembly_queries[-1]['box_floor'] == '0'
+    expect(page.locator('#minimum-floor-field')).to_be_visible()
+    page.locator('#minimum-floor-options button[data-value="0.8"]').click()
+    expect(page.locator('#minimum-floor-hint')).to_contain_text('facade shell')
+    expect(page.locator('#assembly-instances .assembly-instance')).to_have_count(67)
+    assert assembly_queries[-1]['box_floor'] == '0'
+    assert assembly_queries[-1]['facade_floor'] == '0.8'
     page.screenshot(path=str(output / 'box-rear-pattern-desktop.png'), full_page=True)
     page.set_viewport_size({'width':390,'height':844})
     page.screenshot(path=str(output / 'box-rear-pattern-mobile.png'), full_page=True)
     page.locator('#box-rear-pattern-field').screenshot(path=str(output / 'box-rear-pattern-controls-mobile.png'))
+    page.locator('#minimum-floor-field').screenshot(path=str(output / 'minimum-floor-controls-mobile.png'))
+    page.locator('#perimeters-field').screenshot(path=str(output / 'perimeters-controls-mobile.png'))
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
     page.locator('#build-button').click()
     expect(page.locator('#build-button')).to_be_disabled()
@@ -388,6 +449,7 @@ with sync_playwright() as p:
     assert submissions[0]['pattern_construction'] == 'corrugated'
     assert submissions[0]['box_variant'] == 'gridfinity' and submissions[0]['box_floor'] == 0
     assert submissions[0]['box_rear_pattern'] == 'miura'
+    assert submissions[0]['facade_floor'] == 0.8
     page.reload()
     expect(page.locator('#job-description')).to_contain_text('L6² · 2F · 4 drawers')
     expect(page.locator('#job-description')).to_contain_text('Gridfinity')

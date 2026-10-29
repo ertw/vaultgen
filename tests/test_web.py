@@ -201,18 +201,18 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(status, 200)
         scene = json.loads(data)
         self.assertFalse(scene['complete'])
-        self.assertEqual(len(scene['missing']), 13)
+        self.assertEqual(len(scene['missing']), 29)
         self.assertEqual(scene['instances'], [])
         status, data = self.request('GET', '/api/assembly?family=L&depth_units=6&height_units=2&drawer_columns=2')
         self.assertEqual(status, 200)
         scene = json.loads(data)
         self.assertEqual(scene['name'], 'L6² · 2F complete set')
-        self.assertEqual(len(scene['missing']), 25)
+        self.assertEqual(len(scene['missing']), 51)
         status, data = self.request('GET', '/api/assembly?family=L&depth_units=6&height_units=2&drawer_columns=2&drawer_rows=2')
         self.assertEqual(status, 200)
         scene = json.loads(data)
         self.assertEqual(scene['name'], 'L6² · 2F · 4 drawers complete set')
-        self.assertEqual(len(scene['missing']), 33)
+        self.assertEqual(len(scene['missing']), 67)
         status, data = self.request('GET', '/api/assembly?wall_pattern=miura&pattern_pitch=20&pattern_depth=1.4&pattern_line_width=0.8&pattern_faces=sides&pattern_construction=corrugated')
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(data)['configuration']['pattern_pitch'], 20.)
@@ -232,8 +232,14 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(configured['configuration']['box_floor'], 0)
         self.assertEqual(configured['configuration']['box_rear_pattern'], 'miura')
         self.assertIn('Floorless Gridfinity', configured['name'])
+        for floor, expected in (('0.8', .8), ('default', 'default')):
+            status, data = self.request('GET', '/api/assembly?facade_floor=' + floor)
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(data)['configuration']['facade_floor'], expected)
         for query in ('family=XL', 'family=S&family=L', 'depth_units=4.5', 'part=box',
                       'box_floor=nan', 'box_floor=0', 'box_floor=0&box_variant=plain',
+                      'facade_floor=nan', 'facade_floor=0', 'facade_floor=3', 'facade_floor=',
+                      'facade_floor=0.8&facade_floor=default',
                       'module_rear=3', 'unknown=1', 'drawer_columns=2',
                       'family=L&drawer_columns=3', 'family=L&drawer_columns=2.0',
                       'family=L&drawer_columns=2&drawer_rows=2', 'family=L&height_units=2&drawer_rows=2',
@@ -292,10 +298,10 @@ class HTTPTests(unittest.TestCase):
     def check_multi_drawer_bundle(self, rows):
         configuration = Configuration(family='L', depth_units=6, height_units=2, drawer_columns=2, drawer_rows=rows)
         expected = {'module':1, 'box':2, 'facade':2, 'rails':2, 'runner_guides':4,
-                    'runner_slides':4, 'key':2, 'spring':2, 'runner_stop':8,
+                    'runner_slides':4, 'key':2, 'spring':4, 'runner_stop':8,
                     'facade_cap':8, 'key_cap':2, 'latch':2}
         if rows == 2:
-            expected.update(box=4, facade=4, rails=4, key=4, spring=4, key_cap=4, latch=4)
+            expected.update(box=4, facade=4, rails=4, key=4, spring=8, key_cap=4)
         part_names = {'module':'l6_2_columns_module_2f', 'box':'s6_box_2f', 'facade':'s2f_facade',
                       'rails':'s_geared_rails', 'runner_guides':'x6_runner_guides',
                       'runner_slides':'x6_runner_slides', 'key':'snap_key'}

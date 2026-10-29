@@ -68,8 +68,10 @@ def handler(jobs):
                         for key in ('box_floor', 'module_rear', 'pattern_pitch', 'pattern_depth', 'pattern_line_width'):
                             if key in values:
                                 values[key] = float(values[key])
+                        if 'facade_floor' in values and values['facade_floor'] != 'default':
+                            values['facade_floor'] = float(values['facade_floor'])
                         values.setdefault('part', 'set')
-                        config = Configuration.parse(values)
+                        config = Configuration.parse_request(values)
                         if config.part != 'set':
                             raise ValueError('Assembly previews require a complete set')
                     except (ValueError, TypeError) as error:
@@ -146,7 +148,7 @@ def handler(jobs):
                 if not 0 < length <= 8192:
                     return self.send(413, {'error': 'Request must contain at most 8192 bytes'})
                 value = json.loads(self.rfile.read(length))
-                config = parse_configuration(value)
+                config = parse_configuration(value, new_request=True)
                 return self.send(202, jobs.submit(config))
             except (ValueError, TypeError) as error:
                 self.send(400, {'error': str(error)})

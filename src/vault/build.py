@@ -62,9 +62,12 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
     if finished is not None:
         print('Exporting finished assembly preview…', flush=True)
         from .exports import export_assembly_mesh, translation_matrix
-        # Module/facade print exports rotate +90° around X; box lowers its base.
+        # Shelled facades put their front on the bed; other facade/module
+        # exports put the back on the bed. Record each exact inverse placement.
         print_to_native = (translation_matrix((0, 0, module.bounding_box().min.Z))
                            if part_kind(spec) == 'box' else
+                           [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 10, 0, 1]
+                           if part_kind(spec) == 'facade' and spec.facade_floor == 0.8 else
                            [1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1])
         assembly_mesh = export_assembly_mesh(output, stem, finished, component='single',
                                              print_to_native=print_to_native)
@@ -102,6 +105,9 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
                               'Closed back on Z=0; model rotated +90 degrees about X. '
                               'Remove the breakaway webs under the runner-mouth lips in every bay and tier before assembly.'
                               if part_kind(spec) == 'module' else
+                              'Front face on Z=0; rear cavities open upward. Model rotated -90 degrees about X. '
+                              'The label recess and lock lips may need local support; inspect them in the slicer.'
+                              if getattr(spec, 'facade_floor', 'default') == 0.8 else
                               'Rear face on Z=0; model rotated +90 degrees about X. Use supports beneath recessed faces.'),
         'source_files': source_hashes(PROJECT_ROOT),
         'files': {
@@ -141,7 +147,7 @@ def part_kind(spec):
     for kind in ('runner_guides', 'runner_slides'):
         if spec.slug.endswith('_' + kind):
             return kind
-    if spec.slug.endswith('_facade'):
+    if spec.slug.endswith('_facade') or '_facade_floor_' in spec.slug:
         return 'facade'
     if '_box_' in spec.slug:
         return 'box'
@@ -155,6 +161,11 @@ def print_orientation(module, spec):
     if part_kind(spec) == 'box':
         from .box import print_orientation as orient_box
         return orient_box(module)
+    if part_kind(spec) == 'facade' and spec.facade_floor == 0.8:
+        from build123d import Axis
+        # The facade front datum is Y=10; opening its rear pockets upward
+        # avoids bridging the broad 0.8 mm floor over an unsupported cavity.
+        return module.rotate(Axis.X, -90).translate((0, 0, 10))
     from .model import print_orientation as orient_module
     return orient_module(module)
 
@@ -281,7 +292,7 @@ def selected_build(output, spec):
 def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.8, module_rear=0.9,
                 drawer_columns=1, drawer_rows=1, wall_pattern='plain', pattern_pitch=14.0,
                 pattern_depth=1.7, pattern_line_width=0.65, pattern_faces='all', pattern_construction='recessed',
-                box_variant='plain', box_rear_pattern='plain'):
+                box_variant='plain', box_rear_pattern='plain', facade_floor='default'):
     """Resolve the same native constructors for the CLI and web generator."""
     from .generator import ACCESSORY_PARTS
     if part in ACCESSORY_PARTS:
@@ -300,7 +311,7 @@ def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.
         return BoxSpec(family, depth_units, height_units, box_floor, box_variant, box_rear_pattern)
     if part == 'facade':
         from .facade import FacadeSpec
-        return FacadeSpec(family, height_units)
+        return FacadeSpec(family, height_units, facade_floor=facade_floor)
     if part == 'rails':
         from .geared_rails import GearRailSpec
         return GearRailSpec(family)

@@ -10,20 +10,28 @@ const state = {
   assembly: null, assemblySignature: null, assemblyKey: null, assemblyRequest: 0,
   assemblyController: null, assemblyPending: false, assemblyShowing: false,
   hiddenInstances: new Set(), selectedInstance: null,
+  minimumFloor: 0.8,
 };
 const names = {
   set: 'Complete set', module: 'Module', box: 'Box', facade: 'Facade',
   key: 'Key', spring: 'Spring', runner_stop: 'Runner stop', facade_cap: 'Facade cap', key_cap: 'Key cap', latch: 'Latch',
   rails: 'Geared rails', runner_guides: 'Runner guides', runner_slides: 'Runner slides',
 };
+// Preview-only material roles; keep server metadata and print previews unchanged.
+const assemblyColorRoles = {
+  module: 'primary', facade: 'primary', runner_guides: 'primary', facade_cap: 'primary', key_cap: 'primary',
+  box: 'secondary', runner_slides: 'secondary', key: 'secondary',
+  rails: 'highlight', spring: 'highlight', runner_stop: 'highlight', latch: 'highlight',
+};
+const assemblyColor = instance => $(`assembly-${assemblyColorRoles[instance.kind] || 'primary'}-color`).value;
 const partDescriptions = {
-  set: 'Module, box, facade, geared rails, runner guides and runner slides.',
+  set: 'Module, box, facade, geared rails, runner guides, runner slides, key, spring, latch, runner stops and caps.',
   module: 'The outside shell, sized by family, depth and height.',
   box: 'The drawer tray, sized to fit the selected module.',
   facade: 'The drawer front follows family and height; depth does not change it.',
   rails: 'The geared locking rails follow family; depth and height do not change them.',
   key: 'Universal single-piece key with an integrated drive pinion. Print one per drawer.',
-  spring: 'Universal spring at nominal dimensions.',
+  spring: 'Universal spring at nominal dimensions. Print two per drawer.',
   latch: 'Universal underside latch with 0.10 mm outline relief and 0.15 mm less thickness for an easier fit.',
   runner_stop: 'Universal runner stop. Print two per populated runner tier.',
   facade_cap: 'Universal facade screw cap. Repeat for each screw counterbore.',
@@ -45,14 +53,19 @@ const drawerHeight = config => config.height_units / (config.drawer_rows || 1);
 const drawerCount = config => (config.drawer_columns || 1) * (config.drawer_rows || 1);
 const layoutCount = layout => layout.columns * (layout.rows || 1);
 const patternKeys = ['wall_pattern', 'pattern_pitch', 'pattern_depth', 'pattern_line_width', 'pattern_faces', 'pattern_construction'];
+// Missing fields in saved builds retain their historical meaning. New selections
+// use the catalog defaults, including corrugated construction.
 const patternDefaults = {wall_pattern: 'plain', pattern_pitch: 14, pattern_depth: 1.7, pattern_line_width: 0.65, pattern_faces: 'all', pattern_construction: 'recessed'};
 const moduleSelected = () => ['set', 'module'].includes(state.selection.part);
 const boxSelected = () => ['set', 'box'].includes(state.selection.part);
+const thicknessApplies = key => state.selection.part === 'set'
+  || (state.config.thickness_applicability?.[key] ?? {minimum_floor: ['box', 'facade'], perimeters: ['module']}[key]).includes(state.selection.part);
+const closedBoxFloor = () => state.minimumFloor === 'default' ? 3 : 0.8;
 const defaultPattern = () => Object.fromEntries(patternKeys.map(key => [key, state.config.defaults[key] ?? patternDefaults[key]]));
 const requestConfiguration = () => ({
   ...state.selection,
   ...(!moduleSelected() ? {...defaultPattern(), wall_pattern: 'plain'} : {}),
-  ...(!boxSelected() ? {box_variant: 'plain', box_rear_pattern: 'plain', box_floor: state.selection.box_floor || 0.8} : {}),
+  ...(!boxSelected() ? {box_variant: 'plain', box_rear_pattern: 'plain', box_floor: state.selection.box_floor || closedBoxFloor()} : {}),
 });
 const svgIcon = name => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.classList.add('icon');
@@ -78,13 +91,19 @@ function optionButton(value, key, label, className) {
     if (key === 'drawer_layout') {
       const layout = state.config.drawer_layouts.find(item => layoutCount(item) === value);
       state.selection.drawer_columns = layout.columns; state.selection.drawer_rows = layout.rows || 1;
+    } else if (key === 'minimum_floor') {
+      state.minimumFloor = value;
+      state.selection.facade_floor = value;
+      if (state.selection.box_floor !== 0) state.selection.box_floor = closedBoxFloor();
+    } else if (key === 'box_bottom') {
+      state.selection.box_floor = value === 'floorless' ? 0 : closedBoxFloor();
     } else state.selection[key] = value;
     if (key === 'family' && value !== 'L') {
       state.selection.drawer_columns = 1; state.selection.drawer_rows = 1;
     }
     if (key === 'height_units' && value === 1) state.selection.drawer_rows = 1;
     if (key === 'wall_pattern' && value === 'plain') Object.assign(state.selection, defaultPattern(), {wall_pattern: 'plain'});
-    if (key === 'box_variant' && value === 'plain' && state.selection.box_floor === 0) state.selection.box_floor = 0.8;
+    if (key === 'box_variant' && value === 'plain' && state.selection.box_floor === 0) state.selection.box_floor = closedBoxFloor();
     renderSelection(); showSelection();
   });
   return button;
@@ -106,9 +125,12 @@ function createControls(config) {
       button.textContent = key === 'height_units' ? `${value}F` : value; $(target).append(button);
     }
   }
-  for (const [key, target] of [['box_floor', 'box-floor-options'], ['module_rear', 'module-rear-options']]) {
-    for (const value of config.thicknesses[key]) {
-      const label = value === 0 ? 'Floorless' : `${value} mm · ${value === config.defaults[key] ? 'Current' : 'Original'}`;
+  for (const [key, target, values] of [
+    ['minimum_floor', 'minimum-floor-options', [[0.8, '0.8 mm'], ['default', 'Default']]],
+    ['module_rear', 'perimeters-options', [[0.9, '0.9 mm'], [2, 'Default']]],
+    ['box_bottom', 'box-bottom-options', [['closed', 'Closed'], ['floorless', 'Floorless']]],
+  ]) {
+    for (const [value, label] of values) {
       const button = optionButton(value, key, label, ''); button.textContent = label; $(target).append(button);
     }
   }
@@ -189,10 +211,12 @@ function renderEnvelope(dimensions) {
   label(width/2,0,-17,`${width} mm`); label(width+25,depth/2,0,`${depth.toFixed(1)} mm`);
 }
 function renderSelection() {
-  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-variant-options','box_variant'], ['box-rear-pattern-options','box_rear_pattern'], ['box-floor-options','box_floor'], ['module-rear-options','module_rear'], ['wall-pattern-options','wall_pattern'], ['pattern-faces-options','pattern_faces'], ['pattern-construction-options','pattern_construction']]) {
+  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-variant-options','box_variant'], ['box-rear-pattern-options','box_rear_pattern'], ['perimeters-options','module_rear'], ['wall-pattern-options','wall_pattern'], ['pattern-faces-options','pattern_faces'], ['pattern-construction-options','pattern_construction']]) {
     for (const button of $(target).querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.value === String(state.selection[key])));
   }
   const dimensions = envelopeDimensions(), config = state.selection;
+  for (const button of $('minimum-floor-options').querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.value === String(state.minimumFloor)));
+  for (const button of $('box-bottom-options').querySelectorAll('button')) button.setAttribute('aria-pressed', String((button.dataset.value === 'floorless') === (config.box_floor === 0)));
   for (const button of $('drawer-layout-options').querySelectorAll('button')) {
     const layout = state.config.drawer_layouts.find(item => layoutCount(item) === Number(button.dataset.value));
     button.disabled = !layout.families.includes(config.family) || (layout.heights && !layout.heights.includes(config.height_units));
@@ -209,8 +233,13 @@ function renderSelection() {
   $('configuration-dimensions').textContent = `${dimensions[0]} × ${dimensions[1].toFixed(1)} × ${dimensions[2]} mm body`;
   $('part-hint').textContent = partDescription(config);
   $('box-variant-field').hidden = !boxSelected();
-  const floorless = $('box-floor-options').querySelector('button[data-value="0"]');
-  if (floorless) floorless.hidden = !boxSelected() || config.box_variant !== 'gridfinity';
+  $('box-bottom-field').hidden = !boxSelected() || config.box_variant !== 'gridfinity';
+  $('minimum-floor-field').hidden = !thicknessApplies('minimum_floor') || (config.part === 'box' && config.box_floor === 0);
+  $('perimeters-field').hidden = !thicknessApplies('perimeters');
+  $('minimum-floor-hint').textContent = config.part === 'facade' || (config.part === 'set' && config.box_floor === 0)
+    ? 'Applies to the facade shell. Edges, lock and screw supports retain their reinforcement.'
+    : config.part === 'set' ? 'Applies to box floors and facade shells. Reinforced features keep their thickness.'
+      : 'Applies to the box floor.';
   $('box-variant-hint').textContent = config.box_variant === 'gridfinity'
     ? `Integrated ${({S: 3, M: 5, L: 6})[drawerFamily(config)]} × ${config.depth_units} Gridfinity grid inside each box, on a 42 mm pitch. ${config.box_floor === 0 ? 'Open cell bottoms; bins rest on the grid. The perimeter and grid webs support the box.' : 'Adds 5 mm above the selected floor.'}`
     : 'A plain interior floor. Choose Gridfinity to locate bins on an integrated grid inside the box.';
@@ -252,14 +281,15 @@ function renderPatternSettings() {
   for (const id of ['pattern-pitch', 'pattern-depth', 'pattern-line-width']) $(id).setAttribute('aria-invalid', String(Boolean(error)));
   const web = Number.isFinite(state.selection.pattern_line_width) ? `${Number(2 * state.selection.pattern_line_width).toFixed(2)} mm` : 'two line widths';
   const construction = state.selection.pattern_construction === 'corrugated'
-    ? `Thin facets target ${web} thickness perpendicular to each face.${state.selection.wall_pattern === 'miura' ? ' Miura depth limits the recess envelope; fold height is reduced to fit that thickness.' : ''}`
-    : `Recessed valleys retain a minimum ${web} web target, with thicker crests and ribs.`;
+    ? `Paired inner and outer relief targets 2 perimeters with a 0.6 mm nozzle. Thin facets target ${web} thickness perpendicular to each face.${state.selection.wall_pattern === 'miura' ? ' Miura depth limits the recess envelope; fold height is reduced to fit that thickness.' : ''}`
+    : `Exterior-only recesses retain the original flat interior. Valleys retain a minimum ${web} web, with thicker crests and ribs; this does not produce a two-perimeter wall.`;
   $('wall-pattern-hint').textContent = enabled
-    ? `For a 0.6 mm nozzle and 2 perimeters. ${construction} Pattern stays inside the existing wall; mating surfaces and mechanical lands retain full thickness. Verify perimeter paths in your slicer.`
-    : 'Original solid walls. Waffle and Miura-ori recess the wall while preserving mating surfaces.';
+    ? `${construction} Pattern stays inside the existing wall; mating surfaces and mechanical lands retain full thickness. Verify perimeter paths in your slicer.`
+    : 'Original solid walls. Waffle and Miura-ori default to paired thin-wall corrugation while preserving mating surfaces.';
 }
 
 function partDescription(config) {
+  if (config.part === 'latch') return `${partDescriptions.latch} Print ${config.family === 'L' ? 'two' : 'one'}, one per module connector bank.`;
   if (config.drawer_columns !== 2) return partDescriptions[config.part] || '';
   const count = drawerCount(config), copies = count === 4 ? 'four' : 'two';
   const size = config.drawer_rows === 2 ? 'S1F' : 'S', pairs = count * drawerHeight(config);
@@ -272,8 +302,7 @@ function partDescription(config) {
     runner_guides: `Guides follow depth. Print ${pairs} pairs: one per tier in each drawer bay.`,
     runner_slides: `Slides follow depth. Print ${pairs} pairs: one per tier in each drawer bay.`,
     key: `Universal single-piece key. Print ${copies}, one per drawer.`,
-    spring: `Universal spring at nominal dimensions. Print ${copies}, one per drawer.`,
-    latch: `Universal underside latch with 0.10 mm outline relief and 0.15 mm less thickness. Print ${copies}, one per drawer.`,
+    spring: `Universal spring at nominal dimensions. Print ${2 * count}, two per drawer.`,
     runner_stop: `Universal runner stop. Print ${2 * pairs}, two per populated tier in each drawer bay.`,
     facade_cap: `Universal facade screw cap. Print ${2 * pairs}, one per S facade screw counterbore.`,
     key_cap: `Universal cap for the key handle. Print ${copies} if desired, one per drawer.`,
@@ -356,9 +385,10 @@ function matches(build, kind) {
   const selected = kind === 'module' ? s : {...s, family: drawerFamily(s), height_units: drawerHeight(s)};
   if (kind === 'box' && (c.box_variant ?? 'plain') !== s.box_variant) return false;
   if (kind === 'box' && (c.box_rear_pattern ?? 'plain') !== s.box_rear_pattern) return false;
+  if (kind === 'facade' && (c.facade_floor ?? 'default') !== s.facade_floor) return false;
   if (kind === 'module') {
     if ((c.wall_pattern ?? 'plain') !== s.wall_pattern) return false;
-    if (s.wall_pattern !== 'plain' && !patternKeys.slice(1).every(key => (c[key] ?? state.config.defaults[key] ?? patternDefaults[key]) === s[key])) return false;
+    if (s.wall_pattern !== 'plain' && !patternKeys.slice(1).every(key => (c[key] ?? patternDefaults[key]) === s[key])) return false;
   }
   return keys.every(key => (c[key] ?? state.config.defaults[key]) === selected[key]);
 }
@@ -380,6 +410,14 @@ function setExplosion(value) {
     $('preview-badge').textContent = amount === 0 ? 'Assembled' : amount === 100 ? 'Exploded' : `Exploded · ${amount}%`;
   }
 }
+function updateAssemblyColors() {
+  if (!state.assemblyShowing || !state.assembly) return;
+  const colors = Object.fromEntries(state.assembly.instances.map(instance => [instance.id, assemblyColor(instance)]));
+  state.viewer?.setColors(colors);
+  for (const row of $('assembly-instances').children) {
+    row.querySelector('.instance-color').style.backgroundColor = colors[row.dataset.instance];
+  }
+}
 function selectInstance(id) {
   const instance = state.assembly?.instances.find(item => item.id === id);
   state.selectedInstance = instance?.id || null;
@@ -399,7 +437,10 @@ function renderAssemblyDetails(scene) {
   if (!state.repository) warnings.unshift('Repository status unavailable.');
   const revisionReasons = scene.instances.flatMap(instance => instance.freshness?.warning ? instance.freshness.reasons || ['Cached build revision needs checking.'] : !instance.freshness ? ['Cached build revision unknown; rebuild recommended.'] : []);
   renderFreshness(scene.instances.length ? { freshness: { warning: revisionReasons.length > 0, reasons: [...new Set(revisionReasons)] } } : null);
-  $('assembly-summary').textContent = `${scene.instances.length} available components · ${scene.complete ? 'All generated parts available' : 'Incomplete set'} · ${scene.complete && scene.validation?.passed ? '✓ Fit checked' : '⚠ Fit not verified for this view'}`;
+  const fitStatus = scene.complete && scene.validation?.passed
+    ? (scene.validation_scope === 'drawer_components' ? '✓ Drawer fit checked · accessory fit not checked' : '✓ Fit checked')
+    : '⚠ Fit not verified for this view';
+  $('assembly-summary').textContent = `${scene.instances.length} available components · ${scene.complete ? 'All generated parts available' : 'Incomplete set'} · ${fitStatus}`;
   if (scene.notes?.length) $('assembly-note').textContent = scene.notes.join(' ');
   $('assembly-omissions').hidden = !scene.omissions?.length;
   $('assembly-omissions').textContent = scene.omissions?.length ? `Not included: ${scene.omissions.join(', ')}.` : '';
@@ -419,7 +460,7 @@ function renderAssemblyDetails(scene) {
     });
     const button = element('button', 'instance-select'); button.type = 'button'; button.setAttribute('aria-label', `Highlight ${instance.label}`);
     const swatch = element('span', 'instance-color'); swatch.setAttribute('aria-hidden', 'true');
-    if (/^#[a-f\d]{6}$/i.test(instance.color || '')) swatch.style.backgroundColor = instance.color;
+    swatch.style.backgroundColor = assemblyColor(instance);
     const text = element('span'); text.append(element('span', 'instance-label', instance.label));
     const warning = !instance.freshness || instance.freshness.warning;
     const revision = element('span', `instance-revision${warning ? ' warning' : ''}`, `${warning ? '⚠ Check revision' : '✓ Current'} · ${(instance.build_id || 'unknown build').slice(0, 12)}`);
@@ -431,7 +472,7 @@ function renderAssemblyDetails(scene) {
   selectInstance(state.selectedInstance);
 }
 async function showAssembly(preservePreview = false) {
-  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'box_variant', 'box_rear_pattern', 'module_rear', 'drawer_columns', 'drawer_rows', ...patternKeys].map(key => [key, state.selection[key]])));
+  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'facade_floor', 'box_variant', 'box_rear_pattern', 'module_rear', 'drawer_columns', 'drawer_rows', ...patternKeys].map(key => [key, state.selection[key]])));
   const key = query.toString(), newSelection = !state.assemblyShowing || state.assemblyKey !== key;
   if (preservePreview && !newSelection && state.assemblyPending) return;
   state.assemblyController?.abort();
@@ -450,11 +491,11 @@ async function showAssembly(preservePreview = false) {
   $('envelope').setAttribute('hidden', ''); $('assembly-controls').hidden = false;
   $('preview-eyebrow').textContent = 'COMPLETE SET';
   $('preview-title').textContent = `${configurationName(state.selection)} assembly`;
-  $('preview-kind').textContent = 'Assembled dimensions · X / Y / Z';
+  $('preview-kind').textContent = 'Complete-set view · X / Y / Z';
   const builds = Object.keys(names).filter(kind => kind !== 'set').map(kind => state.builds.find(build => matches(build, kind))).filter(Boolean);
   showArtifacts(builds, null, false, false);
   $('artifact-description').textContent = 'Printable downloads · select a part below to inspect its print orientation.';
-  $('print-note').textContent = 'Assembly previews use finished drawer parts. Key, spring, latch, runner stops and caps are separate downloads; their installation is not checked. Print downloads retain required sacrificial supports.';
+  $('print-note').textContent = 'Complete set includes drawer parts and accessories. Accessory placement and retention are not fit checked. Print downloads retain required sacrificial supports.';
   downloadLink($('stl-download'), null); downloadLink($('step-download'), null);
   renderFreshness();
   try {
@@ -485,7 +526,7 @@ async function showAssembly(preservePreview = false) {
     if (loaded.length) {
       $('model-canvas').hidden = false;
       state.viewer ||= new STLViewer($('model-canvas'));
-      const dimensions = state.viewer.loadScene(loaded); setMetrics(dimensions);
+      const dimensions = state.viewer.loadScene(loaded.map(instance => ({ ...instance, color: assemblyColor(instance) }))); setMetrics(dimensions);
       state.viewer.onSelect = selectInstance;
       state.viewer.setExplosion(Number($('explosion').value) / 100);
       for (const id of state.hiddenInstances) state.viewer.setVisible(id, false);
@@ -633,6 +674,7 @@ $('explosion').addEventListener('input', event => setExplosion(event.target.valu
 $('assemble-view').addEventListener('click', () => { setExplosion(0); state.viewer?.fitCurrent(); });
 $('explode-view').addEventListener('click', () => { setExplosion(100); state.viewer?.fitCurrent(); });
 $('fit-view').addEventListener('click', () => state.viewer?.fitCurrent());
+$('assembly-colors').addEventListener('input', updateAssemblyColors);
 $('show-all-instances').addEventListener('click', () => {
   state.hiddenInstances.clear();
   for (const instance of state.assembly?.instances || []) state.viewer?.setVisible(instance.id, true);
@@ -651,6 +693,8 @@ $('refresh-history').addEventListener('click', async () => {
 async function initialize() {
   try {
     state.config = await api('/api/config'); state.selection = { ...patternDefaults, box_variant: 'plain', box_rear_pattern: 'plain', ...state.config.defaults };
+    state.minimumFloor = state.selection.box_floor === 3 ? 'default' : 0.8;
+    state.selection.facade_floor = state.minimumFloor;
     createControls(state.config); renderSelection();
     await refreshHistory();
     const { jobs: allJobs } = await api('/api/jobs');

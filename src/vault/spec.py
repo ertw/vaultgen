@@ -15,6 +15,9 @@ DEPTH_PITCH = 42.0
 TIER_PITCH = 48.0
 WALL_PATTERNS = MappingProxyType({'plain': 'Plain', 'waffle': 'Waffle', 'miura': 'Miura-ori'})
 PATTERN_CONSTRUCTIONS = MappingProxyType({'recessed': 'Recessed', 'corrugated': 'Two-perimeter corrugated'})
+# New user selections favor paired thin walls. Historical data and native
+# constructors keep their original defaults so omitted fields retain meaning.
+NEW_PATTERN_CONSTRUCTION = 'corrugated'
 PATTERN_DEFAULTS = MappingProxyType({
     'wall_pattern': 'plain', 'pattern_pitch': 14.0, 'pattern_depth': 1.7,
     'pattern_line_width': 0.65, 'pattern_faces': 'all', 'pattern_construction': 'recessed',

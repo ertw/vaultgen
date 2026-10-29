@@ -30,6 +30,49 @@ geometry and the existing facade `gap` argument remains positional.
 | M outer screws | X = ±92.45 mm |
 | L outer screws | X = ±130.25 mm |
 
+## Shelled facades
+
+`FacadeSpec(facade_floor=0.8)` subtracts deeper rear-open pockets from the
+original native facade. `facade_floor='default'` retains the original geometry.
+The thin variant has a separate identity such as `s1f_facade_floor_0p8`; older
+saved builds without the field resolve to the default facade.
+
+The flat front remains at Y=10 with a 0.8 mm skin. Under the recessed label face
+at Y=7.91, the cavity stops at Y=7.11; a matching 0.8 mm inset also protects the
+recess sidewalls. A 3.5 mm land inside the flat front perimeter retains the
+entire rolled outer edge and the rear seating rebate. The rear seating lands
+retain their complete original footprint for the first 0.8 mm; a 45° cavity
+flare connects that opening to the broader front pocket. The lock's protected
+radius is 24.125 mm, 4 mm beyond its largest opening lobe. Screw protection
+extends to radius 10.8 mm, 4 mm beyond the existing 6.8 mm risers. Retained
+2.4 mm webs connect the screw tiers, lock region and perimeter where material
+exists in the original facade. The shell removes material without adding it to
+the existing rear clearances or changing the front, sides, screw bores,
+counterbores or label recess. All construction uses native wires, extrusions
+and booleans; no purchased meshes are used.
+
+Thin facades print front-down: rotate −90° about X and translate +10 mm in Z.
+The export records the exact inverse transform for assembly previews and
+checks. Rear pockets open upward rather than forming broad unsupported roofs.
+The existing recessed label and lock features may still need local support;
+inspect the sliced paths and outside roll. Default facades keep their original
+rear-down orientation. Strength, screw torque and printing time have not been
+qualified by physical tests.
+
+```bash
+python -m vault build --part facade --family S --height-units 1 --facade-floor 0.8
+python tools/check_label_interfaces.py --facade-floor 0.8
+python tools/check_assembly.py --definitions-only --facade-floor 0.8
+python tools/check_assembly.py --case S4:1 --facade-floor 0.8
+```
+
+The facade tests compare all six S/M/L × 1F/2F variants against the original,
+checking connectedness, bounds, skin and reinforcement. The label checker
+checks the unchanged recess clearance. The assembly checker checks the closed
+rigid pose and mating registrations; it does not certify lock motion, loaded
+strength or printed fit. Fresh exports retain the normal STEP round-trip and
+watertight print-mesh checks.
+
 ## Gridfinity boxes
 
 `BoxSpec(box_variant='gridfinity')` adds an integral baseplate inside the native
@@ -354,8 +397,11 @@ Labels editor, choose S labels for these S facades.
 `drawer_rows` defaults to 1. The value 2 is accepted only with family L,
 height 2F and two columns. Boxes and facades then resolve to S1F; the module
 stays 2F. The print plan calls for four copies of each box, facade and geared
-rail, and four left/right runner pairs in total. The assembly preview has 33
-instances, each with its own drawer identity and explicit (X,Z) placement.
+rail, and four left/right runner pairs in total. The assembly preview includes
+33 drawer components plus 34 accessory instances (67 total). Facade caps use
+the screw seats; the other accessories are laid out separately with unverified
+installation poses. Drawer components retain their own drawer identity and
+explicit (X,Z) placement.
 
 The supplied L² module references cover depths 3–7 and 1F/2F/4F. The web
 generator remains limited to 1F/2F; 4F is available only through the lower-level
@@ -546,9 +592,13 @@ the part's layer count.
 `SpringDimensions` now defaults to zero relief; the spring is nominal.
 Reference meshes are used only by the diagnostic tool, never by construction.
 
-Accessory native frames are print frames, not installed drawer poses. They are
-excluded from drawer assembly validation and explicitly listed as omissions in
-the scene. Complete-set receipts separately record their immutable build IDs.
+Accessory native frames are print frames, not installed drawer poses. The
+complete-set view places facade caps at the shared screw axes; other accessories
+appear in a labeled loose-part layout in front of the drawer. These display
+transforms are explicit in `assembly.py`, independent of print bounds. All
+accessories remain outside drawer fit validation, and complete-set receipts
+pin their immutable build IDs separately. Quantities include two springs per
+drawer and one latch per module connector bank.
 The cap interface diagnostic checks a facade screw cap at (51.45, 10, 23.5)
 after a +90° X rotation, and a key cap at Z=35.517 after a 180° X rotation.
 These are geometric seated-pose checks, not insertion or snap retention tests.

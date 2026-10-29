@@ -1,7 +1,9 @@
 """Authoritative finished-drawer placements, shared by CAD checks and the viewer.
 
-The assembly datum is the module's native frame: X across its width, Y from
-closed back toward the facade, Z upward. Each rigid transform maps a component's
+The assembly datum has X across the width, Y from closed back toward the facade,
+and Z upward from the installed module's lower skin. The module's native frame
+has its latch carrier above its body; its installed pose turns that face down.
+Each rigid transform maps a component's
 native geometry into that frame; it never infers a placement from mesh bounds.
 Matrices use the column-major convention consumed by WebGL/Three.js. Print
 orientation is separate export metadata, not part of the assembly definition.
@@ -12,6 +14,7 @@ viewer to interpolate directly without changing its assembled transform.
 """
 from __future__ import annotations
 
+from .drawer import DrawerLayout
 from .generator import Configuration
 from .spec import DEFAULT_SPEC, ModuleSpec, WALL_PATTERNS, pattern_parameters
 
@@ -20,6 +23,8 @@ SCHEMA = 'vault-assembly/v1'
 COLORS = {
     'module': '#88a9c0', 'box': '#e1b46a', 'facade': '#bd91cc',
     'rails': '#ee927b', 'runner_guides': '#76b5a4', 'runner_slides': '#aabd70',
+    'key': '#ee927b', 'spring': '#ee927b', 'runner_stop': '#76b5a4',
+    'facade_cap': '#bd91cc', 'key_cap': '#bd91cc', 'latch': '#ee927b',
 }
 IDENTITY_ROTATION = ((1, 0, 0), (0, 1, 0), (0, 0, 1))
 
@@ -53,6 +58,8 @@ def assembly_definition(configuration: Configuration):
     Each drawer has one box/facade and repeats runner pairs on every tier;
     its two geared rails remain at the bottom lock. Rails are shown at
     zero locking travel (unlocked), the insertion pose in the fit checks.
+    Facade caps use the documented screw seats. Accessories without checked
+    installation poses use a labeled layout in front of the drawer instead.
     """
     if not isinstance(configuration, Configuration):
         raise TypeError('configuration must be a Configuration')
@@ -70,16 +77,21 @@ def assembly_definition(configuration: Configuration):
 
     def add(identifier, kind, component, label, group, rotation=IDENTITY_ROTATION,
             translation=(0, 0, 0), explode=(0, 0, 0), **metadata):
-        displacement = drawer_explode if group == 'drawer' else (0, 0, 0)
+        displacement = drawer_explode if group in ('drawer', 'accessories') else (0, 0, 0)
         instances.append({
             'id': identifier, 'kind': kind, 'component': component, 'label': label,
             'group': group, 'parent': group,
             'transform': rigid_transform(rotation, translation),
             'explode': [float(a + b) for a, b in zip(displacement, explode)],
-            'color': COLORS[kind], **metadata,
+            'color': COLORS[kind], 'placement': 'installed', **metadata,
         })
 
-    add('module', 'module', 'single', spec.name, 'shell')
+    # Native Z=0 is the original marked top, while native Z=height carries
+    # the underside latch tracks. Turn only the housing upright, preserving
+    # the +Y opening and the opposed runner mouths; drawers already have Z up.
+    add('module', 'module', 'single', spec.name, 'shell',
+        rotation=((-1, 0, 0), (0, 1, 0), (0, 0, -1)),
+        translation=(0, 0, spec.height))
     for bay, (center, elevation) in enumerate(spec.drawer_origins, start=1):
         def add_drawer(identifier, kind, component, label, group,
                        rotation=IDENTITY_ROTATION, translation=(0, 0, 0), **metadata):
@@ -98,6 +110,34 @@ def assembly_definition(configuration: Configuration):
                       if configuration.box_rear_pattern != 'plain' else ''), 'drawer')
         add_drawer('facade', 'facade', 'single', f'{drawer_spec.family}{drawer_spec.height_units}F Facade', 'drawer',
                    translation=(0, spec.depth, 0), explode=(0, 65, 0))
+        for index, (x, z) in enumerate(DrawerLayout(drawer_spec).screw_positions, start=1):
+            add_drawer(f'facade_cap_{index}', 'facade_cap', 'single',
+                       f'Facade screw cap {index}', 'drawer',
+                       rotation=((1, 0, 0), (0, 0, -1), (0, 1, 0)),
+                       translation=(x, spec.depth + 10, z), explode=(0, 80, 0))
+
+        # This is an inventory layout, not an inferred installation pose. Its
+        # fixed spacing is independent of mesh/print bounds. Stacked drawers
+        # have separate rows, with every loose part resting on the same plane.
+        row = (bay - 1) // configuration.drawer_columns
+        layout_y = spec.depth + 110 + row * 180
+
+        def add_loose(identifier, kind, label, x, y, **metadata):
+            add_drawer(identifier, kind, 'key' if kind == 'key' else 'single',
+                       label, 'accessories', translation=(x, y, -elevation),
+                       placement='layout', **metadata)
+
+        add_loose('key', 'key', 'Key · loose part', -30, layout_y)
+        add_loose('key_cap', 'key_cap', 'Key cap · loose part', 30, layout_y)
+        for index, x in enumerate((-30, 30), start=1):
+            add_loose(f'spring_{index}', 'spring', f'Spring {index} · loose part',
+                      x, layout_y + 50)
+        for tier in range(1, drawer_spec.height_units + 1):
+            for side, name in ((-1, 'left'), (1, 'right')):
+                add_loose(f'runner_stop_{name}_{tier}', 'runner_stop',
+                          f'{name.title()} runner stop · tier {tier} · loose part',
+                          side * 65, layout_y + 42 + (tier - 1) * 26,
+                          tier=tier, side=side)
 
         # Proper rotations preserve rail handedness. Each drawer's bottom lock
         # retains its own nose datums; a second bay only translates the drawer.
@@ -124,24 +164,35 @@ def assembly_definition(configuration: Configuration):
                                explode=(side * lateral_explode, 0, (tier - 1) * 25),
                                tier=tier, side=side)
 
+    # Latches attach to module connector banks, independently of the number
+    # of drawers. Keep their unverified installation poses out of the shell.
+    for bank, center in enumerate(spec.bank_centers, start=1):
+        add(f'latch_{bank}', 'latch', 'single', f'Latch · bank {bank} · loose part',
+            'accessories', translation=(center, spec.depth + 220, 0),
+            placement='layout', bank=bank)
+
     return {
-        'schema': SCHEMA, 'units': 'mm', 'coordinates': 'native-module',
+        'schema': SCHEMA, 'units': 'mm', 'coordinates': 'installed-drawer',
         'matrix_order': 'column-major', 'configuration': configuration.as_dict(),
-        'rail_travel_mm': 0,
+        'rail_travel_mm': 0, 'validation_scope': 'drawer_components',
         'groups': [{'id': 'shell', 'label': 'Module and fixed guides'},
-                   {'id': 'drawer', 'label': 'Drawer and attached parts'}],
+                   {'id': 'drawer', 'label': 'Drawer and attached parts'},
+                   {'id': 'accessories', 'label': 'Loose accessories · installation not checked'}],
         'instances': instances,
-        'omissions': ['Key, spring, latch, runner stops and caps (separate downloads; installation not checked)', 'Screws'],
+        'omissions': ['Screws'],
         'notes': ['Finished parts: module webs and box runner sheets removed.',
                   'Geared rails shown unlocked at zero locking travel.',
+                  'Loose accessories are laid out in front of the drawer; their installation is not checked.',
+                  'Facade caps use the documented screw seats; accessory fit is outside the drawer fit check.',
                   'Exploded spacing illustrates components; it is not a disassembly path.'],
     }
 
 
 def build_finished_components(configuration: Configuration):
-    """Build native solids for the unique components referenced by a definition.
+    """Build native solids for the six groups covered by drawer fit validation.
 
     The keys are ``(kind, component)`` pairs from ``assembly_definition``.
+    Accessory display instances are outside this validation scope.
     Left/right runners have identical geometry, reused across all height tiers.
     CAD dependencies stay lazy so web requests can compose scenes cheaply.
     """
@@ -166,7 +217,8 @@ def build_finished_components(configuration: Configuration):
             spec=BoxSpec(family, depth, height, configuration.box_floor, configuration.box_variant,
                          configuration.box_rear_pattern),
             include_supports=False),
-        ('facade', 'single'): build_facade(spec=FacadeSpec(family, height)),
+        ('facade', 'single'): build_facade(spec=FacadeSpec(family, height,
+                                                        facade_floor=configuration.facade_floor)),
         ('rails', 'plain'): build_gear_rail(False, spec=GearRailSpec(family)),
         ('rails', 'retained'): build_gear_rail(True, spec=GearRailSpec(family)),
         ('runner_guides', 'left'): guides, ('runner_guides', 'right'): guides,

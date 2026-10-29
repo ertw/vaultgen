@@ -208,10 +208,17 @@ pre { background: var(--background); color: #cad3dc; border: 1px solid var(--bor
 #selection-note { padding: 0 24px; }
 
 .assembly-controls { padding: 14px 24px 0; }
-.explosion-controls { display: flex; gap: 10px; align-items: center; }
+.explosion-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.explosion-controls > .artifact-tab { flex-shrink: 0; }
 .explosion-controls label { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .explosion-controls output { display: inline-block; width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
 #explosion { flex: 1; min-width: 35px; accent-color: var(--accent); cursor: pointer; }
+.assembly-colors { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; }
+.assembly-colors input { appearance: none; -webkit-appearance: none; width: 24px; height: 24px; padding: 0; border: 1px solid var(--muted); border-radius: 50%; background: transparent; cursor: pointer; }
+.assembly-colors input::-webkit-color-swatch-wrapper { padding: 0; }
+.assembly-colors input::-webkit-color-swatch { border: 0; border-radius: 50%; }
+.assembly-colors input::-moz-color-swatch { border: 0; border-radius: 50%; }
+.assembly-colors input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .assembly-panel { padding: 18px 24px; background: var(--panel); border-top: 1px solid var(--border); }
 .assembly-warnings, .assembly-missing { border-left: 3px solid #bd8730; background: #302819; color: #ffe0a1; padding: 9px 12px; font-size: 12px; margin: 12px 0; }
 .assembly-missing { padding-left: 28px; }

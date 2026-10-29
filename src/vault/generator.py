@@ -1,7 +1,7 @@
 """Bounded generator requests shared by HTTP and the isolated CAD worker."""
 from dataclasses import dataclass, asdict
 
-from .spec import FAMILIES, PATTERN_CONSTRUCTIONS, PATTERN_DEFAULTS, PATTERN_RANGES, WALL_PATTERNS, validate_wall_pattern
+from .spec import FAMILIES, NEW_PATTERN_CONSTRUCTION, PATTERN_CONSTRUCTIONS, PATTERN_DEFAULTS, PATTERN_RANGES, WALL_PATTERNS, validate_wall_pattern
 
 # Keep request validation independent of the CAD runtime.
 ACCESSORY_PARTS = ('key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch')
@@ -32,6 +32,7 @@ class Configuration:
     pattern_construction: str = 'recessed'
     box_variant: str = 'plain'
     box_rear_pattern: str = 'plain'
+    facade_floor: float | str = 'default'
 
     def __post_init__(self):
         validate_wall_pattern(self)
@@ -43,6 +44,9 @@ class Configuration:
             value = getattr(self, key)
             if type(value) not in (int, float) or value not in choices:
                 raise ValueError(f'{key} must be one of {choices} mm')
+        if not (self.facade_floor == 'default' or
+                (type(self.facade_floor) in (int, float) and self.facade_floor == 0.8)):
+            raise ValueError('facade_floor must be 0.8 mm or default')
         if self.box_floor == 0 and self.box_variant != 'gridfinity':
             raise ValueError('A floorless box requires the Gridfinity base')
         if self.family not in ('S', 'M', 'L'):
@@ -74,6 +78,13 @@ class Configuration:
     def as_dict(self):
         return asdict(self)
 
+    @classmethod
+    def parse_request(cls, value):
+        """Default fresh selections to thin walls without reinterpreting history."""
+        if isinstance(value, dict):
+            value = {'pattern_construction': NEW_PATTERN_CONSTRUCTION, **value}
+        return cls.parse(value)
+
     @property
     def drawer_family(self):
         return 'S' if self.drawer_columns == 2 else self.family
@@ -98,7 +109,8 @@ class Configuration:
         return {
             'module': 1, 'box': count, 'facade': count, 'rails': count,
             'runner_guides': count * height, 'runner_slides': count * height,
-            'key': count, 'spring': count, 'latch': count,
+            'key': count, 'spring': 2 * count,
+            'latch': len(FAMILIES[self.family].bank_centers),
             'runner_stop': 2 * count * height,
             'facade_cap': screws * count, 'key_cap': count,
         }
@@ -119,7 +131,10 @@ def catalog():
                  'heights': [2], 'drawer_family': 'S'},
             ],
             'parts': [{'id': key, 'name': value, 'common': key in ACCESSORY_PARTS} for key, value in PARTS.items()],
-            'thicknesses': {'box_floor': [0.0, 0.8, 3.0], 'module_rear': [0.9, 2.0]},
+            'thicknesses': {'box_floor': [0.0, 0.8, 3.0], 'module_rear': [0.9, 2.0],
+                           'facade_floor': [0.8, 'default']},
+            'thickness_applicability': {'minimum_floor': ['box', 'facade'],
+                                        'perimeters': ['module']},
             'box_variants': [{'id': 'plain', 'name': 'Plain'},
                              {'id': 'gridfinity', 'name': 'Gridfinity'}],
             'box_rear_patterns': [{'id': key, 'name': value} for key, value in WALL_PATTERNS.items()],
@@ -133,10 +148,10 @@ def catalog():
                    for key, bounds in PATTERN_RANGES.items()},
                 'wall_thickness': 3.0,
             },
-            'defaults': Configuration().as_dict()}
+            'defaults': Configuration.parse_request({}).as_dict()}
 
 
-def parse_configuration(value):
+def parse_configuration(value, *, new_request=False):
     """Dispatch independent editors without changing complete drawer sets."""
     if isinstance(value, dict) and value.get('part') == 'label':
         from .label_config import LabelConfiguration
@@ -144,4 +159,4 @@ def parse_configuration(value):
     if isinstance(value, dict) and value.get('part') == 'gridfinity_bins':
         from .bin_config import BinConfiguration
         return BinConfiguration.parse(value)
-    return Configuration.parse(value)
+    return Configuration.parse_request(value) if new_request else Configuration.parse(value)

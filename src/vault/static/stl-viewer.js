@@ -180,6 +180,10 @@ export class STLViewer {
   }
   setExplosion(value) { this.explosion = Math.max(0, Math.min(1, Number(value) || 0)); this.render(); }
   setVisible(id, visible) { const mesh = this.meshes.find(item => item.id === id); if (mesh) { mesh.visible = visible; this.render(); } }
+  setColors(colors) {
+    for (const mesh of this.meshes) if (Object.hasOwn(colors, mesh.id)) mesh.color = rgb(colors[mesh.id]);
+    this.render();
+  }
   select(id) { this.selected = id; this.render(); }
 
   fitCurrent() {

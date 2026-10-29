@@ -69,11 +69,36 @@ check the first label on your intended facade, printer, and material.
 
 ## Generator builds
 
-Box floor thickness defaults to the current 0.8 mm, with the original 3 mm
-floor available. Module rear thickness defaults to 0.9 mm, with the original
-2 mm rear available. These thicknesses were checked against the supplied S4
-STLs. Each variant has its own resolved parameters and build alias; external
-dimensions remain fixed.
+**Minimum floor** offers **0.8 mm** or **Default** for boxes, facades, and
+complete sets. The thin choice selects the 0.8 mm box floor and a shelled
+facade with a 0.8 mm front skin; Default restores the 3 mm box floor and the
+original facade pockets. The browser starts with the thin choice. **Perimeters**
+offers **0.9 mm** or **Default** for modules and complete sets; it selects the
+module's rear panel thickness, with Default restoring 2 mm. It does not change
+the long sleeve walls or the separate wall-pattern settings. Both controls
+are hidden for parts without a corresponding variant.
+
+The API retains `box_floor` (0.8 or 3), `module_rear` (0.9 or 2), and adds
+`facade_floor` (0.8 or `"default"`). Omitting `facade_floor` retains the original
+facade for older saved requests and CLI callers. Each geometry variant has a
+separate build identity and cache match; external dimensions remain fixed.
+Complete sets apply the floor choice to each matching drawer facade and box.
+
+The shelled facade retains the front and side profiles, lock opening, screw
+interfaces, label recess and seating lands. It removes material from the rear,
+leaving reinforcement around the perimeter, lock and screws. Its print exports
+place the front face on the bed with the rear cavities open upward; check the
+existing recessed label and lock details for local support in your slicer.
+The original facade retains its rear-down print orientation. Material savings
+are measured from CAD volume; printed strength and print time require a slicer
+and physical samples.
+
+```bash
+python -m vault build --part facade --facade-floor 0.8
+python -m vault build --part facade --facade-floor default
+python tools/check_assembly.py --case S4:1 --facade-floor 0.8
+python tools/check_label_interfaces.py --facade-floor 0.8
+```
 
 For a box or complete set, **Box base** selects **Plain** (the default) or
 **Gridfinity**. Gridfinity integrates a baseplate into the closed drawer floor,
@@ -92,11 +117,13 @@ retains the normal breakaway runner supports. Complete-set fit receipts still
 check the exact selected component builds. Gridfinity bin seating is checked
 separately with nominal native feet; physical printed fit remains untested.
 
-With Gridfinity selected, **Box floor → Floorless** opens the cell bottoms
+With Gridfinity selected, **Box bottom → Floorless** opens the cell bottoms
 and retains the grid webs and perimeter as physical support. The socket
 profiles and height match the 0.8 mm-floor Gridfinity box. The API/CLI value
 is `box_floor: 0` / `--box-floor 0`, accepted only with Gridfinity; switching
-the browser back to a plain base restores the 0.8 mm floor. Floorless boxes
+the browser back to a plain base restores the selected minimum/default floor.
+The floor control is hidden for a floorless box alone; it still controls the
+facades in a complete set. Floorless boxes
 have their own build and cache identity and combine with either rear-wall
 pattern. Regenerate the box to use this option.
 
@@ -147,6 +174,13 @@ Changing the selection previews the newest matching cached part, or shows
 with an explosion slider, component colors, visibility controls and click-to-highlight.
 Fit view centers the visible components; endpoint buttons fit their pose, while
 dragging the explosion slider preserves the camera.
+The three color circles after **Fit view** open native color pickers for the
+complete-set preview. Primary defaults to matte white for the module, facade
+and runner guides; secondary defaults to matte black for the box and runner
+slides; highlight defaults to matte pink for the geared rails. Changes last
+until the page is reloaded and apply only to the assembly preview and its
+component swatches. Individual print previews and downloads keep their existing
+appearance and contents.
 Missing groups and legacy builds that need new assembly assets are listed explicitly. Recent builds can still be inspected independently.
 
 Choose **Two S drawers** with family L for an L² module. Both drawers have the
@@ -163,14 +197,23 @@ includes `PRINTING.txt` and `print-plan.json`, identifying the immutable build
 and number of copies of each printable file; repeated parts share the same STL.
 
 Assembly previews use explicit native-coordinate transforms from
-`src/vault/assembly.py`. A single-drawer scene has 9 instances for 1F and 13 for
-2F; L² has 17 and 25 respectively, with a left/right runner pair on each tier
-of each bay. Four S1F drawers have 33 instances. The drawer group moves forward as a unit
-while the explosion separates its facade, rails and slides. Exploded positions
-illustrate the parts; they do not certify a disassembly path. Key, spring, latch, runner stops, caps and screws are omitted and identified in the scene.
-The six accessory groups are included in complete-set downloads but are not
-positioned in the drawer preview or covered by its assembly fit receipt.
-Accessory build IDs are recorded separately from the checked drawer build IDs.
+`src/vault/assembly.py`. The view includes all twelve generated part groups.
+The module's native underside is rotated down into the installed drawer frame;
+the box stays upright with its floor below its contents. Print orientations
+and immutable component meshes retain their original coordinates.
+Facade caps sit in the documented screw seats. Keys, key caps, springs, runner
+stops and latches are laid out in front of the drawer, explicitly labeled as
+loose parts because their installed poses are not verified. Only screws are
+omitted. S scenes have 18/26 instances for 1F/2F; M has 20/28 and L has 21/29.
+L² has 35/51 instances with two drawers, or 67 with four S1F drawers.
+Each drawer has two springs and a left/right runner pair on every tier;
+latch quantities follow the module's connector banks, independently of drawer count.
+The drawer group moves forward while the explosion separates its facade,
+rails, slides and caps. Loose parts move forward to stay clear of the drawer.
+Exploded positions illustrate the parts; they do not certify a disassembly path.
+Accessory build IDs are pinned separately from the six groups covered by the
+drawer fit check. A changed accessory build also invalidates the scene's receipt;
+the UI explicitly identifies accessory fit as unchecked.
 
 New builds include finished assembly STL and STEP assets under `preview/assembly/`.
 These omit module support webs and box runner sheets. Printable exports retain
@@ -181,7 +224,9 @@ Preview assets are excluded from printable ZIP bundles.
 
 After generating a complete set, the worker imports its exact finished STEP
 assets and checks topology, rigid transforms, mating registrations and pairwise
-intersections using `src/vault/assembly_validation.py`. Intentional seating and
+intersections for the six drawer component groups using `src/vault/assembly_validation.py`.
+All displayed instances also receive inventory and rigid-transform checks.
+Accessory interfaces are outside the native drawer fit audit. Intentional seating and
 stop contacts are allowed; positive-volume collisions above numerical tolerance
 fail. A fit-check receipt pins the result to the selected configuration and
 immutable component build IDs, assembly definition and validator revision. Failed checks preserve individual exports and
@@ -356,8 +401,11 @@ python tools/check_drawer_bins.py --build out/builds/<build-id>
 Key, spring, latch, runner stop, facade cap and key cap fit all offered size selections;
 changing family, depth or height does not change their cache identity. The key
 is a single piece with an integrated drive pinion. Print one per drawer. Print
-one spring, two runner stops per populated tier, a cap for each facade screw
-counterbore, and one key cap if desired. Each choice exports checked STL and
+two springs per drawer, two runner stops per populated tier, a cap for each facade screw
+counterbore, and one key cap per drawer if desired. Print one underside latch per
+module connector bank: one for S/M, two for L, including either L² drawer layout.
+The spring pair and module-mounted latch follow the local assembly instructions
+(pages 2 and 8). Each choice exports checked STL and
 STEP through immutable build storage. Complete sets contain twelve build groups
 and fifteen STL files; quantities reuse the same files.
 

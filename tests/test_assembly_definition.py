@@ -1,10 +1,13 @@
 """Assembly invariants across all supported sizes without importing CAD."""
 from itertools import product
+from collections import Counter
 import unittest
 
 from vault.assembly import assembly_definition, transform_point
 from vault.assembly_validation import definition_errors
+from vault.drawer import DrawerLayout
 from vault.generator import Configuration, ASSEMBLY_PARTS, ACCESSORY_PARTS
+from vault.spec import ModuleSpec
 
 
 class AssemblyDefinitionTests(unittest.TestCase):
@@ -14,10 +17,13 @@ class AssemblyDefinitionTests(unittest.TestCase):
             scene = assembly_definition(configuration)
             instances = scene['instances']
             with self.subTest(configuration=configuration):
-                self.assertEqual(len(instances), 5 + 4 * height)
+                self.assertEqual(len(instances), {'S': 10, 'M': 12, 'L': 13}[family] + 8 * height)
                 self.assertEqual(len({item['id'] for item in instances}), len(instances))
-                self.assertEqual({item['kind'] for item in instances}, set(ASSEMBLY_PARTS))
-                self.assertTrue(set(ACCESSORY_PARTS).isdisjoint(item["kind"] for item in instances))
+                self.assertEqual({item['kind'] for item in instances}, set(ASSEMBLY_PARTS + ACCESSORY_PARTS))
+                expected = {kind: copies * (2 if kind in ('rails', 'runner_guides', 'runner_slides') else 1)
+                            for kind, copies in configuration.print_copies.items()}
+                self.assertEqual(Counter(item['kind'] for item in instances), expected)
+                self.assertEqual(definition_errors(configuration, scene), [])
                 for item in instances:
                     matrix = item['transform']
                     self.assertEqual(len(matrix), 16)
@@ -69,12 +75,13 @@ class AssemblyDefinitionTests(unittest.TestCase):
                                    drawer_columns=2, drawer_rows=rows)
             scene = assembly_definition(config)
             self.assertEqual(definition_errors(config, scene), [])
-            self.assertEqual(len(scene['instances']), 1 + 2 * rows * (4 + 4 * height // rows))
+            self.assertEqual(len(scene['instances']), 3 + 2 * rows * (8 + 8 * height // rows))
             reference = assembly_definition(Configuration('S', depth, height // rows, module_rear=rear))
             origins = ((-82.4, 0), (82.4, 0)) if rows == 1 else (
                 (-82.4, 0), (82.4, 0), (-82.4, 48), (82.4, 48))
             for bay, (center, elevation) in enumerate(origins, start=1):
-                for original in reference['instances'][1:]:
+                for original in (item for item in reference['instances']
+                                 if item['kind'] not in ('module', 'latch')):
                     instance = next(item for item in scene['instances']
                                     if item['id'] == f'bay_{bay}_{original["id"]}')
                     self.assertEqual(instance['bay'], bay)
@@ -82,9 +89,79 @@ class AssemblyDefinitionTests(unittest.TestCase):
                     for point in ((0, 0, 0), (1, 2, 3)):
                         expected = transform_point(original['transform'], point)
                         actual = transform_point(instance['transform'], point)
+                        if original['placement'] == 'layout':
+                            # Stacked drawers use separate inventory rows on
+                            # one plane, rather than floating their loose parts.
+                            self.assertAlmostEqual(actual[0], expected[0] + center)
+                            self.assertAlmostEqual(actual[2], expected[2])
+                            if elevation:
+                                self.assertGreater(actual[1], expected[1])
+                            else:
+                                self.assertAlmostEqual(actual[1], expected[1])
+                            continue
                         for a, b in zip(actual, (expected[0] + center, expected[1], expected[2] + elevation)):
                             self.assertAlmostEqual(a, b)
-            self.assertEqual(scene['instances'][0]['transform'][12:15], [0., 0., 0.])
+            self.assertEqual(scene['instances'][0]['transform'][12:15], [0., 0., float(48 * height - 1)])
+
+    def test_module_latch_face_points_down_while_drawer_stays_upright(self):
+        for family, depth, height in product('SML', range(3, 8), (1, 2)):
+            scene = assembly_definition(Configuration(family, depth, height))
+            module = scene['instances'][0]['transform']
+            skin_height = 48 * height - 1
+            self.assertEqual(transform_point(module, (0, 0, 0)), (0, 0, skin_height))
+            self.assertEqual(transform_point(module, (0, 0, skin_height)), (0, 0, 0))
+            self.assertEqual(transform_point(module, (10, 20, skin_height + 4)), (-10, 20, -4))
+            box = next(item['transform'] for item in scene['instances'] if item['kind'] == 'box')
+            self.assertEqual(transform_point(box, (0, 20, 5)), (0, 20, 5))
+
+    def test_facade_caps_share_every_screw_axis_and_face_seat(self):
+        configurations = [Configuration(family, depth, height)
+                          for family, depth, height in product('SML', range(3, 8), (1, 2))]
+        configurations += [Configuration('L', depth, height, drawer_columns=2, drawer_rows=rows)
+                           for depth, height, rows in product(range(3, 8), (1, 2), (1, 2))
+                           if rows <= height]
+        for config in configurations:
+            module = ModuleSpec(config.family, config.depth_units, config.height_units,
+                                drawer_columns=config.drawer_columns, drawer_rows=config.drawer_rows)
+            drawer = ModuleSpec(config.drawer_family, config.depth_units, config.drawer_height_units)
+            caps = [item for item in assembly_definition(config)['instances'] if item['kind'] == 'facade_cap']
+            expected = {(center + x, module.depth + 10, elevation + z)
+                        for center, elevation in module.drawer_origins
+                        for x, z in DrawerLayout(drawer).screw_positions}
+            with self.subTest(configuration=config):
+                self.assertEqual({transform_point(cap['transform'], (0, 0, 0)) for cap in caps}, expected)
+                self.assertEqual(len(caps), len(expected))
+                for cap in caps:
+                    self.assertEqual(cap['placement'], 'installed')
+                    self.assertEqual(cap['group'], 'drawer')
+                    seat = transform_point(cap['transform'], (0, 0, 0))
+                    tip = transform_point(cap['transform'], (0, 0, 3.8))
+                    self.assertEqual(tip[::2], seat[::2])
+                    self.assertAlmostEqual(tip[1], seat[1] - 3.8)
+
+    def test_loose_accessories_are_explicit_and_repeat_by_drawer_or_module_bank(self):
+        cases = [('S', 1, 1, 1, 18), ('S', 2, 1, 1, 26),
+                 ('M', 1, 1, 1, 20), ('M', 2, 1, 1, 28),
+                 ('L', 1, 1, 1, 21), ('L', 2, 1, 1, 29),
+                 ('L', 1, 2, 1, 35), ('L', 2, 2, 1, 51), ('L', 2, 2, 2, 67)]
+        for family, height, columns, rows, count in cases:
+            config = Configuration(family, 4, height, drawer_columns=columns, drawer_rows=rows)
+            scene = assembly_definition(config)
+            loose = [item for item in scene['instances'] if item['placement'] == 'layout']
+            with self.subTest(configuration=config):
+                self.assertEqual(len(scene['instances']), count)
+                self.assertEqual({item['kind'] for item in loose}, set(ACCESSORY_PARTS) - {'facade_cap'})
+                self.assertEqual(scene['omissions'], ['Screws'])
+                self.assertEqual(scene['validation_scope'], 'drawer_components')
+                for item in loose:
+                    self.assertEqual(item['group'], 'accessories')
+                    self.assertEqual(item['transform'][14], 0)
+                    self.assertGreater(item['transform'][13], 4 * 42 + 30.1)
+                self.assertEqual(len({tuple(item['transform'][12:15]) for item in loose}), len(loose))
+                self.assertEqual(sum(item['kind'] == 'spring' for item in loose), 2 * columns * rows)
+                latches = [item for item in loose if item['kind'] == 'latch']
+                self.assertEqual(len(latches), 2 if family == 'L' else 1)
+                self.assertTrue(all('bay' not in item for item in latches))
 
     def test_multi_drawer_configuration_rejects_unsupported_or_untyped_layouts(self):
         self.assertEqual(Configuration().drawer_columns, 1)
@@ -111,8 +188,10 @@ class AssemblyDefinitionTests(unittest.TestCase):
         single = Configuration('L', 6, 2).print_copies
         double = Configuration('L', 6, 2, drawer_columns=2).print_copies
         self.assertEqual(double['module'], 1)
-        for kind in ('box', 'facade', 'rails', 'key', 'spring', 'latch', 'key_cap'):
+        for kind in ('box', 'facade', 'rails', 'key', 'key_cap'):
             self.assertEqual(double[kind], 2)
+        self.assertEqual(double['spring'], 4)
+        self.assertEqual(double['latch'], 2)
         self.assertEqual(double['runner_guides'], 4)
         self.assertEqual(double['runner_slides'], 4)
         self.assertEqual(double['runner_stop'], 8)
@@ -120,9 +199,13 @@ class AssemblyDefinitionTests(unittest.TestCase):
         self.assertEqual(single['facade_cap'], 6)
         four = Configuration('L', 6, 2, drawer_columns=2, drawer_rows=2).print_copies
         self.assertEqual(four['module'], 1)
-        for kind in ('box', 'facade', 'rails', 'key', 'spring', 'latch', 'key_cap',
+        for kind in ('box', 'facade', 'rails', 'key', 'key_cap',
                      'runner_guides', 'runner_slides'):
             self.assertEqual(four[kind], 4)
+        self.assertEqual(four['spring'], 8)
+        self.assertEqual(four['latch'], 2)
+        self.assertEqual(single['spring'], 2)
+        self.assertEqual(single['latch'], 2)
         self.assertEqual(four['runner_stop'], 8)
         self.assertEqual(four['facade_cap'], 8)
 
@@ -131,7 +214,7 @@ class AssemblyDefinitionTests(unittest.TestCase):
             instances = assembly_definition(Configuration('S', depth, 2))['instances']
             for item in instances:
                 self.assertEqual(item['group'], item['parent'])
-                if item['group'] == 'drawer':
+                if item['group'] in ('drawer', 'accessories'):
                     self.assertGreaterEqual(item['explode'][1], (depth * 42 + 20.1) * .8)
                 else:
                     self.assertEqual(item['explode'][1], 0)

@@ -68,6 +68,7 @@ class BuildFiles:
     def assembly(self, configuration):
         """Resolve one immutable build per group; never infer legacy mesh poses."""
         from .assembly import assembly_definition
+        from .generator import ACCESSORY_PARTS, ASSEMBLY_PARTS
         from .assembly_validation import validation_signature
         definition = assembly_definition(configuration)
         repository = git_provenance(PROJECT_ROOT)
@@ -76,8 +77,9 @@ class BuildFiles:
         module_pattern_fields = PATTERN_FIELDS if configuration.wall_pattern != 'plain' else ('wall_pattern',)
         keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear', 'drawer_columns', *module_pattern_fields),
                 'box': ('family', 'depth_units', 'height_units', 'box_floor', 'box_variant', 'box_rear_pattern'),
-                'facade': ('family', 'height_units'), 'rails': ('family',),
-                'runner_guides': ('depth_units',), 'runner_slides': ('depth_units',)}
+                'facade': ('family', 'height_units', 'facade_floor'), 'rails': ('family',),
+                'runner_guides': ('depth_units',), 'runner_slides': ('depth_units',),
+                **{kind: () for kind in ACCESSORY_PARTS}}
         defaults, selected = Configuration().as_dict(), configuration.as_dict()
         selected_drawer = {**selected, 'family': configuration.drawer_family,
                            'height_units': configuration.drawer_height_units}
@@ -106,6 +108,8 @@ class BuildFiles:
             warnings.append('These cached components were generated from different source revisions.')
         # A checked receipt certifies these exact immutable component builds.
         validation = None
+        checked_builds = {build_id for build_id, build in used.items() if build['kind'] in ASSEMBLY_PARTS}
+        accessory_builds = set(used) - checked_builds
         signature = validation_signature(configuration)
         receipt_root = self.root.parent / 'web' / 'assemblies'
         for path in sorted(receipt_root.glob('*.json'), key=lambda path: path.stat().st_mtime_ns, reverse=True):
@@ -113,7 +117,8 @@ class BuildFiles:
                 receipt = json.loads(path.read_text())
                 if (receipt.get('validation_signature') == signature and
                         receipt['configuration'] == selected and
-                        set(receipt['build_ids']) == set(used) and not missing):
+                        set(receipt['build_ids']) == checked_builds and
+                        set(receipt.get('accessory_build_ids', [])) == accessory_builds and not missing):
                     validation = receipt['validation']
                     break
             except (OSError, ValueError, KeyError):
@@ -137,6 +142,8 @@ class BuildFiles:
             pattern += ' · Floorless Gridfinity' if configuration.box_floor == 0 else ' · Gridfinity'
         if configuration.box_rear_pattern != 'plain':
             pattern += f' · {WALL_PATTERNS[configuration.box_rear_pattern]} corrugated box rear'
+        if configuration.facade_floor == 0.8:
+            pattern += ' · 0.8 mm facade floor'
         return {**definition, 'name': f'{configuration.family}{configuration.depth_units}{columns} · {configuration.height_units}F{rows}{pattern} complete set',
                 'instances': instances, 'missing': missing, 'warnings': list(dict.fromkeys(warnings)),
                 'complete': not missing, 'repository': repository, 'validation': validation}
@@ -153,7 +160,7 @@ class BuildFiles:
                 'runner_guides' if part.endswith('_runner_guides') else
                 'runner_slides' if part.endswith('_runner_slides') else
                 'rails' if part.endswith('_geared_rails') else
-                'facade' if part.endswith('_facade') else
+                'facade' if part.endswith('_facade') or '_facade_floor_' in part else
                 'box' if '_box_' in part else 'module')
         config = {key: parameters[key] for key in ('family', 'depth_units', 'height_units')
                   if key in parameters}
@@ -166,6 +173,8 @@ class BuildFiles:
             config['box_floor'] = parameters.get('box_floor', 0.8)
             config['box_variant'] = parameters.get('box_variant', 'plain')
             config['box_rear_pattern'] = parameters.get('box_rear_pattern', 'plain')
+        if kind == 'facade':
+            config['facade_floor'] = parameters.get('facade_floor', 'default')
         if kind == 'module':
             from .spec import PATTERN_DEFAULTS
             config['module_rear'] = parameters.get('module_rear', 0.9)

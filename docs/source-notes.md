@@ -81,3 +81,19 @@ surface-distance tolerance is therefore more meaningful than a literal
 pixel-perfect or identical-triangle claim. The comparison reports preserve
 the source geometry and distinguish these finite-precision differences from
 the intentionally removed decoration.
+
+## Installed module orientation
+
+The native reconstruction frame above is separate from the installed drawer
+frame. The source's marked top is near native Z=0 (see `reference.py`); the
+latch carrier and long underside tracks are above native Z=height. Pages 7–8
+of `02_Drawer Assembly.pdf` show the marked top upright, then turn the module
+over to install the underside latch.
+
+`assembly.py` therefore places the module with a proper 180-degree rotation
+about Y and a translation by its skin height in Z: `(X,Y,Z)` becomes
+`(-X,Y,height-Z)`. The opening still points along positive Y. Boxes, facades,
+rails and runners keep their existing upright installed poses. This changes
+assembly placement only; native constructors, reference comparisons and print
+exports retain their original frames. The closed-pose native assembly audit
+checks the resulting runner and rail interfaces without relaxing tolerances.

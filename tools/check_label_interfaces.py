@@ -6,16 +6,17 @@ from build123d import Face, Solid
 
 from vault._build import source_digest, source_hashes, write_json
 from vault.exports import precise_volume
-from vault.facade import build_facade
+from vault.facade import FacadeSpec, build_facade
 from vault.label import facade_transform, label_outline, to_facade
 from vault.reference import PROJECT_ROOT
-from vault.spec import ModuleSpec
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,default=PROJECT_ROOT/'out/reviews/label-interfaces.json')
+    parser.add_argument('--facade-floor', choices=('0.8', 'default'), default='default')
     args = parser.parse_args(argv)
+    facade_floor = .8 if args.facade_floor == '0.8' else 'default'
     cases = []
     for family,height in [(family,height) for family in ('S','M','L') for height in (1,2)]:
         # A solid envelope conservatively includes every hollow or solid label.
@@ -27,13 +28,13 @@ def main(argv=None):
         width_passed = (abs(bounds.size.X-expected_width) < 1e-5
                         and abs(bounds.min.X-32.3) < 1e-5
                         and abs(bounds.max.X-(32.3+expected_width)) < 1e-5)
-        facade = build_facade(spec=ModuleSpec(family,4,height))
+        facade = build_facade(spec=FacadeSpec(family,height,facade_floor))
         common = envelope.intersect(facade)
         overlap = sum(abs(precise_volume(s)) for s in common) if common else 0.
         distance = envelope.distance_to(facade)
         passed = (width_passed and envelope.is_valid and len(envelope.solids()) == 1
                   and overlap < 1e-6 and .0099 <= distance <= .0101)
-        result = {'family':family,'height_units':height,'passed':passed,
+        result = {'family':family,'height_units':height,'facade_floor':facade_floor,'passed':passed,
                   'expected_label_width_mm':expected_width,'actual_label_width_mm':bounds.size.X,
                   'width_and_endpoints_passed':width_passed,
                   'label_bounds_mm':[list(bounds.min),list(bounds.max)],

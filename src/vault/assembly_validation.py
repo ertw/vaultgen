@@ -1,7 +1,8 @@
 """Native geometry checks shared by generation and the assembly audit CLI.
 
-Validate only the closed assembled pose. Explosion vectors are illustrative
-translations, not certified paths; omitted hardware is not represented.
+Validate the closed pose of the six drawer component groups. Accessories in
+the complete-set view receive inventory/transform checks only, not fit checks.
+Explosion vectors are illustrative translations, not certified paths.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from pathlib import Path
 import time
 
 from .assembly import apply_transform, assembly_definition, build_finished_components
+from .generator import ASSEMBLY_PARTS
 
 
 VOLUME_TOLERANCE_MM3 = 1e-5
@@ -55,14 +57,17 @@ def definition_errors(configuration, definition):
     drawer_count = configuration.drawer_count
     per_bay = {"box": 1, "facade": 1, "rails": 2,
                "runner_guides": configuration.drawer_height_units * 2,
-               "runner_slides": configuration.drawer_height_units * 2}
-    expected = {"module": 1, **{kind: count * drawer_count for kind, count in per_bay.items()}}
+               "runner_slides": configuration.drawer_height_units * 2,
+               **{kind: configuration.print_copies[kind] // drawer_count
+                  for kind in ('key', 'spring', 'runner_stop', 'facade_cap', 'key_cap')}}
+    expected = {"module": 1, "latch": configuration.print_copies['latch'],
+                **{kind: count * drawer_count for kind, count in per_bay.items()}}
     if counts != expected:
         errors.append(f"Wrong instance inventory: {dict(counts)!r}; expected {expected!r}")
     if len({instance.get("id") for instance in instances}) != len(instances):
         errors.append("Instance IDs are not unique")
     bay_counts = Counter((instance.get("bay", 1), instance.get("kind"))
-                         for instance in instances if instance.get("kind") != "module")
+                         for instance in instances if instance.get("kind") not in ("module", "latch"))
     expected_bays = Counter({(bay, kind): count for bay in range(1, drawer_count + 1)
                             for kind, count in per_bay.items()})
     if bay_counts != expected_bays:
@@ -196,7 +201,8 @@ def validate_assembly(configuration, components=None, *, progress=None):
     ``components`` maps (kind, component) to native-coordinate finished solids.
     A caller validating an exported build should pass solids imported from its
     immutable native STEP assets, so the audit certifies the viewed geometry.
-    The report fails on invalid transforms, invalid solids, any positive-volume
+    Accessory display instances are listed as unchecked in the report.
+    The drawer report fails on invalid transforms, invalid solids, any positive-volume
     interference above numeric tolerance, unintended touching, or lost mating
     registrations. Missing components raise ValueError rather than passing a
     partial assembly.
@@ -211,12 +217,16 @@ def validate_assembly(configuration, components=None, *, progress=None):
         progress("building finished native components" if components is None
                  else "validating supplied finished native components")
     native = build_finished_components(configuration) if components is None else components
-    missing = {(instance["kind"], instance["component"]) for instance in definition["instances"]} - set(native)
+    # Accessories are visible in the complete set, but their installation and
+    # flexible snap interfaces are not certified by the closed drawer audit.
+    checked_instances = [instance for instance in definition["instances"]
+                         if instance['kind'] in ASSEMBLY_PARTS]
+    missing = {(instance["kind"], instance["component"]) for instance in checked_instances} - set(native)
     if missing:
         raise ValueError(f"Missing finished assembly components: {sorted(missing)!r}")
     placed = [(instance, apply_transform(native[(instance["kind"], instance["component"])],
                                          instance["transform"]))
-              for instance in definition["instances"]]
+              for instance in checked_instances]
     solids = []
     for instance, shape in placed:
         original = native[(instance["kind"], instance["component"])]
@@ -234,6 +244,9 @@ def validate_assembly(configuration, components=None, *, progress=None):
         pairs.append(check_pair(left_instance, left, right_instance, right))
     mating = mating_checks(configuration, placed, pairs)
     return {"configuration": configuration.as_dict(), "elapsed_seconds": time.monotonic() - started,
+            "scope": "drawer_components",
+            "unchecked_instances": [instance['id'] for instance in definition['instances']
+                                    if instance['kind'] not in ASSEMBLY_PARTS],
             "definition_errors": errors, "solids": solids, "pairs": pairs, "mating": mating,
             "passed": all(record["passed"] for record in [*solids, *pairs, *mating])}
 

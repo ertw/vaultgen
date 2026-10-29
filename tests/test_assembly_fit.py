@@ -136,7 +136,7 @@ class AssemblyFitTests(unittest.TestCase):
 
     def test_invalid_transforms_fail_before_native_geometry(self):
         config = Configuration()
-        for index, value in ((0, -1), (0, 2), (3, 1), (12, float("nan"))):
+        for index, value in ((0, 1), (0, 2), (3, 1), (12, float("nan"))):
             invalid = deepcopy(assembly_definition(config))
             invalid["instances"][0]["transform"][index] = value
             with self.subTest(index=index, value=value):
@@ -168,10 +168,17 @@ class AssemblyFitTests(unittest.TestCase):
         shape = Box(2, 2, 2)
         components = {(instance["kind"], instance["component"]): shape
                       for instance in assembly_definition(config)["instances"]}
+        # Counteract the housing's native-to-installed Z registration so its
+        # deliberately wrong test solid still coincides with the box.
+        components['module', 'single'] = shape.translate((0, 0, 47))
         with patch("vault.assembly_validation.build_finished_components") as build:
             report = validate_assembly(config, components)
             build.assert_not_called()
         self.assertFalse(report["passed"])
+        self.assertEqual(report['scope'], 'drawer_components')
+        self.assertEqual(set(report['unchecked_instances']), {
+            instance['id'] for instance in assembly_definition(config)['instances']
+            if instance['kind'] in ('key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch')})
         self.assertEqual(len(report["pairs"]), 36)
         collision = next(pair for pair in report["pairs"] if pair["instances"] == ["module", "box"])
         self.assertFalse(collision["passed"])

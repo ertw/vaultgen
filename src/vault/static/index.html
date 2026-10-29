@@ -35,9 +35,10 @@
           </div>
           <fieldset class="part-field" aria-describedby="part-hint"><legend>Parts</legend><div class="part-options" id="part-options"></div><p class="dimension-hint" id="part-hint" aria-live="polite"></p></fieldset>
           <fieldset id="box-variant-field" aria-describedby="box-variant-hint"><legend>Box base</legend><div class="segmented" id="box-variant-options"></div><p class="dimension-hint" id="box-variant-hint" aria-live="polite"></p></fieldset>
-          <fieldset><legend>Box floor</legend><div class="segmented" id="box-floor-options"></div></fieldset>
+          <fieldset id="box-bottom-field"><legend>Box bottom</legend><div class="segmented" id="box-bottom-options"></div></fieldset>
+          <fieldset id="minimum-floor-field" aria-describedby="minimum-floor-hint"><legend>Minimum floor</legend><div class="segmented" id="minimum-floor-options"></div><p class="dimension-hint" id="minimum-floor-hint"></p></fieldset>
           <fieldset id="box-rear-pattern-field" aria-describedby="box-rear-pattern-hint"><legend>Box rear wall</legend><div class="segmented" id="box-rear-pattern-options"></div><p class="dimension-hint" id="box-rear-pattern-hint"></p></fieldset>
-          <fieldset><legend>Module rear</legend><div class="segmented" id="module-rear-options"></div></fieldset>
+          <fieldset id="perimeters-field" aria-describedby="perimeters-hint"><legend>Perimeters</legend><div class="segmented" id="perimeters-options"></div><p class="dimension-hint" id="perimeters-hint">Applies to the module rear wall.</p></fieldset>
           <fieldset id="wall-pattern-field" aria-describedby="wall-pattern-hint"><legend>Module wall pattern</legend><div class="segmented" id="wall-pattern-options"></div>
             <div id="wall-pattern-settings" hidden>
               <p class="pattern-construction-label" id="pattern-construction-label">Wall construction</p><div class="segmented" id="pattern-construction-options" aria-labelledby="pattern-construction-label"></div>
@@ -60,7 +61,18 @@
         <div class="preview-heading"><div><div class="preview-status-row"><p class="eyebrow" id="preview-eyebrow">SELECTION</p><span id="build-freshness" class="revision-status" role="status" tabindex="0" hidden></span></div><h2 id="preview-title">S4 · 1F</h2></div><span id="preview-badge" class="badge">Configuration envelope</span></div>
         <p id="selection-note" class="dimension-hint" hidden></p>
         <div id="assembly-controls" class="assembly-controls" hidden>
-          <div class="explosion-controls"><button id="assemble-view" type="button" class="artifact-tab" aria-pressed="true">Assembled</button><label for="explosion">Explode <output id="explosion-value" for="explosion">0%</output></label><input id="explosion" type="range" min="0" max="100" value="0" aria-label="Assembly explosion"><button id="explode-view" type="button" class="artifact-tab" aria-pressed="false">Exploded</button><button id="fit-view" type="button" class="artifact-tab" title="Center and fit the currently visible components">Fit view</button></div>
+          <div class="explosion-controls">
+            <button id="assemble-view" type="button" class="artifact-tab" aria-pressed="true">Assembled</button>
+            <label for="explosion">Explode <output id="explosion-value" for="explosion">0%</output></label>
+            <input id="explosion" type="range" min="0" max="100" value="0" aria-label="Assembly explosion">
+            <button id="explode-view" type="button" class="artifact-tab" aria-pressed="false">Exploded</button>
+            <button id="fit-view" type="button" class="artifact-tab" title="Center and fit the currently visible components">Fit view</button>
+            <span id="assembly-colors" class="artifact-tab assembly-colors" role="group" aria-label="Assembly colors">
+              <input id="assembly-primary-color" type="color" value="#f2f0eb" aria-label="Primary color" title="Primary color">
+              <input id="assembly-secondary-color" type="color" value="#303030" aria-label="Secondary color" title="Secondary color">
+              <input id="assembly-highlight-color" type="color" value="#e7a6bd" aria-label="Highlight color" title="Highlight color">
+            </span>
+          </div>
           <p id="assembly-note" class="dimension-hint">Finished printed parts; sacrificial supports removed. Explosion shows part relationships, not a validated disassembly path.</p>
         </div>
         <div class="viewport" id="viewport">

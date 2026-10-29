@@ -47,15 +47,15 @@ with sync_playwright() as p:
     page.locator('#family-options button').nth(2).click()
     page.locator('#height-options button').nth(1).click()
     assert page.locator('#configuration-name').inner_text()=='L4 · 2F'
-    expect(page.locator('#preview-title')).to_have_text('L4 · 2F complete set',timeout=60000)
+    expect(page.locator('#preview-title')).to_have_text('L4 · 2F · 0.8 mm facade floor complete set',timeout=60000)
     page.locator('#drawer-layout-options button[data-value="2"]').click()
     expect(page.locator('#configuration-name')).to_have_text('L4² · 2F')
-    expect(page.locator('#preview-title')).to_have_text('L4² · 2F complete set',timeout=60000)
+    expect(page.locator('#preview-title')).to_have_text('L4² · 2F · 0.8 mm facade floor complete set',timeout=60000)
     expect(page.locator('#part-hint')).to_contain_text('two S boxes')
     page.screenshot(path=str(out/'desktop-multi-drawer.png'),full_page=True)
     page.locator('#drawer-layout-options button[data-value="4"]').click()
     expect(page.locator('#configuration-name')).to_have_text('L4² · 2F · 4 drawers')
-    expect(page.locator('#preview-title')).to_have_text('L4² · 2F · 4 drawers complete set',timeout=60000)
+    expect(page.locator('#preview-title')).to_have_text('L4² · 2F · 4 drawers · 0.8 mm facade floor complete set',timeout=60000)
     expect(page.locator('#part-hint')).to_contain_text('four S1F boxes')
     page.screenshot(path=str(out/'desktop-four-drawer.png'),full_page=True)
     page.locator('#drawer-layout-options button[data-value="1"]').click()
@@ -72,7 +72,7 @@ with sync_playwright() as p:
         # selected assembly; this behavior predates the label editor.
         page.locator('#family-options button').nth(1).click()
         expect(page.locator('#configuration-name')).to_have_text('M4 · 2F')
-        expect(page.locator('#preview-title')).to_have_text('M4 · 2F complete set',timeout=60000)
+        expect(page.locator('#preview-title')).to_have_text('M4 · 2F · 0.8 mm facade floor complete set',timeout=60000)
         expect(page.locator('#preview-eyebrow')).to_have_text('COMPLETE SET')
         page.locator('.history-card').first.click()
         expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true',timeout=60000)
@@ -98,7 +98,7 @@ with sync_playwright() as p:
                     assert len(response.body())>100
             page.screenshot(path=str(out/f'{kind}-preview.png'),full_page=True)
     page.locator('#part-options button[data-value="box"]').click()
-    for target,value in [('family','S'),('depth','4'),('height','1'),('box-floor','0.8')]:
+    for target,value in [('family','S'),('depth','4'),('height','1'),('minimum-floor','0.8')]:
         page.locator(f'#{target}-options button[data-value="{value}"]').click()
     page.locator('#box-variant-options button[data-value="gridfinity"]').click()
     expect(page.locator('#configuration-name')).to_have_text('S4 · 1F · Gridfinity')

@@ -41,7 +41,8 @@ class StepExportTests(unittest.TestCase):
         import numpy as np
         import trimesh
         from vault.box import BoxSpec
-        for spec in (DEFAULT_SPEC, BoxSpec()):
+        from vault.facade import FacadeSpec
+        for spec in (DEFAULT_SPEC, BoxSpec(), FacadeSpec(), FacadeSpec(facade_floor=.8)):
             with self.subTest(spec=spec), tempfile.TemporaryDirectory() as temporary:
                 output = Path(temporary)
                 native = Pos(2, 3, 25) * Box(10, 20, 30)
