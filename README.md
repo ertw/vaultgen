@@ -3,8 +3,8 @@
 The size configurator at **https://vaultgen.erik.cl** generates matching modules,
 boxes, facades, geared rails, runner guides, runner slides, keys, springs, runner
 stops, facade caps, key caps and latches. Choose S, M or L,
-depth 3–7, and 1F or 2F;
-XL and taller configurations are excluded from the generator. Build a single
+depth 3–7, and 1F, 2F or 4F;
+XL and other heights are excluded from the generator. Build a single
 part or a complete set, inspect the actual print-oriented STL in 3D, and download
 checked STL/STEP files or the whole set as a ZIP. Existing host sign-in protects
 the application.
@@ -57,7 +57,6 @@ Enter the pinned development environment:
 nix develop
 # On a fresh checkout, run just setup once.
 python -m vault build
-python -m vault validate
 python -m unittest discover -s tests -v
 ```
 
@@ -75,33 +74,32 @@ python -m vault build --part runner_slides --depth-units 7
 python -m vault build --family L --depth-units 6 --height-units 2 --drawer-columns 2
 ```
 
-Modules also offer **Waffle** and **Miura-ori** wall variants in the configurator:
+The configurator shares **Wall pattern → Plain / Miura-ori** and
+**Perimeters → 1 / 2 / Full width** between boxes and modules. Two perimeters
+is the default. Select a **0.6 or 0.8 mm nozzle** to target 0.65 or 0.85 mm per
+nominal extrusion line in the thin sections. Both plain and patterned walls
+use this target; Full width keeps the original solid walls without relief.
 
 ```bash
-python -m vault build --wall-pattern waffle
-python -m vault build --wall-pattern miura
-python -m vault build --wall-pattern waffle --pattern-construction corrugated
-python -m vault build --wall-pattern miura --pattern-construction corrugated
-python -m vault build --wall-pattern miura --pattern-pitch 20 \
-  --pattern-depth 1.4 --pattern-line-width 0.8 --pattern-faces sides
+python -m vault build --wall-pattern plain --wall-perimeters 2 --nozzle-size 0.6
+python -m vault build --wall-pattern miura --wall-perimeters 1 --nozzle-size 0.8
+python -m vault build --part box --wall-pattern miura --wall-perimeters 2
+python -m vault build --wall-perimeters full
 ```
 
-Choose **Recessed** for outer dimples with a **1.3 mm minimum web** at the default
-14 mm pitch and 1.7 mm depth, retaining the original inner surfaces. Choose
-**Two-perimeter corrugated** for paired relief on both sides of each patterned
-panel, targeting **1.3 mm normal facet thickness** for two 0.65 mm extrusion lines
-with a 0.6 mm nozzle. Both options stay inside the existing wall thickness and
-return to full thickness at connector roots, front lips, stopper lands and other
-protected features. Miura-ori uses a sharper zigzag crease relief; it is a rigid
-printed wall, not a folding mechanism. Patterns default to all four long faces;
-`--pattern-faces sides` limits them to the left and right walls. Verify perimeter
-paths in the slicer and test printed fit. See [pattern parameters and protected
-surfaces](docs/generator-geometry.md#patterned-module-walls).
+All eligible module faces receive the selected wall treatment. Box rear panels
+share the pattern and thickness, while their runner backing remains plain at
+the selected thickness. Native transitions preserve connector roots, front lips,
+stopper lands and other mechanical interfaces. Miura-ori uses paired zigzag
+relief inside the original wall envelope, with thickness measured normal to its
+facets. It is a rigid printed wall, not a folding mechanism. Slice with Arachne
+and inspect its variable-width paths; perimeter counts and printed fit still
+need verification. See [wall geometry](docs/generator-geometry.md#patterned-module-walls).
 
 **L² multi-drawer modules** have two S-width bays inside the standard
 329.6 mm L envelope. Select **Two S drawers** with family L in the configurator,
 or pass `--drawer-columns 2` to the CLI. The generator offers depths 3–7 and
-heights 1F/2F. Single-part box, facade and geared-rail selections resolve to S
+heights 1F/2F/4F. Single-part box, facade and geared-rail selections resolve to S
 parts; complete sets record the required copies and place each drawer in the
 assembly view.
 
@@ -113,8 +111,9 @@ Changing the drawer layout changes the matching parts, print quantities and
 assembly placements. For four drawers, use
 `--family L --height-units 2 --drawer-columns 2 --drawer-rows 2` on the CLI.
 The matching boxes and facades are 1F, with four copies of each in the print plan.
-Both layouts share the `l6_2_columns_module_2f` module identity at depth 6,
-and the same module STL/STEP downloads and reusable build.
+Both layouts share a module build at depth 6 when their wall settings agree.
+With the new defaults its identity is
+`l6_2_columns_module_2f_plain_walls_2p_n0p6`.
 
 Boxes also offer a **Gridfinity** base in the configurator. It integrates a
 42 mm grid inside the drawer: S has three columns, M five, and L six, with
@@ -133,7 +132,7 @@ Choose **Floorless** under Box bottom with the Gridfinity base to open each
 cell bottom. The grid and its perimeter support the drawer and bins; the
 socket height and profiles match the 0.8 mm-floor option. On the CLI, use
 `--box-variant gridfinity --box-floor 0`. Floorless is available only with
-Gridfinity and can be combined with either patterned rear wall.
+Gridfinity and can be combined with Plain or Miura-ori walls.
 
 The vertical divider repeats the native runner channels, bores, handed mouth
 pockets and removable supports. Rear access passages lead to the center runner
@@ -308,7 +307,7 @@ from `S1F (Turn On Supports).stl` measurements. `python -m vault build`
 builds the corresponding S4 Module 1F. Both use the usual immutable build
 storage and appear in the existing Vault viewer. The latest files are
 `out/latest/s1f_facade/s1f_facade.step` and
-`out/latest/s4_module_1f/s4_module_1f.step`.
+`out/latest/s4_module_1f_plain_walls_2p_n0p6/s4_module_1f_plain_walls_2p_n0p6.step`.
 
 The facade constructor is `src/vault/facade.py`; it uses native lofts, arcs,
 extrusions and booleans, without loading the source mesh. It retains the
@@ -342,17 +341,18 @@ retain a thin front skin and reinforcement around the lock, perimeter and screw
 mounts, with the original exterior and mating profiles. The new variant exports
 front-down so its rear cavities open upward. **Default** keeps the original
 facade. The same control selects a box's 0.8 or 3 mm floor; it appears only for
-relevant parts and complete sets. **Perimeters → 0.9 mm / Default** selects the
-module rear's 0.9 or 2 mm thickness and appears only for modules and sets.
+relevant parts and complete sets. **Perimeters** selects one or two nominal
+extrusion lines in box/module thin walls, or **Full width** for original solid
+walls. The module's bed-facing rear remains a separate floor dimension.
 See [generator options](docs/generator.md#generator-builds) and
 [facade geometry](docs/generator-geometry.md#shelled-facades).
 
 ## S4 Box 1F
 
 `python -m vault build --part box` builds the native drawer tray and publishes
-`out/latest/s4_box_1f/`, including STEP, BREP, print STL, and review images.
+`out/latest/<selected-box-identity>/`, including STEP, BREP, print STL, and review images.
 The existing catalog entry is **S4 Box 1F**, bound to the `vault-box` adapter.
-The CLI and generator also support S/M/L boxes and facades at 1F or 2F.
+The CLI and generator also support S/M/L boxes and facades at 1F, 2F or 4F.
 Shared dimensions and screw centers live in `src/vault/drawer.py`; runner
 profiles repeat by tier, while the lock stays on the bottom tier. `python -m vault render --part box` renders its latest build.
 
@@ -362,9 +362,9 @@ rounded cavity, side runner channels and strips, a solid rear wall, and front
 attachment lands with 3.6 mm screw holes. The front seating plane is
 Y=188.1; screw centers are X=±51.45, Z=23.5, matching the positioned S1F
 facade. Print exports place the closed bottom on Z=0.
-The interior is widened to leave 1.3 mm behind both runner channels for two
-perimeters with a 0.6 mm nozzle. Exterior dimensions and the front screw
-attachment wall are retained.
+The default two-perimeter selection leaves 1.3 mm behind both runner channels
+for a 0.6 mm nozzle. The cavity width follows the selected perimeter/nozzle
+target; exterior dimensions and the front screw attachment wall are retained.
 
 The front attachment pockets open through the outside wall at negative X/lower
 and positive X/upper, matching the module's handed gear mates. The exits retain
@@ -375,13 +375,13 @@ of central headroom** for bridge sag during bottom-down printing. The arch
 retains the side shoulders and blind installation stop. Plain and Gridfinity
 boxes use these same passages; printed clearance still needs checking.
 
-**Box rear wall** offers Plain, Waffle, and Miura-ori independently of the
-module walls and box base. The patterned choices use two-perimeter corrugation
-inside the existing 3 mm rear wall, with 14 mm pitch and 1.3 mm facet thickness
-for two 0.65 mm extrusion lines. Floor fillets, corners and the top rim retain
-solid lands. Use `--box-rear-pattern waffle` or `--box-rear-pattern miura`
-when building a box; Plain remains the default. Inspect the slicer paths and
-printed fit before use.
+The shared **Wall pattern** choice applies Plain or Miura-ori to the box rear.
+**Perimeters** and **Nozzle size** determine its thin-panel thickness and the
+backing behind both side runner channels. Miura relief stays within the existing
+3 mm rear envelope; floor fillets, corners and the top rim retain solid lands.
+Use `--wall-pattern miura --wall-perimeters 2 --nozzle-size 0.8` when building a
+box. Full width retains the original solid rear and runner backing. Inspect the
+slicer paths and printed fit before use.
 
 The exterior front corners are square in plan, as in the original box. This
 preserves the side walls and front rims around the two closed attachment
@@ -455,7 +455,7 @@ and add a straight shank before the tail instead of stretching the mechanism.
 
 The generator offers **Runner guides** and **Runner slides** individually and
 includes both in a complete set. Their size follows the selected depth, from
-X3 through X7; S/M/L family and 1F/2F height do not change these parts. Use the
+X3 through X7; S/M/L family and 1F/2F/4F height do not change these parts. Use the
 guide and slide files with the same depth as the module and box.
 
 The CLI selectors are `--part runner_guides` and `--part runner_slides`, with

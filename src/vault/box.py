@@ -3,14 +3,16 @@
 Measured nominal dimensions from S4 Box 1F.stl. The front seating plane is
 Y=188.1 and screw axes coincide with the S1F facade. Small source blends and
 attachment recesses are simplified; branding is omitted. Sacrificial sheets support
-both runner channels during bottom-down printing. The rear wall is plain by
-default, with optional two-perimeter Waffle and Miura-ori corrugation.
+both runner channels during bottom-down printing. The shared wall setting
+targets one or two perimeters in the backing and plain or Miura rear panel;
+legacy native specs retain their historical independent rear-wall options.
 """
 from dataclasses import dataclass
 from math import ceil, isfinite, sqrt
 from build123d import Axis, Edge, Solid, Wire, Face, Plane
 from .shell import _rounded_rect
-from .spec import DEFAULT_SPEC, WALL_PATTERNS
+from .spec import (DEFAULT_SPEC, WALL_PATTERNS, validate_wall_settings,
+                   wall_parameters, wall_setting_suffix, wall_target_thickness)
 from .drawer import DrawerLayout, drawer_spec
 
 
@@ -22,8 +24,19 @@ class BoxSpec:
     box_floor: float = 0.8
     box_variant: str = 'plain'
     box_rear_pattern: str = 'plain'
+    wall_perimeters: int | str | None = None
+    nozzle_size: float = 0.6
+    wall_pattern: str = 'plain'
+    pattern_pitch: float = 14.0
+    pattern_depth: float = 1.7
 
     def __post_init__(self):
+        validate_wall_settings(self)
+        if self.wall_perimeters is not None:
+            object.__setattr__(self, 'box_rear_pattern', self.wall_pattern)
+        else:
+            for key, value in (('wall_pattern', 'plain'), ('pattern_pitch', 14.), ('pattern_depth', 1.7)):
+                object.__setattr__(self, key, value)
         drawer_spec(self)
         if type(self.box_floor) not in (int, float) or self.box_floor not in (0.0, 0.8, 3.0):
             raise ValueError('Box floor must be 0 (floorless Gridfinity), 0.8, or 3.0 mm')
@@ -39,6 +52,9 @@ class BoxSpec:
         floor = ' · Floorless' if self.box_floor == 0 else ' · 3 mm floor' if self.box_floor == 3 else ''
         base = ' · Gridfinity' if self.box_variant == 'gridfinity' else ''
         rear = f' · {WALL_PATTERNS[self.box_rear_pattern]} corrugated rear' if self.box_rear_pattern != 'plain' else ''
+        if self.wall_perimeters is not None:
+            rear += (' · Full width' if self.wall_perimeters == 'full' else
+                     f' · {self.wall_perimeters} perimeter{ "s" if self.wall_perimeters == 2 else ""}, {self.nozzle_size:g} mm nozzle')
         return f'{self.family}{self.depth_units} Box {self.height_units}F' + floor + base + rear
 
     @property
@@ -46,6 +62,8 @@ class BoxSpec:
         floor = '_floorless' if self.box_floor == 0 else '_floor_3mm' if self.box_floor == 3 else ''
         base = '_gridfinity' if self.box_variant == 'gridfinity' else ''
         rear = f'_rear_{self.box_rear_pattern}_corrugated' if self.box_rear_pattern != 'plain' else ''
+        if self.wall_perimeters is not None:
+            rear = wall_setting_suffix(self)
         return f'{self.family.lower()}{self.depth_units}_box_{self.height_units}f' + floor + base + rear
 
 
@@ -179,10 +197,11 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
     floor_thickness = getattr(spec, 'box_floor', 0.8)
     box_variant = getattr(spec, 'box_variant', 'plain')
     box_rear_pattern = getattr(spec, 'box_rear_pattern', 'plain')
+    wall_settings = wall_parameters(spec) if hasattr(spec, 'wall_perimeters') else {}
     layout = DrawerLayout(spec)
     spec = layout.spec
     box_spec = BoxSpec(spec.family, spec.depth_units, spec.height_units,
-                       floor_thickness, box_variant, box_rear_pattern)
+                       floor_thickness, box_variant, box_rear_pattern, **wall_settings)
     dx, dy, dz = layout.width_delta, layout.depth_delta, layout.height_delta
     if not isfinite(gear_corner_radius) or not 0 <= gear_corner_radius <= 1.0:
         raise ValueError('gear_corner_radius must be between 0 and 1 mm')
@@ -200,9 +219,11 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
     # Floorless Gridfinity retains the thin foundation beneath its webs and
     # perimeter; socket openings are cut through it after the grid is fused.
     floor_z = 6 + max(0.8, floor_thickness)
-    # Leave 1.3 mm behind the runner channels for two extrusion lines
-    # with a 0.6 mm nozzle. Keep front/rear planes and exterior fixed.
-    cavity_half_width = 64.9 + dx - 1.3
+    # Change the cavity side of the backing to target the selected perimeters.
+    # The runner's external profile stays fixed. Legacy/full retains 1.3 mm.
+    backing = (wall_target_thickness(box_spec)
+               if box_spec.wall_perimeters in (1, 2) else 1.3)
+    cavity_half_width = 64.9 + dx - backing
     cavity = _rounded_rect(-cavity_half_width,3,cavity_half_width,179.2+dy,3.5,
                            lambda x,y:(x,y,floor_z))
     cutter = Solid.extrude(cavity,(0,0,40+dz))
@@ -263,7 +284,7 @@ def build_box(*, spec=DEFAULT_SPEC, gear_corner_radius=0.8, runner_clearance=0.3
     part=part.cut(_linear_gear_exit(corner_radius=gear_corner_radius, layout=layout),
                   _linear_gear_exit(lower=True, corner_radius=gear_corner_radius, layout=layout))
     part=part.translate((0,2.3,-1))
-    if box_rear_pattern != 'plain':
+    if box_rear_pattern != 'plain' or box_spec.wall_perimeters in (1, 2):
         from .box_wall_patterns import apply_box_rear_pattern
         part = apply_box_rear_pattern(part, box_spec)
     if box_variant == 'gridfinity':

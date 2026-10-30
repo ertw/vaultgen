@@ -37,21 +37,18 @@
           <fieldset id="box-variant-field" aria-describedby="box-variant-hint"><legend>Box base</legend><div class="segmented" id="box-variant-options"></div><p class="dimension-hint" id="box-variant-hint" aria-live="polite"></p></fieldset>
           <fieldset id="box-bottom-field"><legend>Box bottom</legend><div class="segmented" id="box-bottom-options"></div></fieldset>
           <fieldset id="minimum-floor-field" aria-describedby="minimum-floor-hint"><legend>Minimum floor</legend><div class="segmented" id="minimum-floor-options"></div><p class="dimension-hint" id="minimum-floor-hint"></p></fieldset>
-          <fieldset id="box-rear-pattern-field" aria-describedby="box-rear-pattern-hint"><legend>Box rear wall</legend><div class="segmented" id="box-rear-pattern-options"></div><p class="dimension-hint" id="box-rear-pattern-hint"></p></fieldset>
-          <fieldset id="perimeters-field" aria-describedby="perimeters-hint"><legend>Perimeters</legend><div class="segmented" id="perimeters-options"></div><p class="dimension-hint" id="perimeters-hint">Applies to the module rear wall.</p></fieldset>
-          <fieldset id="wall-pattern-field" aria-describedby="wall-pattern-hint"><legend>Module wall pattern</legend><div class="segmented" id="wall-pattern-options"></div>
+          <fieldset id="perimeters-field" aria-describedby="perimeters-hint"><legend>Perimeters</legend><div class="segmented" id="perimeters-options"></div><p class="dimension-hint" id="perimeters-hint"></p></fieldset>
+          <fieldset id="nozzle-field"><legend>Nozzle size <span class="field-unit">mm</span></legend><div class="segmented" id="nozzle-options"></div></fieldset>
+          <fieldset id="wall-pattern-field" aria-describedby="wall-pattern-hint"><legend>Wall pattern</legend><div class="segmented" id="wall-pattern-options"></div>
             <div id="wall-pattern-settings" hidden>
-              <p class="pattern-construction-label" id="pattern-construction-label">Wall construction</p><div class="segmented" id="pattern-construction-options" aria-labelledby="pattern-construction-label"></div>
               <div class="pattern-inputs">
                 <label for="pattern-pitch">Pitch <span class="field-unit">mm</span><input id="pattern-pitch" type="number" min="8" max="40" step="0.1" required></label>
                 <label for="pattern-depth">Depth <span class="field-unit">mm</span><input id="pattern-depth" type="number" min="0.2" max="2" step="0.05" required aria-describedby="wall-pattern-error"></label>
-                <label for="pattern-line-width">Line width <span class="field-unit">mm</span><input id="pattern-line-width" type="number" min="0.6" max="1" step="0.01" required aria-describedby="wall-pattern-error"></label>
               </div>
-              <p class="pattern-faces-label" id="pattern-faces-label">Patterned faces</p><div class="segmented" id="pattern-faces-options" aria-labelledby="pattern-faces-label"></div>
             </div>
             <p class="dimension-hint" id="wall-pattern-hint"></p><p id="wall-pattern-error" class="error-message" role="alert" hidden></p>
           </fieldset>
-          <div class="config-summary"><svg class="icon"><use href="#i-cube"/></svg><div><strong id="configuration-name">S4 · 1F</strong><span id="configuration-dimensions"></span></div><span class="size-limit">S → L · 2F max</span></div>
+          <div class="config-summary"><svg class="icon"><use href="#i-cube"/></svg><div><strong id="configuration-name">S4 · 1F</strong><span id="configuration-dimensions"></span></div><span class="size-limit">S → L · 4F max</span></div>
           <button id="build-button" class="button button-primary" type="submit" disabled><span id="build-button-text">Generate parts</span><svg class="icon"><use href="#i-arrow"/></svg></button>
         </form>
         <p id="connection-error" class="error-message" role="alert" hidden></p>

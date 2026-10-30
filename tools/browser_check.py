@@ -32,8 +32,12 @@ with sync_playwright() as p:
     expect(page.locator('#drawer-layout-options button[data-value="4"]')).to_be_disabled()
     assert page.locator('#family-options button').count()==3
     assert page.locator('#depth-options button').count()==5
-    assert page.locator('#height-options button').count()==2
+    expect(page.locator('#height-options button')).to_have_text(['1F', '2F', '4F'])
     expect(page.locator('#part-options button')).to_have_count(13)
+    expect(page.locator('#perimeters-options button')).to_have_text(['1 perimeter', '2 perimeters', 'Full width'])
+    expect(page.locator('#perimeters-options button[data-value="2"]')).to_have_attribute('aria-pressed', 'true')
+    expect(page.locator('#nozzle-options button')).to_have_text(['0.6 mm', '0.8 mm'])
+    expect(page.locator('#wall-pattern-options button')).to_have_text(['Plain', 'Miura-ori'])
     expect(page.locator('#box-variant-options button')).to_have_count(2)
     expect(page.locator('#box-variant-options button[data-value="plain"]')).to_have_attribute('aria-pressed','true')
     for part, name in [('runner_guides', 'runner guides'), ('runner_slides', 'runner slides')]:
@@ -47,17 +51,29 @@ with sync_playwright() as p:
     page.locator('#family-options button').nth(2).click()
     page.locator('#height-options button').nth(1).click()
     assert page.locator('#configuration-name').inner_text()=='L4 · 2F'
-    expect(page.locator('#preview-title')).to_have_text('L4 · 2F · 0.8 mm facade floor complete set',timeout=60000)
+    expect(page.locator('#preview-title')).to_have_text('L4 · 2F · 2 perimeters, 0.6 mm nozzle · 0.8 mm facade floor complete set',timeout=60000)
     page.locator('#drawer-layout-options button[data-value="2"]').click()
     expect(page.locator('#configuration-name')).to_have_text('L4² · 2F')
-    expect(page.locator('#preview-title')).to_have_text('L4² · 2F · 0.8 mm facade floor complete set',timeout=60000)
+    expect(page.locator('#preview-title')).to_have_text('L4² · 2F · 2 perimeters, 0.6 mm nozzle · 0.8 mm facade floor complete set',timeout=60000)
     expect(page.locator('#part-hint')).to_contain_text('two S boxes')
     page.screenshot(path=str(out/'desktop-multi-drawer.png'),full_page=True)
     page.locator('#drawer-layout-options button[data-value="4"]').click()
     expect(page.locator('#configuration-name')).to_have_text('L4² · 2F · 4 drawers')
-    expect(page.locator('#preview-title')).to_have_text('L4² · 2F · 4 drawers · 0.8 mm facade floor complete set',timeout=60000)
+    expect(page.locator('#preview-title')).to_have_text('L4² · 2F · 4 drawers · 2 perimeters, 0.6 mm nozzle · 0.8 mm facade floor complete set',timeout=60000)
     expect(page.locator('#part-hint')).to_contain_text('four S1F boxes')
     page.screenshot(path=str(out/'desktop-four-drawer.png'),full_page=True)
+    page.locator('#height-options button[data-value="4"]').click()
+    expect(page.locator('#configuration-name')).to_have_text('L4² · 4F')
+    expect(page.locator('#height-hint')).to_have_text('191 mm body height')
+    expect(page.locator('#drawer-layout-options button[data-value="4"]')).to_be_disabled()
+    expect(page.locator('#drawer-layout-options button[data-value="2"]')).to_have_attribute('aria-pressed','true')
+    expect(page.locator('#preview-title')).to_have_text('L4² · 4F · 2 perimeters, 0.6 mm nozzle · 0.8 mm facade floor complete set',timeout=60000)
+    page.screenshot(path=str(out/'desktop-4f.png'),full_page=True)
+    page.set_viewport_size({'width':390,'height':844})
+    page.locator('.size-row').screenshot(path=str(out/'mobile-4f-controls.png'))
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+    page.set_viewport_size({'width':1440,'height':1150})
+    page.locator('#height-options button[data-value="2"]').click()
     page.locator('#drawer-layout-options button[data-value="1"]').click()
     expect(page.locator('#configuration-name')).to_have_text('L4 · 2F')
     if page.locator('.history-card').count():
@@ -72,7 +88,7 @@ with sync_playwright() as p:
         # selected assembly; this behavior predates the label editor.
         page.locator('#family-options button').nth(1).click()
         expect(page.locator('#configuration-name')).to_have_text('M4 · 2F')
-        expect(page.locator('#preview-title')).to_have_text('M4 · 2F · 0.8 mm facade floor complete set',timeout=60000)
+        expect(page.locator('#preview-title')).to_have_text('M4 · 2F · 2 perimeters, 0.6 mm nozzle · 0.8 mm facade floor complete set',timeout=60000)
         expect(page.locator('#preview-eyebrow')).to_have_text('COMPLETE SET')
         page.locator('.history-card').first.click()
         expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true',timeout=60000)
@@ -107,7 +123,10 @@ with sync_playwright() as p:
     gridfinity_build=next((build for build in builds
         if build['kind']=='box' and all(build['configuration'].get(key)==value for key,value in
             [('family','S'),('depth_units',4),('height_units',1),('box_variant','gridfinity')])
-        and build['configuration'].get('box_floor',0.8)==0.8),None)
+        and build['configuration'].get('box_floor',0.8)==0.8
+        and build['configuration'].get('wall_perimeters') == 2
+        and build['configuration'].get('nozzle_size', .6) == .6
+        and build['configuration'].get('wall_pattern', 'plain') == 'plain'),None)
     if gridfinity_build:
         expect(page.locator('#preview-title')).to_have_text(gridfinity_build['name'],timeout=60000)
         expect(page.locator('#model-canvas')).to_have_attribute('data-model-ready','true',timeout=60000)

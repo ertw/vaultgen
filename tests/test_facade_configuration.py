@@ -17,7 +17,7 @@ class FacadeConfigurationTests(unittest.TestCase):
         self.assertEqual(catalog()['defaults']['facade_floor'], 'default')
         self.assertEqual(catalog()['thicknesses']['facade_floor'], [.8, 'default'])
         self.assertEqual(catalog()['thickness_applicability'],
-                         {'minimum_floor': ['box', 'facade'], 'perimeters': ['module']})
+                         {'minimum_floor': ['box', 'facade'], 'perimeters': ['module', 'box']})
         for value in (.8, 'default'):
             self.assertEqual(Configuration.parse({'facade_floor': value}).facade_floor, value)
         for value in (0, 3, .9, '0.8', '', None, True, [], {}, float('nan')):

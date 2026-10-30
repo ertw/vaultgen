@@ -67,14 +67,12 @@ legend { width: 100%; padding: 0 0 10px; font-size: 13px; font-weight: 600; }
 .segmented button:disabled { cursor: not-allowed; background: transparent; }
 .segmented button[aria-pressed=true] { background: var(--selected); color: #cce0ef; font-weight: 600; }
 .dimension-hint { font-size: 11px; color: var(--muted); margin-top: 7px; }
-.pattern-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 13px 0; }
-.pattern-inputs label, .pattern-faces-label { font-size: 11px; color: var(--muted); }
+.pattern-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 13px 0; }
+.pattern-inputs label { font-size: 11px; color: var(--muted); }
 .pattern-inputs .field-unit { margin-left: 1px; }
 .pattern-inputs input { display: block; width: 100%; min-width: 0; margin-top: 5px; padding: 8px 6px; color: var(--text); background: var(--background); border: 1px solid var(--border); border-radius: 4px; font: inherit; font-size: 13px; }
 .pattern-inputs input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .pattern-inputs input[aria-invalid=true] { border-color: var(--error); }
-.pattern-faces-label { margin-bottom: 5px; }
-.pattern-construction-label { margin: 13px 0 5px; color: var(--muted); font-size: 11px; }
 .part-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .part-option { border: 1px solid var(--border); border-radius: 5px; background: transparent; text-align: left; font-size: 12px; padding: 10px; display: flex; align-items: center; gap: 8px; }
 .part-option:first-child { grid-column: 1 / -1; }

@@ -6,7 +6,7 @@ S/M/L 1F and 2F sources place the box 5 mm above the sleeve datum, with a
 bottom tier; the tall trays repeat their runner channels and outer screws.
 """
 from dataclasses import dataclass
-from .spec import DEFAULT_SPEC, ModuleSpec
+from .spec import DEFAULT_SPEC, DRAWER_HEIGHTS, ModuleSpec
 
 
 def drawer_spec(spec=DEFAULT_SPEC):
@@ -16,8 +16,8 @@ def drawer_spec(spec=DEFAULT_SPEC):
                             getattr(spec, 'drawer_height_units', spec.height_units))
     if normalized.family not in ("S", "M", "L"):
         raise ValueError("Drawer parts support S, M, and L families")
-    if normalized.height_units not in (1, 2):
-        raise ValueError("Drawer parts support 1F and 2F heights")
+    if normalized.height_units not in DRAWER_HEIGHTS:
+        raise ValueError("Drawer parts support 1F, 2F, and 4F heights")
     return normalized
 
 

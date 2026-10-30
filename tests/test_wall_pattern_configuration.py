@@ -10,7 +10,7 @@ from vault import __main__ as cli, build as builds
 from vault.assembly import assembly_definition, build_finished_components
 from vault.assembly_validation import validation_signature
 from vault.generator import Configuration, catalog
-from vault.spec import ModuleSpec, PATTERN_DEFAULTS, pattern_parameters
+from vault.spec import ModuleSpec, PATTERN_DEFAULTS, pattern_parameters, wall_parameters, wall_target_thickness
 
 
 class PatternConfigurationTests(unittest.TestCase):
@@ -26,8 +26,9 @@ class PatternConfigurationTests(unittest.TestCase):
         self.assertEqual(ModuleSpec(pattern_pitch=20), plain)
         self.assertEqual(ModuleSpec(pattern_construction='corrugated'), plain)
         self.assertEqual(pattern_parameters(Configuration.parse({})), dict(PATTERN_DEFAULTS))
-        self.assertEqual([item['id'] for item in catalog()['wall_patterns']], ['plain', 'waffle', 'miura'])
-        self.assertEqual([item['id'] for item in catalog()['pattern_constructions']], ['recessed', 'corrugated'])
+        self.assertEqual([item['id'] for item in catalog()['wall_patterns']], ['plain', 'miura'])
+        self.assertNotIn('pattern_constructions', catalog())
+        self.assertNotIn('pattern_faces', catalog())
 
     def test_native_and_http_reject_invalid_or_under_thickness_parameters(self):
         values = [{'wall_pattern': 'honeycomb'}, {'wall_pattern': []}, {'pattern_faces': 'front'},
@@ -56,13 +57,13 @@ class PatternConfigurationTests(unittest.TestCase):
 
     def test_cli_propagates_parameters_and_rejects_invalid_values_before_build(self):
         argv = ['vault', 'build', '--wall-pattern', 'miura', '--pattern-pitch', '20',
-                '--pattern-depth', '1.4', '--pattern-line-width', '.8', '--pattern-faces', 'sides',
-                '--pattern-construction', 'corrugated']
+                '--pattern-depth', '1.4', '--nozzle-size', '.8', '--wall-perimeters', '1']
         with patch('sys.argv', argv), patch.object(cli, 'build') as build:
             cli.main()
         spec = build.call_args.args[1]
         self.assertEqual(pattern_parameters(spec), dict(wall_pattern='miura', pattern_pitch=20.,
-                         pattern_depth=1.4, pattern_line_width=.8, pattern_faces='sides', pattern_construction='corrugated'))
+                         pattern_depth=1.4, pattern_line_width=.85, pattern_faces='all', pattern_construction='corrugated'))
+        self.assertEqual((spec.wall_perimeters, spec.nozzle_size), (1, .8))
         with patch('sys.argv', ['vault', 'build', '--wall-pattern', 'waffle', '--pattern-depth', '2']), \
                 patch.object(cli, 'build') as build, redirect_stderr(StringIO()), self.assertRaises(SystemExit):
             cli.main()
@@ -96,6 +97,63 @@ class PatternConfigurationTests(unittest.TestCase):
             build_finished_components(config)
         self.assertFalse(module.call_args.kwargs['include_supports'])
         self.assertEqual(pattern_parameters(module.call_args.kwargs['spec']), pattern_parameters(config))
+
+
+class SharedWallConfigurationTests(unittest.TestCase):
+    def test_new_requests_default_to_two_perimeters_without_reinterpreting_history(self):
+        selected = Configuration.parse_request({})
+        self.assertEqual((selected.wall_perimeters, selected.nozzle_size), (2, .6))
+        self.assertEqual(selected.pattern_construction, 'corrugated')
+        self.assertIsNone(Configuration.parse({}).wall_perimeters)
+        self.assertEqual(Configuration.parse({'wall_pattern': 'waffle'}).wall_pattern, 'waffle')
+        self.assertEqual(catalog()['nozzle_sizes'], [.6, .8])
+        self.assertEqual([item['id'] for item in catalog()['wall_perimeters']], [1, 2, 'full'])
+        for values in ({'wall_perimeters': None}, {'wall_perimeters': True}, {'wall_perimeters': 0},
+                       {'wall_perimeters': 2.0}, {'wall_perimeters': '2'}, {'wall_perimeters': 'default'},
+                       {'nozzle_size': .4}, {'nozzle_size': True}, {'nozzle_size': float('nan')},
+                       {'wall_pattern': 'waffle'}, {'pattern_faces': 'sides'},
+                       {'pattern_construction': 'recessed'}, {'pattern_line_width': .7},
+                       {'box_rear_pattern': 'miura'}):
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                Configuration.parse_request(values)
+
+    def test_box_and_module_share_pattern_perimeter_and_nozzle_targets(self):
+        for style in ('plain', 'miura'):
+            for nozzle in (.6, .8):
+                for count in (1, 2):
+                    config = Configuration.parse_request(dict(family='L', depth_units=6, height_units=2,
+                        drawer_columns=2, drawer_rows=2, wall_pattern=style,
+                        wall_perimeters=count, nozzle_size=nozzle))
+                    settings = {**pattern_parameters(config), **wall_parameters(config)}
+                    specs = [builds.select_spec(kind, config.family, config.depth_units, config.height_units,
+                        drawer_columns=2, drawer_rows=2, **settings) for kind in ('module', 'box')]
+                    self.assertEqual(specs[1].family, 'S')
+                    self.assertEqual(specs[1].height_units, 1)
+                    for spec in specs:
+                        self.assertEqual(spec.wall_pattern, style)
+                        self.assertEqual(wall_target_thickness(spec), round(count * (nozzle + .05), 2))
+                    self.assertEqual(specs[1].box_rear_pattern, style)
+                    self.assertEqual(config.box_rear_pattern, style)
+        full = Configuration.parse_request({'wall_perimeters': 'full', 'wall_pattern': 'miura',
+                                             'nozzle_size': .8})
+        self.assertEqual((full.wall_pattern, full.box_rear_pattern, full.nozzle_size), ('plain', 'plain', .6))
+        self.assertIsNone(wall_target_thickness(full))
+
+    def test_plain_wall_settings_propagate_to_finished_parts_and_receipts(self):
+        base = Configuration.parse_request({})
+        changed = replace(base, wall_perimeters=1, nozzle_size=.8)
+        before, after = assembly_definition(base), assembly_definition(changed)
+        self.assertEqual([i['transform'] for i in before['instances']],
+                         [i['transform'] for i in after['instances']])
+        self.assertNotEqual(validation_signature(base), validation_signature(changed))
+        with patch('vault.model.build_module') as module, patch('vault.box.build_box') as box, \
+                patch('vault.facade.build_facade'), patch('vault.geared_rails.build_gear_rail'), \
+                patch('vault.runner_guides.build_runner_guide'), patch('vault.runner_slides.build_runner_slide'):
+            build_finished_components(changed)
+        for call in (module, box):
+            self.assertEqual(call.call_args.kwargs['spec'].wall_perimeters, 1)
+            self.assertEqual(call.call_args.kwargs['spec'].nozzle_size, .8)
+            self.assertFalse(call.call_args.kwargs['include_supports'])
 
 
 if __name__ == '__main__':

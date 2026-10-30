@@ -2,6 +2,7 @@
 import unittest
 
 from vault.box import BoxSpec, build_box
+from vault.build import select_spec
 from vault.drawer import DrawerLayout
 from vault.facade import FacadeSpec, build_facade
 from vault.spec import ModuleSpec
@@ -13,24 +14,39 @@ class DrawerSizeTests(unittest.TestCase):
         self.assertEqual(BoxSpec('M', 3, 1).name, 'M3 Box 1F')
         self.assertEqual(FacadeSpec('M', 2).slug, 'm2f_facade')
         self.assertEqual(FacadeSpec('L', 1).name, 'L1F Facade')
+        self.assertEqual(BoxSpec('S', 4, 4).slug, 's4_box_4f')
+        self.assertEqual(FacadeSpec('M', 4).slug, 'm4f_facade')
         for family, outer in [('S', 51.45), ('M', 92.45), ('L', 130.25)]:
-            layout = DrawerLayout(ModuleSpec(family, 7, 2))
+            layout = DrawerLayout(ModuleSpec(family, 7, 4))
             self.assertIn((-outer, 71.5), layout.screw_positions)
+            self.assertIn((-outer, 119.5), layout.screw_positions)
+            self.assertIn((outer, 167.5), layout.screw_positions)
             self.assertIn((outer, 23.5), layout.screw_positions)
             self.assertIn((51.45, 23.5), layout.screw_positions)
+            self.assertEqual(len(layout.screw_positions), 8 if family == 'S' else 10)
         for constructor, arguments in [(BoxSpec, ('XL', 4, 1)),
-                                       (BoxSpec, ('S', 4, 4)),
+                                       (BoxSpec, ('S', 4, 3)),
                                        (BoxSpec, ('S', 2, 1)),
                                        (FacadeSpec, ('XL', 1)),
-                                       (FacadeSpec, ('M', 4))]:
+                                       (FacadeSpec, ('M', 5))]:
             with self.assertRaises(ValueError):
                 constructor(*arguments)
 
+    def test_four_floor_part_selection_retains_shared_runner_geometry(self):
+        for part in ('runner_guides', 'runner_slides'):
+            for family in ('S', 'M', 'L'):
+                self.assertEqual(select_spec(part, family, 7, 4), select_spec(part, family, 7, 1))
+                with self.assertRaises(ValueError):
+                    select_spec(part, family, 7, 3)
+        self.assertEqual(select_spec('box', 'L', 7, 4, drawer_columns=2), BoxSpec('S', 7, 4))
+        self.assertEqual(select_spec('facade', 'L', 7, 4, drawer_columns=2), FacadeSpec('S', 4))
+
     def test_generated_drawer_extremes(self):
         # Include each family, shortest/longest supported catalog depths and
-        # both heights. Probes test wall thickness and moving mating datums,
+        # all heights. Probes test wall thickness and moving mating datums,
         # rather than merely repeating constructor arithmetic.
-        for spec in (ModuleSpec('S', 3, 2), ModuleSpec('M', 5, 1), ModuleSpec('L', 7, 2)):
+        for spec in (ModuleSpec('S', 3, 2), ModuleSpec('M', 5, 1), ModuleSpec('L', 7, 2),
+                     ModuleSpec('S', 3, 4), ModuleSpec('M', 5, 4), ModuleSpec('L', 7, 4)):
             with self.subTest(spec=spec):
                 layout = DrawerLayout(spec)
                 box = build_box(spec=BoxSpec(spec.family, spec.depth_units, spec.height_units))

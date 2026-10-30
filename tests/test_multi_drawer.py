@@ -35,7 +35,7 @@ class MultiDrawerSelectionTests(unittest.TestCase):
                                     '--height-units', '2', '--drawer-columns', '2']):
                 cli.main()
             build.assert_called_once_with(cli.PROJECT_ROOT / 'out',
-                                          ModuleSpec('L', 6, 2, drawer_columns=2))
+                                          ModuleSpec('L', 6, 2, drawer_columns=2, wall_perimeters=2))
 
     def test_invalid_layouts_are_rejected_before_construction(self):
         for family, columns in [('S', 2), ('M', 2), ('XL', 2), ('L', 0),

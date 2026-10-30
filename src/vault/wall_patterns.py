@@ -12,6 +12,7 @@ from build123d import Face, Kind, Shell, Solid, Wire
 
 from .connectors import build_connectors, build_connector_cutters
 from .shell import _rounded_rect
+from .spec import wall_target_thickness
 
 
 @dataclass(frozen=True)
@@ -252,9 +253,9 @@ def _miura_cutters(panel, spec):
 
 
 def miura_normal_offset(spec):
-    """Axial separation giving exactly two lines normal to every Miura facet."""
+    """Axial separation giving the selected thickness normal to each facet."""
     slope = spec.pattern_depth / (spec.pattern_pitch / 2)
-    return 2 * spec.pattern_line_width * sqrt(1 + 1.25*slope*slope)
+    return wall_target_thickness(spec) * sqrt(1 + 1.25*slope*slope)
 
 
 def corrugated_miura_spec(spec, wall):
@@ -265,7 +266,7 @@ def corrugated_miura_spec(spec, wall):
     for _ in range(48):
         depth = (low+high)/2
         slope = depth / (spec.pattern_pitch/2)
-        separation = 2*spec.pattern_line_width * sqrt(1 + 1.25*slope*slope)
+        separation = wall_target_thickness(spec) * sqrt(1 + 1.25*slope*slope)
         if depth + separation <= wall:
             low = depth
         else:
@@ -283,7 +284,7 @@ def _corrugated_inner_cutters(panel, spec, dimensions, outside):
     lands; inner and outer clipping share the same protected feature footprints.
     """
     wall = dimensions.skin if panel.face in ('top', 'bottom') else dimensions.channel_outer_inset
-    thickness = 2 * spec.pattern_line_width
+    thickness = wall_target_thickness(spec)
     if spec.wall_pattern == 'miura':
         a, b = panel.point(0, 0, 0), panel.point(0, 0, miura_normal_offset(spec))
         offsets = [_miura_field(panel, spec).translate(tuple(y-x for x, y in zip(a, b)))]
@@ -302,18 +303,36 @@ def _corrugated_inner_cutters(panel, spec, dimensions, outside):
     return [solid for item in inside.solids() for solid in item.intersect(mask).solids()]
 
 
-def pattern_cutters(spec, dimensions, connector_parameters):
-    """Return cutters and enforce the two-line minimum against native skins."""
-    if spec.wall_pattern == 'plain':
+def plain_panel_cutters(panel, wall, thickness):
+    """Thin a flat panel symmetrically with native ramps into its solid lands."""
+    if thickness > wall + 1e-9:
+        raise ValueError('Selected perimeters do not fit the native wall')
+    relief = (wall-thickness)/2
+    if relief <= 1e-9:
         return []
-    minimum = 2 * spec.pattern_line_width
+    inner = replace(panel, origin_depth=wall, direction=-1)
+    return [*_panel_mask(panel, relief).solids(), *_panel_mask(inner, relief).solids()]
+
+
+def pattern_cutters(spec, dimensions, connector_parameters):
+    """Return cutters and enforce the requested thickness against native skins."""
+    selected = getattr(spec, 'wall_perimeters', None)
+    if selected == 'full' or spec.wall_pattern == 'plain' and selected is None:
+        return []
+    minimum = wall_target_thickness(spec)
     available = dimensions.channel_outer_inset
     if spec.pattern_faces == 'all':
         available = min(available, dimensions.skin)
-    if spec.pattern_depth + minimum > available + 1e-9:
+    if minimum > available + 1e-9:
+        raise ValueError('Selected perimeters do not fit the native wall')
+    if selected is None and spec.pattern_depth + minimum > available + 1e-9:
         raise ValueError('Pattern depth must leave two extrusion lines in the native skin')
     result = []
     for panel in pattern_panels(spec, dimensions, connector_parameters):
+        wall = dimensions.skin if panel.face in ('top', 'bottom') else dimensions.channel_outer_inset
+        if spec.wall_pattern == 'plain':
+            result.extend(plain_panel_cutters(panel, wall, minimum))
+            continue
         panel_spec = spec
         if spec.pattern_construction == 'corrugated' and spec.wall_pattern == 'miura':
             wall = dimensions.skin if panel.face in ('top', 'bottom') else dimensions.channel_outer_inset
@@ -331,7 +350,8 @@ def pattern_cutters(spec, dimensions, connector_parameters):
 
 
 def apply_wall_pattern(part, spec, dimensions, connector_parameters, progress=None):
-    if spec.wall_pattern == 'plain':
+    if (getattr(spec, 'wall_perimeters', None) == 'full'
+            or spec.wall_pattern == 'plain' and getattr(spec, 'wall_perimeters', None) is None):
         return part
     if progress:
         progress(f'Cutting {spec.wall_pattern} wall relief; preserving mechanical lands')

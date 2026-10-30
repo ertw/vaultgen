@@ -1,8 +1,8 @@
 # Generator geometry
 
-The generator supports S, M, and L widths, depth units 3–7, and 1F or 2F
+The generator supports S, M, and L widths, depth units 3–7, and 1F, 2F or 4F
 heights. The Python `ModuleSpec` still permits previously supported sizes;
-`BoxSpec` and `FacadeSpec` reject XL and heights beyond 2F. Drawer depth
+`BoxSpec` and `FacadeSpec` reject XL and heights outside 1F/2F/4F. Drawer depth
 extensions above 7 remain available to Python callers, but are not exposed
 in the web generator.
 
@@ -102,8 +102,9 @@ runner channels, removable supports and assembly transforms are preserved.
 The grid remains in both printable and finished assembly exports; only the
 normal sacrificial runner sheets are removed from finished previews.
 
-Default identity is `s4_box_1f_gridfinity`; the thick-floor variant is
-`s4_box_1f_floor_3mm_gridfinity`. Plain aliases stay unchanged. The configuration
+Legacy native identities are `s4_box_1f_gridfinity` and
+`s4_box_1f_floor_3mm_gridfinity`. New default CLI/generator builds append
+`_plain_walls_2p_n0p6`; other wall settings have their own suffixes. The configuration
 and immutable build parameters record `box_variant`; module, facade, rail and
 accessory identities remain independent of this box option. No catalog entries
 are inferred from generated files.
@@ -222,128 +223,108 @@ and watertight meshes.
 
 ## Patterned box rear walls
 
-`BoxSpec(box_rear_pattern='waffle')` and
-`BoxSpec(box_rear_pattern='miura')` add two-perimeter corrugation to the rear
-wall. `plain` remains the default. This setting is independent of module wall
-patterns and combines with either box base and either floor thickness.
+New box and module requests share `wall_pattern` (`plain` or `miura`),
+`wall_perimeters` (`1`, `2`, or `"full"`), and `nozzle_size` (`0.6` or `0.8`).
+The generator defaults to two perimeters with the 0.6 mm nozzle. Nominal line
+widths are 0.65 and 0.85 mm respectively; target wall thickness is the selected
+count times that width. This is a design target for Arachne's variable-width
+paths, not a guarantee of an exact toolpath count for every print profile.
 
-The rear wall remains inside its original Y = 2.3–5.3 mm envelope. Both faces
-are relieved using the same native Waffle and Miura-ori constructors as the
-module's corrugated walls. Pitch is fixed at 14 mm, maximum relief depth at
-1.7 mm, and nominal facet thickness at 1.3 mm normal to the face, for two
-0.65 mm extrusion lines. Miura fold height is reduced to fit this thickness
-inside the original wall. Solid perimeter lands preserve rear corners, the
-floor fillet and top rim; the pattern stops 3 mm above the floor fillet and
-3 mm below the top. The Gridfinity base, runner channels, removable supports,
-rail passages and assembly placements retain their geometry.
+The box's rear treatment stays inside Y = 2.3–5.3 mm. Plain uses a flat thin
+panel and Miura-ori uses normally offset facets. Pitch defaults to 14 mm and
+maximum relief depth to 1.7 mm. The actual fold amplitude is reduced to fit the
+target thickness inside the original wall. Solid lands protect the rear corners,
+floor fillet and top rim. The pattern stops 3 mm above the floor fillet and
+3 mm below the top. The cavity width also follows the target behind the side
+runner channels, retaining their outside mating profiles. These backing walls
+remain plain because they carry the runner geometry. Full width restores the
+original solid rear and the original 1.3 mm runner backing.
 
-Default patterned identities are `s4_box_1f_rear_waffle_corrugated` and
-`s4_box_1f_rear_miura_corrugated`; floor and Gridfinity suffixes precede the
-rear pattern suffix. Resolved parameters and assembly matching retain
-`box_rear_pattern`. Existing plain identities and immutable builds remain
-unchanged. Finished previews retain the pattern and omit only the normal
-sacrificial runner supports.
+Two perimeters with the 0.8 mm nozzle reduce the cavity width by 0.8 mm in total
+(S: 126.4 mm instead of 127.2 mm). Existing drawer-fit containers from the
+separate editor assume the original cavity and need resizing for this choice;
+its 0.25 mm side clearance is smaller than the 0.4 mm inward change per side.
+The Gridfinity socket grid retains its fixed dimensions.
+
+Floor thickness, Gridfinity sockets, removable supports, rail passages and
+assembly placements retain their own definitions. The wall settings combine
+with plain/Gridfinity bases and closed/floorless Gridfinity floors. Native
+legacy `BoxSpec` instances without `wall_perimeters` preserve old behavior,
+including historical independent `box_rear_pattern` settings; new selections
+use distinct identities and exact cache matching. Immutable builds are unchanged.
 
 ```bash
-python -m vault build --part box --box-rear-pattern waffle
-python -m vault build --part box --box-rear-pattern miura --box-variant gridfinity
-python tools/check_assembly.py --case S4:1 --box-rear-pattern waffle
+python -m vault build --part box --wall-pattern plain --wall-perimeters 1 --nozzle-size 0.6
+python -m vault build --part box --wall-pattern miura --wall-perimeters 2 --nozzle-size 0.8
+python tools/check_assembly.py --case S4:1 --wall-pattern miura --wall-perimeters 2 --nozzle-size 0.8
 ```
 
-Native checks cover solid validity, removed-material containment, preserved
+Native checks cover solid validity, removed-material containment, protected
 interfaces and sampled normal facet thickness. Export checks include STEP
-round trips and watertight print meshes. Inspect the slicer's perimeter paths;
-these checks do not establish printed stiffness, bridging or fit.
+round trips and watertight print meshes. Inspect Arachne's sliced perimeter
+paths; these checks do not establish printed stiffness, bridging or fit.
 
 ## Patterned module walls
 
-`ModuleSpec(wall_pattern='waffle')` and `ModuleSpec(wall_pattern='miura')`
-apply native relief cutters from `src/vault/wall_patterns.py`. Plain remains the
-default. Both patterns offer `pattern_construction='recessed'` (the default) and
-`pattern_construction='corrugated'`. Recessed construction removes material from
-the outside while preserving the original inner surfaces, producing a variable
-wall thickness. Corrugated construction pairs relief on both sides of the
-nonmating panels to form thin facets; the entire construction stays inside the
-original wall thickness. Waffle uses rounded square dimples with sloping
-shoulders and flat valleys. Miura-ori uses connected planar parallelograms with
-alternating row offsets to form a sharper zigzag crease layout. This is a rigid
-printed relief, not a foldable origami mechanism.
+New wall selections apply to every eligible long sleeve face through native
+cutters in `src/vault/wall_patterns.py`. Plain uses flat thin panels; Miura-ori
+uses paired reliefs, with thickness measured normal to each facet. Fold
+junctions, panel borders and structural transitions remain thicker. Full width
+keeps the original solid geometry and suppresses relief for either pattern.
+Miura-ori is a rigid connected zigzag field of planar parallelograms, not a
+foldable origami mechanism. The geometry stays inside the original wall envelope.
 
-| Parameter | Default | Accepted range or values |
+| Parameter | New-selection default | Accepted values |
 | --- | --- | --- |
-| `wall_pattern` | `plain` | `plain`, `waffle`, `miura` |
-| `pattern_construction` | `recessed` | `recessed`, `corrugated` |
+| `wall_pattern` | `plain` | `plain`, `miura` |
+| `wall_perimeters` | `2` | `1`, `2`, `"full"` |
+| `nozzle_size` | 0.6 mm | 0.6, 0.8 mm |
 | `pattern_pitch` | 14 mm | 8–40 mm |
-| `pattern_depth` | 1.7 mm | 0.2–2 mm |
-| `pattern_line_width` | 0.65 mm | 0.6–1 mm |
-| `pattern_faces` | `all` | `all` four long faces, or `sides` left/right only |
+| `pattern_depth` | 1.7 mm | 0.2–2 mm maximum relief |
 
-Recessed default valleys retain **1.3 mm** within the 3 mm skin, targeting two
-0.65 mm extrusion lines for a 0.6 mm nozzle; crests and ribs retain more material.
-Corrugated patterned facets target **1.3 mm thickness measured normal to the
-facet**, with thicker fold junctions, panel borders and structural transitions.
-For corrugated Miura-ori, the selected depth is a maximum recess envelope:
-the effective fold amplitude is reduced so the normal facet thickness also
-fits inside the original skin. It is not a promise of a full 1.7 mm fold height.
-The constructor requires `pattern_depth + 2 * pattern_line_width`
-to fit the actual native wall; custom `ShellDimensions` therefore receive an
-additional thickness check. Values are finite and bounded at both API and CLI
-entry points. Cells become rectangular on narrow side panels; when a large cell
-cannot avoid a short module's connectors, its footprint is trimmed to an
-available rectangular land. A panel with no room for a tapered cell is rejected. These
-are geometric limits; slicer line placement, printability and loaded stiffness
-still need checking on a physical part.
+The target thicknesses are 0.65/1.30 mm with a 0.6 mm nozzle and 0.85/1.70 mm
+with a 0.8 mm nozzle. Line width is derived, all eligible faces are included,
+and Miura construction always relieves both sides. Fold amplitude is reduced
+as needed so its normal offset fits within the native skin. Custom native
+skin dimensions receive a thickness check as well. New requests do not expose
+Waffle, recessed construction, or a sides-only choice.
 
-Side panels stay between the existing runner floors and ceilings. Solid lands
-retain the entire stopper footprint and its chamfer, corners, inter-tier webs,
-front mouth lips, catches and mounting features. The front and rear bands follow
-native feature dimensions, retaining at least 12 mm at the front and 8 mm at the
-rear. Top and bottom panel exclusions use the actual native connector and cutter
-footprints, with 3 mm of surrounding full-thickness material. This protects the
-stacking mating surfaces and their roots. L² also retains the central divider
-and its root lands. The rear panel, its selected thickness, and all sacrificial
-mouth supports remain unchanged.
+Side panels stay between runner floors and ceilings. Solid lands retain the
+entire stopper footprint and chamfer, corners, inter-tier webs, front mouth
+lips, catches and mounting features. Front and rear bands follow the native
+features, retaining at least 12 mm at the front and 8 mm at the rear. Top and
+bottom panel exclusions use actual connector and cutter footprints with 3 mm
+of surrounding solid material. L² retains its central divider and root lands.
+The module rear, printed against the bed, keeps its separate floor thickness.
+All sacrificial mouth supports retain their geometry.
 
-Waffle uses tapered cells that avoid every protected footprint. Miura
-clips its connected crease field with native tapered masks: panel edges and
-feature exclusions return to full thickness over a 2:1 run relative to depth.
-Both constructions preserve mating surfaces and their protected inner and outer
-lands; corrugation changes only nonmating panel surfaces. Patterns never stretch
-a mating cross-section or move assembly transforms.
-Corrugated side walls reshape the broad back of the runner channels while
-retaining their floor, ceiling, stopper and mouth regions. Recessed walls keep
-those broad inner faces flat. This difference matters when comparing loaded
-stiffness and print behavior.
-Finished assembly exports omit only the usual sacrificial supports; printable
-exports retain them. Every patterned build uses the existing solid, STEP
-round-trip and watertight-mesh validation pipeline.
+Native tapered masks return to full thickness at panel edges and feature
+exclusions. Corrugated side panels reshape only the broad nonmating backs of
+runner channels, retaining their floor, ceiling, stopper and mouth regions.
+Finished assembly exports omit the usual sacrificial supports; printable
+exports retain them. No mating cross-section or assembly transform is stretched.
 
 ```bash
-python -m vault build --wall-pattern waffle
-python -m vault build --wall-pattern miura
-python -m vault build --wall-pattern waffle --pattern-construction corrugated
-python -m vault build --wall-pattern miura --pattern-construction corrugated
-python -m vault build --wall-pattern miura --pattern-pitch 20 \
-  --pattern-depth 1.4 --pattern-line-width 0.8 --pattern-faces sides
-python tools/check_assembly.py --definitions-only --wall-pattern waffle
-python tools/check_assembly.py --case S4:1 --wall-pattern miura
-python tools/check_assembly.py --case S4:1 --wall-pattern miura --pattern-construction corrugated
-python tools/check_wall_patterns.py --pattern waffle --construction corrugated
+python -m vault build --wall-pattern plain --wall-perimeters 2 --nozzle-size 0.6
+python -m vault build --wall-pattern miura --wall-perimeters 1 --nozzle-size 0.8
+python -m vault build --wall-perimeters full
+python tools/check_assembly.py --definitions-only --wall-perimeters 2
+python tools/check_assembly.py --case S4:1 --wall-pattern miura --wall-perimeters 2 --nozzle-size 0.8
 ```
 
-The wall-pattern audit checks exact containment of the removed material and
-unchanged native connector roots, probes the protected interfaces, and samples
-corrugated thickness along native face normals. Its optional `--baseline-step`
-and `--pattern-step` arguments inspect exported solids and record their hashes.
-Thickness samples do not establish slicer toolpaths or printed fit.
+The wall audit checks exact containment of removed material, native connector
+roots, protected interface probes and sampled normal thickness. Its optional
+`--baseline-step` and `--pattern-step` inputs audit exported solids and record
+their hashes. Every build retains native solid, STEP round-trip and watertight
+print-mesh validation. These checks establish neither Arachne line counts nor
+printed fit. See [Arachne's variable-width behavior](https://help.prusa3d.com/article/arachne-perimeter-generator_352769).
 
-Default pattern identities are `s4_module_1f_waffle` and
-`s4_module_1f_miura`. Nondefault pattern controls add a stable parameter digest;
-the corrugated constructions add `_corrugated`, and resolved parameters retain
-every value. Existing recessed aliases remain unchanged. Box, facade, rail and accessory
-identities remain independent of wall style. Existing build directories remain
+Native constructors and saved configurations with no `wall_perimeters` retain
+historical geometry and pattern identities, including Waffle/recessed records.
+Fresh selections have distinct settings in identities, manifests, cache matching
+and fit receipts, including plain thin walls. Existing build directories are
 immutable. The historical S4 source comparison expects the original flat skin
-and is not an acceptance test for these intentional reliefs.
+and is not an acceptance test for these intentional wall changes.
 
 ## Multi-drawer modules
 
@@ -378,9 +359,10 @@ the surrounding lands. This shared rebate is an intentional change from the
 purchased reference.
 
 The module's name, resolved build parameters and download identity depend on
-its envelope, columns and rear thickness. Drawer rows affect the installed
-parts and their quantities, not the module geometry. At depth 6, both 2F
-layouts resolve to `l6_2_columns_module_2f` and share its STL/STEP files and
+its envelope, columns, rear thickness and wall settings. Drawer rows affect the
+installed parts and their quantities, not module geometry. At depth 6, both 2F
+layouts with new default walls resolve to
+`l6_2_columns_module_2f_plain_walls_2p_n0p6` and share its STL/STEP files and
 reusable build. Existing immutable exports retain their original geometry and
 provenance; a changed module is regenerated through the normal export pipeline.
 
@@ -405,8 +387,8 @@ Drawer components retain their own drawer identity and
 explicit (X,Z) placement.
 
 The supplied L² module references cover depths 3–7 and 1F/2F/4F. The web
-generator remains limited to 1F/2F; 4F is available only through the lower-level
-module API/CLI and has no generated matching drawer set. XL² references are
+generator offers all three heights with matching drawer sets. At 4F, L² uses
+two S4F drawers; the four-drawer layout remains limited to L² 2F. XL² references are
 outside this implementation. The separate CAD viewer's fixed catalog is
 unchanged; L² builds are available through the configurator and CLI.
 
@@ -436,7 +418,7 @@ bottom lock and repeat their outer pair at each tier. The box and facade
 use the same list of axes. Screw holes remain 3.6 mm in the box and 4.4 mm
 in the facade, with the original facade counterbores and bosses.
 
-The gear mechanism remains on the bottom tier in both heights; its central
+The gear mechanism remains on the bottom tier at every supported height; its central
 opening, cross-sections, rounded exit lips, roof clearance and fixed gear
 Z positions do not scale. Its open exit passages extend with family width.
 Both lower rail passages include the upper exit's rounded roof profile:
@@ -455,8 +437,10 @@ M3 1F and L6 2F pockets; all terminate near this central datum despite their
 different outside widths. Their rounded end surfaces differ from the native
 flat stops. `python tools/check_gear_pocket_stops.py` reproduces the measurements.
 Runner channels repeat every 48 mm and move out with the side walls. The
-0.8 mm floor, 1 mm interior floor fillet, 1.3 mm runner backing walls, 0.3 mm
-runner flank clearance, and breakaway sheets are preserved. Sheet teeth are
+0.8 mm floor, 1 mm interior floor fillet, 0.3 mm runner flank clearance, and
+breakaway sheets retain their dimensions. Runner backing is 1.3 mm for the
+default two perimeters with a 0.6 mm nozzle and for Full width/legacy walls;
+other numbered choices use their selected nozzle/perimeter target. Sheet teeth are
 repeated at approximately the original pitch as depth changes.
 
 The facade uses the sleeve's parametric outer silhouette and a matching
@@ -482,8 +466,8 @@ original dimensions.
 
 Existing S4 box/facade regression tests cover gear passage lips, corner
 radii, closed pockets, cavity fillets, supports, screws and rebates.
-`tests/test_drawer_sizes.py` additionally checks S3 2F, M5 1F and L7 2F
-for valid connected solids, expected bounds, floor thickness, screw
+`tests/test_drawer_sizes.py` additionally checks S3 2F, M5 1F, L7 2F and
+4F drawers in all three families for valid connected solids, expected bounds, floor thickness, screw
 alignment, runner positions, gear exits and matching facade rebates.
 These CAD checks do not establish physical printed fit.
 
@@ -540,7 +524,7 @@ per populated runner tier, repeating prints for additional tiers.
 
 Depth changes the straight lengths and stop positions, preserving the mating
 profiles. The x3 guide retains the source's one-millimeter-shorter travel slot.
-These parts are shared across S/M/L widths and 1F/2F heights. Their constructors
+These parts are shared across S/M/L widths and 1F/2F/4F heights. Their constructors
 never load the purchased meshes. Both print with the supplied flat face on Z=0.
 
 Slides add a 1 mm, 45° crown chamfer at the insertion nose to ease entry into

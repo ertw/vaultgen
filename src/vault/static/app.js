@@ -38,37 +38,41 @@ const partDescriptions = {
   runner_stop: 'Universal runner stop. Print two per populated runner tier.',
   facade_cap: 'Universal facade screw cap. Repeat for each screw counterbore.',
   key_cap: 'Universal cap for the key handle.',
-  runner_guides: 'Guides follow depth; the same guides fit S, M and L at either height.',
-  runner_slides: 'Slides follow depth; the same slides fit S, M and L at either height.',
+  runner_guides: 'Guides follow depth; the same guides fit S, M and L at every height.',
+  runner_slides: 'Slides follow depth; the same slides fit S, M and L at every height.',
 };
 const configurationName = config => [
   `${config.family || 'S'}${config.depth_units || ''}${config.drawer_columns === 2 ? '²' : ''}`,
   `${config.height_units || 1}F`, config.drawer_rows === 2 ? '4 drawers' : '',
-  ['set','module'].includes(config.part) ? {waffle:'Waffle', miura:'Miura-ori'}[config.wall_pattern] : '',
-  ['set','module'].includes(config.part) && config.wall_pattern !== 'plain' && config.pattern_construction === 'corrugated' ? 'Corrugated' : '',
+  (config.wall_perimeters != null ? ['set','module','box'] : ['set','module']).includes(config.part) && config.wall_perimeters !== 'full' ? {waffle:'Waffle', miura:'Miura-ori'}[config.wall_pattern] : '',
+  config.wall_perimeters == null && ['set','module'].includes(config.part) && config.wall_pattern !== 'plain' && config.pattern_construction === 'corrugated' ? 'Corrugated' : '',
   ['set','box'].includes(config.part) && config.box_variant === 'gridfinity' ? 'Gridfinity' : '',
   ['set','box'].includes(config.part) && config.box_floor === 0 ? 'Floorless' : '',
-  ['set','box'].includes(config.part) ? {waffle:'Waffle rear', miura:'Miura-ori rear'}[config.box_rear_pattern] : '',
+  config.wall_perimeters == null && ['set','box'].includes(config.part) ? {waffle:'Waffle rear', miura:'Miura-ori rear'}[config.box_rear_pattern] : '',
 ].filter(Boolean).join(' · ');
 const drawerFamily = config => config.drawer_columns === 2 ? 'S' : config.family;
 const drawerHeight = config => config.height_units / (config.drawer_rows || 1);
 const drawerCount = config => (config.drawer_columns || 1) * (config.drawer_rows || 1);
 const layoutCount = layout => layout.columns * (layout.rows || 1);
-const patternKeys = ['wall_pattern', 'pattern_pitch', 'pattern_depth', 'pattern_line_width', 'pattern_faces', 'pattern_construction'];
-// Missing fields in saved builds retain their historical meaning. New selections
-// use the catalog defaults, including corrugated construction.
-const patternDefaults = {wall_pattern: 'plain', pattern_pitch: 14, pattern_depth: 1.7, pattern_line_width: 0.65, pattern_faces: 'all', pattern_construction: 'recessed'};
+const patternKeys = ['wall_pattern', 'pattern_pitch', 'pattern_depth', 'wall_perimeters', 'nozzle_size'];
+const patternDefaults = {wall_pattern: 'plain', pattern_pitch: 14, pattern_depth: 1.7, wall_perimeters: 2, nozzle_size: 0.6};
 const moduleSelected = () => ['set', 'module'].includes(state.selection.part);
 const boxSelected = () => ['set', 'box'].includes(state.selection.part);
+const wallsSelected = () => moduleSelected() || boxSelected();
 const thicknessApplies = key => state.selection.part === 'set'
-  || (state.config.thickness_applicability?.[key] ?? {minimum_floor: ['box', 'facade'], perimeters: ['module']}[key]).includes(state.selection.part);
+  || (state.config.thickness_applicability?.[key] ?? {minimum_floor: ['box', 'facade'], perimeters: ['module', 'box']}[key]).includes(state.selection.part);
 const closedBoxFloor = () => state.minimumFloor === 'default' ? 3 : 0.8;
 const defaultPattern = () => Object.fromEntries(patternKeys.map(key => [key, state.config.defaults[key] ?? patternDefaults[key]]));
-const requestConfiguration = () => ({
-  ...state.selection,
-  ...(!moduleSelected() ? {...defaultPattern(), wall_pattern: 'plain'} : {}),
-  ...(!boxSelected() ? {box_variant: 'plain', box_rear_pattern: 'plain', box_floor: state.selection.box_floor || closedBoxFloor()} : {}),
-});
+const requestConfiguration = () => {
+  const request = {...state.selection};
+  // Historical fields remain readable in saved builds; current selections have
+  // one wall pattern and nozzle-derived thickness for both component types.
+  for (const key of ['box_rear_pattern', 'pattern_faces', 'pattern_construction', 'pattern_line_width']) delete request[key];
+  if (!wallsSelected()) Object.assign(request, defaultPattern(), {wall_pattern: 'plain'});
+  if (request.wall_perimeters === 'full') request.wall_pattern = 'plain';
+  if (!boxSelected()) Object.assign(request, {box_variant: 'plain', box_floor: state.selection.box_floor || closedBoxFloor()});
+  return request;
+};
 const svgIcon = name => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.classList.add('icon');
   const use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); use.setAttribute('href', `#i-${name}`); svg.append(use); return svg;
@@ -103,8 +107,12 @@ function optionButton(value, key, label, className) {
     if (key === 'family' && value !== 'L') {
       state.selection.drawer_columns = 1; state.selection.drawer_rows = 1;
     }
-    if (key === 'height_units' && value === 1) state.selection.drawer_rows = 1;
-    if (key === 'wall_pattern' && value === 'plain') Object.assign(state.selection, defaultPattern(), {wall_pattern: 'plain'});
+    if (key === 'height_units' && value !== 2) state.selection.drawer_rows = 1;
+    if (key === 'wall_pattern' && value === 'plain') {
+      const defaults = defaultPattern();
+      state.selection.pattern_pitch = defaults.pattern_pitch; state.selection.pattern_depth = defaults.pattern_depth;
+    }
+    if (key === 'wall_perimeters' && value === 'full') state.selection.wall_pattern = 'plain';
     if (key === 'box_variant' && value === 'plain' && state.selection.box_floor === 0) state.selection.box_floor = closedBoxFloor();
     renderSelection(); showSelection();
   });
@@ -129,7 +137,8 @@ function createControls(config) {
   }
   for (const [key, target, values] of [
     ['minimum_floor', 'minimum-floor-options', [[0.8, '0.8 mm'], ['default', 'Default']]],
-    ['module_rear', 'perimeters-options', [[0.9, '0.9 mm'], [2, 'Default']]],
+    ['wall_perimeters', 'perimeters-options', (config.wall_perimeters || [{id:1,name:'1 perimeter'}, {id:2,name:'2 perimeters'}, {id:'full',name:'Full width'}]).map(option => [option.id, option.name])],
+    ['nozzle_size', 'nozzle-options', (config.nozzle_sizes || [0.6, 0.8]).map(value => [value, `${value} mm`])],
     ['box_bottom', 'box-bottom-options', [['closed', 'Closed'], ['floorless', 'Floorless']]],
   ]) {
     for (const [value, label] of values) {
@@ -138,16 +147,13 @@ function createControls(config) {
   }
   for (const [values, key, target] of [
     [config.box_variants || [{id:'plain', name:'Plain'}, {id:'gridfinity', name:'Gridfinity'}], 'box_variant', 'box-variant-options'],
-    [config.box_rear_patterns || [{id:'plain', name:'Plain'}, {id:'waffle', name:'Waffle'}, {id:'miura', name:'Miura-ori'}], 'box_rear_pattern', 'box-rear-pattern-options'],
-    [config.wall_patterns || [{id:'plain', name:'Plain'}, {id:'waffle', name:'Waffle'}, {id:'miura', name:'Miura-ori'}], 'wall_pattern', 'wall-pattern-options'],
-    [config.pattern_faces || [{id:'all', name:'All outer walls'}, {id:'sides', name:'Sides only'}], 'pattern_faces', 'pattern-faces-options'],
-    [config.pattern_constructions || [{id:'recessed', name:'Recessed'}, {id:'corrugated', name:'Two-perimeter corrugated'}], 'pattern_construction', 'pattern-construction-options'],
+    [config.wall_patterns || [{id:'plain', name:'Plain'}, {id:'miura', name:'Miura-ori'}], 'wall_pattern', 'wall-pattern-options'],
   ]) {
     for (const value of values) {
       const button = optionButton(value.id, key, value.name, ''); button.textContent = value.name; $(target).append(button);
     }
   }
-  for (const [name, id] of [['pitch', 'pattern-pitch'], ['depth', 'pattern-depth'], ['line_width', 'pattern-line-width']]) {
+  for (const [name, id] of [['pitch', 'pattern-pitch'], ['depth', 'pattern-depth']]) {
     const input = $(id), settings = config.pattern_settings?.[name];
     if (settings) { input.min = settings.min; input.max = settings.max; }
     input.addEventListener('input', () => {
@@ -213,7 +219,7 @@ function renderEnvelope(dimensions) {
   label(width/2,0,-17,`${width} mm`); label(width+25,depth/2,0,`${depth.toFixed(1)} mm`);
 }
 function renderSelection() {
-  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-variant-options','box_variant'], ['box-rear-pattern-options','box_rear_pattern'], ['perimeters-options','module_rear'], ['wall-pattern-options','wall_pattern'], ['pattern-faces-options','pattern_faces'], ['pattern-construction-options','pattern_construction']]) {
+  for (const [target, key] of [['family-options','family'], ['depth-options','depth_units'], ['height-options','height_units'], ['part-options','part'], ['box-variant-options','box_variant'], ['perimeters-options','wall_perimeters'], ['nozzle-options','nozzle_size'], ['wall-pattern-options','wall_pattern']]) {
     for (const button of $(target).querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.value === String(state.selection[key])));
   }
   const dimensions = envelopeDimensions(), config = state.selection;
@@ -238,6 +244,11 @@ function renderSelection() {
   $('box-bottom-field').hidden = !boxSelected() || config.box_variant !== 'gridfinity';
   $('minimum-floor-field').hidden = !thicknessApplies('minimum_floor') || (config.part === 'box' && config.box_floor === 0);
   $('perimeters-field').hidden = !thicknessApplies('perimeters');
+  $('nozzle-field').hidden = !wallsSelected();
+  for (const button of $('nozzle-options').querySelectorAll('button')) button.disabled = config.wall_perimeters === 'full';
+  $('perimeters-hint').textContent = config.wall_perimeters === 'full'
+    ? 'Full width keeps the original solid walls. Select 1 or 2 perimeters to use thin plain or Miura-ori walls.'
+    : `Thin sections target ${(config.wall_perimeters * (config.nozzle_size === 0.8 ? 0.85 : 0.65)).toFixed(2)} mm for ${config.wall_perimeters} ${config.wall_perimeters === 1 ? 'perimeter' : 'perimeters'} with a ${config.nozzle_size} mm nozzle. Use Arachne and check the sliced paths; reinforced lands remain thicker.${boxSelected() && config.wall_perimeters === 2 && config.nozzle_size === 0.8 ? ' Box cavity is 0.8 mm narrower; existing drawer-fit inserts need resizing.' : ''}`;
   $('minimum-floor-hint').textContent = config.part === 'facade' || (config.part === 'set' && config.box_floor === 0)
     ? 'Applies to the facade shell. Edges, lock and screw supports retain their reinforcement.'
     : config.part === 'set' ? 'Applies to box floors and facade shells. Reinforced features keep their thickness.'
@@ -245,10 +256,6 @@ function renderSelection() {
   $('box-variant-hint').textContent = config.box_variant === 'gridfinity'
     ? `Integrated ${({S: 3, M: 5, L: 6})[drawerFamily(config)]} × ${config.depth_units} Gridfinity grid inside each box, on a 42 mm pitch. ${config.box_floor === 0 ? 'Open cell bottoms; bins rest on the grid. The perimeter and grid webs support the box.' : 'Adds 5 mm above the selected floor.'}`
     : 'A plain interior floor. Choose Gridfinity to locate bins on an integrated grid inside the box.';
-  $('box-rear-pattern-field').hidden = !boxSelected();
-  $('box-rear-pattern-hint').textContent = config.box_rear_pattern === 'plain'
-    ? 'Solid rear wall. Choose Waffle or Miura-ori for a two-perimeter pattern.'
-    : 'Two-perimeter corrugation at 14 mm pitch, with 1.3 mm facets for 0.65 mm extrusion lines. Floor and corner bands stay solid.';
   if (!state.selectedArtifact && !state.assemblyShowing) {
     $('preview-title').textContent = configurationName(config);
     renderEnvelope(dimensions); setMetrics(dimensions);
@@ -259,35 +266,34 @@ function renderSelection() {
 }
 
 function patternError() {
-  if (!moduleSelected() || state.selection.wall_pattern === 'plain') return '';
-  for (const [key, id, label] of [['pattern_pitch', 'pattern-pitch', 'Pitch'], ['pattern_depth', 'pattern-depth', 'Depth'], ['pattern_line_width', 'pattern-line-width', 'Line width']]) {
+  if (!wallsSelected() || state.selection.wall_pattern === 'plain' || state.selection.wall_perimeters === 'full') return '';
+  for (const [key, id, label] of [['pattern_pitch', 'pattern-pitch', 'Pitch'], ['pattern_depth', 'pattern-depth', 'Depth']]) {
     const input = $(id), value = state.selection[key];
     if (!Number.isFinite(value) || value < Number(input.min) || value > Number(input.max)) return `${label} must be between ${input.min} and ${input.max} mm.`;
-  }
-  const thickness = state.config.pattern_settings?.wall_thickness ?? 3;
-  if (state.selection.pattern_depth + 2 * state.selection.pattern_line_width > thickness + 1e-9) {
-    return `Depth plus two line widths must fit within the ${thickness} mm wall. Reduce depth or line width.`;
   }
   return '';
 }
 function renderPatternSettings() {
-  const enabled = moduleSelected() && state.selection.wall_pattern !== 'plain';
-  $('wall-pattern-field').hidden = !moduleSelected();
+  const full = state.selection.wall_perimeters === 'full';
+  const enabled = wallsSelected() && state.selection.wall_pattern === 'miura' && !full;
+  $('wall-pattern-field').hidden = !wallsSelected();
   $('wall-pattern-settings').hidden = !enabled;
-  for (const [key, id] of [['pattern_pitch', 'pattern-pitch'], ['pattern_depth', 'pattern-depth'], ['pattern_line_width', 'pattern-line-width']]) {
+  for (const button of $('wall-pattern-options').querySelectorAll('button')) button.disabled = full;
+  for (const [key, id] of [['pattern_pitch', 'pattern-pitch'], ['pattern_depth', 'pattern-depth']]) {
     const input = $(id); input.disabled = !enabled;
     if (document.activeElement !== input) input.value = Number.isFinite(state.selection[key]) ? state.selection[key] : '';
   }
   const error = patternError();
   $('wall-pattern-error').hidden = !error; $('wall-pattern-error').textContent = error;
-  for (const id of ['pattern-pitch', 'pattern-depth', 'pattern-line-width']) $(id).setAttribute('aria-invalid', String(Boolean(error)));
-  const web = Number.isFinite(state.selection.pattern_line_width) ? `${Number(2 * state.selection.pattern_line_width).toFixed(2)} mm` : 'two line widths';
-  const construction = state.selection.pattern_construction === 'corrugated'
-    ? `Paired inner and outer relief targets 2 perimeters with a 0.6 mm nozzle. Thin facets target ${web} thickness perpendicular to each face.${state.selection.wall_pattern === 'miura' ? ' Miura depth limits the recess envelope; fold height is reduced to fit that thickness.' : ''}`
-    : `Exterior-only recesses retain the original flat interior. Valleys retain a minimum ${web} web, with thicker crests and ribs; this does not produce a two-perimeter wall.`;
-  $('wall-pattern-hint').textContent = enabled
-    ? `${construction} Pattern stays inside the existing wall; mating surfaces and mechanical lands retain full thickness. Verify perimeter paths in your slicer.`
-    : 'Original solid walls. Waffle and Miura-ori default to paired thin-wall corrugation while preserving mating surfaces.';
+  for (const id of ['pattern-pitch', 'pattern-depth']) $(id).setAttribute('aria-invalid', String(Boolean(error)));
+  const surfaces = state.selection.part === 'box' ? 'the box rear wall'
+    : state.selection.part === 'module' ? 'all eligible module faces' : 'all eligible module faces and box rear walls';
+  const runnerNote = boxSelected() ? ' Box runner backing also follows the perimeter and nozzle choices.' : '';
+  $('wall-pattern-hint').textContent = full
+    ? 'Original solid walls. Miura-ori is available with 1 or 2 perimeters.'
+    : enabled
+      ? `Miura-ori applies to ${surfaces}. Facet thickness follows the perimeter and nozzle choices; fold height is reduced as needed to fit the wall. Corners and mechanical lands stay solid.${runnerNote}`
+      : `Plain thin sections apply to ${surfaces}. Corners and mechanical lands stay solid.${runnerNote}`;
 }
 
 function partDescription(config) {
@@ -394,11 +400,15 @@ function matches(build, kind) {
   const keys = {module: ['family','depth_units','height_units','module_rear','drawer_columns'], box: ['family','depth_units','height_units','box_floor'], facade: ['family','height_units'], rails: ['family'], runner_guides: ['depth_units'], runner_slides: ['depth_units'], key: [], spring: [], runner_stop: [], facade_cap: [], key_cap: [], latch: []}[kind];
   const selected = kind === 'module' ? s : {...s, family: drawerFamily(s), height_units: drawerHeight(s)};
   if (kind === 'box' && (c.box_variant ?? 'plain') !== s.box_variant) return false;
-  if (kind === 'box' && (c.box_rear_pattern ?? 'plain') !== s.box_rear_pattern) return false;
   if (kind === 'facade' && (c.facade_floor ?? 'default') !== s.facade_floor) return false;
-  if (kind === 'module') {
-    if ((c.wall_pattern ?? 'plain') !== s.wall_pattern) return false;
-    if (s.wall_pattern !== 'plain' && !patternKeys.slice(1).every(key => (c[key] ?? patternDefaults[key]) === s[key])) return false;
+  if (kind === 'module' || kind === 'box') {
+    // Missing wall_perimeters denotes a historical wall, including historical
+    // plain builds. It must never satisfy a new thin-wall selection.
+    if (c.wall_perimeters !== s.wall_perimeters) return false;
+    if (s.wall_perimeters !== 'full') {
+      if ((c.nozzle_size ?? 0.6) !== s.nozzle_size || (c.wall_pattern ?? 'plain') !== s.wall_pattern) return false;
+      if (s.wall_pattern === 'miura' && !['pattern_pitch', 'pattern_depth'].every(key => (c[key] ?? patternDefaults[key]) === s[key])) return false;
+    }
   }
   return keys.every(key => (c[key] ?? state.config.defaults[key]) === selected[key]);
 }
@@ -485,7 +495,7 @@ function renderAssemblyDetails(scene) {
   selectInstance(state.selectedInstance);
 }
 async function showAssembly(preservePreview = false) {
-  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'facade_floor', 'box_variant', 'box_rear_pattern', 'module_rear', 'drawer_columns', 'drawer_rows', ...patternKeys].map(key => [key, state.selection[key]])));
+  const query = new URLSearchParams(Object.fromEntries(['family', 'depth_units', 'height_units', 'box_floor', 'facade_floor', 'box_variant', 'module_rear', 'drawer_columns', 'drawer_rows', ...patternKeys].map(key => [key, requestConfiguration()[key]])));
   const key = query.toString(), newSelection = !state.assemblyShowing || state.assemblyKey !== key;
   if (preservePreview && !newSelection && state.assemblyPending) return;
   state.assemblyController?.abort();
@@ -710,7 +720,7 @@ $('refresh-history').addEventListener('click', async () => {
 });
 async function initialize() {
   try {
-    state.config = await api('/api/config'); state.selection = { ...patternDefaults, box_variant: 'plain', box_rear_pattern: 'plain', ...state.config.defaults };
+    state.config = await api('/api/config'); state.selection = { ...patternDefaults, box_variant: 'plain', ...state.config.defaults };
     state.minimumFloor = state.selection.box_floor === 3 ? 'default' : 0.8;
     state.selection.facade_floor = state.minimumFloor;
     createControls(state.config); renderSelection();

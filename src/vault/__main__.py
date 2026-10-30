@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .build import build, build_preview, select_spec, selected_build
 from .project import PROJECT_ROOT
-from .spec import DEFAULT_SPEC, FAMILIES, NEW_PATTERN_CONSTRUCTION, ModuleSpec
+from .spec import DEFAULT_SPEC, FAMILIES
 
 
 def main():
@@ -19,8 +19,6 @@ def main():
     parser.add_argument('--height-units', type=int, default=1)
     parser.add_argument('--box-variant', choices=('plain', 'gridfinity'), default='plain',
                         help='Plain drawer floor or integral Gridfinity pockets')
-    parser.add_argument('--box-rear-pattern', choices=('plain', 'waffle', 'miura'), default='plain',
-                        help='Plain box rear or a two-perimeter corrugated waffle/Miura rear wall')
     parser.add_argument('--box-floor', type=float, choices=(0., .8, 3.), default=.8,
                         help='Box floor thickness in mm; 0 selects Floorless and requires --box-variant gridfinity')
     parser.add_argument('--facade-floor', choices=('0.8', 'default'), default='default',
@@ -29,38 +27,29 @@ def main():
                         help='Two columns create an L² module for two S drawers (family L only)')
     parser.add_argument('--drawer-rows', type=int, choices=(1, 2), default=1,
                         help='Two rows with two columns create four S1F drawers in an L 2F module')
-    parser.add_argument('--wall-pattern', choices=('plain', 'waffle', 'miura'), default='plain')
-    parser.add_argument('--pattern-construction', choices=('recessed', 'corrugated'), default=NEW_PATTERN_CONSTRUCTION,
-                        help='Thin corrugated wall (default) or outer-only recesses inside the original wall envelope')
-    parser.add_argument('--pattern-pitch', type=float, default=14.0, help='Pattern cell pitch, 8–40 mm')
-    parser.add_argument('--pattern-depth', type=float, default=1.7, help='Pattern relief within the existing wall, 0.2–2 mm')
-    parser.add_argument('--pattern-line-width', type=float, default=0.65,
-                        help='Target extrusion width for two perimeters with a 0.6 mm nozzle, 0.6–1 mm')
-    parser.add_argument('--pattern-faces', choices=('all', 'sides'), default='all',
-                        help='Pattern all four long sleeve faces, or just the left/right sides')
+    parser.add_argument('--wall-pattern', choices=('plain', 'miura'), default='plain',
+                        help='Shared wall pattern for the module and box')
+    parser.add_argument('--wall-perimeters', choices=('1', '2', 'full'),
+                        help='Thin-section perimeter goal (default: 2); full preserves original solid walls')
+    parser.add_argument('--nozzle-size', type=float, choices=(0.6, 0.8), default=0.6)
+    parser.add_argument('--pattern-pitch', type=float, default=14.0, help='Miura cell pitch, 8–40 mm')
+    parser.add_argument('--pattern-depth', type=float, default=1.7, help='Maximum Miura relief, 0.2–2 mm')
     parser.add_argument('--samples', type=int, default=100_000, help='Area samples and maximum vertex samples per direction')
     parser.add_argument('--tolerance', type=float, default=.25, help='Maximum retained-surface sample deviation in mm, including the simplified outside corners')
     parser.add_argument('--mating-tolerance', type=float, default=.1, help='Stricter maximum deviation in the mechanical interface regions, in mm')
     args = parser.parse_args()
     if args.box_floor == 0 and args.box_variant != 'gridfinity':
         parser.error('A floorless box requires --box-variant gridfinity')
-    try:
-        spec = ModuleSpec(args.family, args.depth_units, args.height_units,
-                          drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows,
-                          wall_pattern=args.wall_pattern, pattern_pitch=args.pattern_pitch,
-                          pattern_depth=args.pattern_depth, pattern_line_width=args.pattern_line_width,
-                          pattern_faces=args.pattern_faces, pattern_construction=args.pattern_construction)
-    except ValueError as error:
-        parser.error(str(error))
+    perimeter_choice = args.wall_perimeters or (None if args.command == 'validate' else '2')
+    wall_perimeters = (int(perimeter_choice) if perimeter_choice in ('1', '2') else perimeter_choice)
     try:
         spec = select_spec(args.part, args.family, args.depth_units, args.height_units,
                            box_variant=args.box_variant, box_floor=args.box_floor,
-                           box_rear_pattern=args.box_rear_pattern,
                            facade_floor=.8 if args.facade_floor == '0.8' else 'default',
                            drawer_columns=args.drawer_columns, drawer_rows=args.drawer_rows,
                            wall_pattern=args.wall_pattern, pattern_pitch=args.pattern_pitch,
-                           pattern_depth=args.pattern_depth, pattern_line_width=args.pattern_line_width,
-                           pattern_faces=args.pattern_faces, pattern_construction=args.pattern_construction)
+                           pattern_depth=args.pattern_depth, wall_perimeters=wall_perimeters,
+                           nozzle_size=args.nozzle_size)
     except ValueError as error:
         parser.error(str(error))
     if args.output is None:

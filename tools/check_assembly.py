@@ -8,10 +8,10 @@ Run after sourcing .local-env::
     python tools/check_assembly.py --representative
     python tools/check_assembly.py --all
 
-The default representative sample covers every family, both heights, shortest
+The default representative sample covers every family, all three heights, shortest
 and longest catalog depths, and all four floor/rear thickness combinations.
-``--all`` checks all 180 supported combinations and is intentionally expensive.
-Every run also checks the inexpensive scene definitions for all 180 cases.
+``--all`` checks all 260 supported combinations and is intentionally expensive.
+Every run also checks the inexpensive scene definitions for all 260 cases.
 Exploded translations explain the parts; this audit certifies only the closed
 assembled pose, not a continuous insertion, locking, or disassembly path.
 """
@@ -30,14 +30,14 @@ from vault.assembly_validation import (
     definition_errors, validate_assembly,
 )
 from vault.generator import Configuration
-from vault.spec import PATTERN_DEFAULTS
+from vault.spec import DRAWER_HEIGHTS, PATTERN_DEFAULTS
 
 
 def all_configurations():
     single_row = tuple(Configuration(family, depth, height, "set", floor, rear, columns)
                        for (family, columns), depth, height, floor, rear in product(
                            (("S", 1), ("M", 1), ("L", 1), ("L", 2)),
-                           range(3, 8), (1, 2), (.8, 3.0), (.9, 2.0)))
+                           range(3, 8), DRAWER_HEIGHTS, (.8, 3.0), (.9, 2.0)))
     four_drawers = tuple(Configuration("L", depth, 2, "set", floor, rear, 2, 2)
                          for depth, floor, rear in product(range(3, 8), (.8, 3.0), (.9, 2.0)))
     return single_row + four_drawers
@@ -47,6 +47,8 @@ def representative_configurations():
     return (
         Configuration("S", 3, 1),
         Configuration("S", 4, 1, box_floor=3.0),
+        Configuration("S", 4, 4),
+        Configuration("L", 3, 4, drawer_columns=2),
         Configuration("M", 3, 2, module_rear=2.0),
         Configuration("L", 7, 2, box_floor=3.0, module_rear=2.0),
         Configuration("L", 3, 1, drawer_columns=2),
@@ -63,7 +65,8 @@ def configuration_label(configuration):
             f"floor={configuration.box_floor:g} rear={configuration.module_rear:g} "
             f"facade_floor={configuration.facade_floor} "
             f"box={configuration.box_variant} box_rear={configuration.box_rear_pattern} "
-            f"pattern={configuration.wall_pattern}/{configuration.pattern_construction}")
+            f"pattern={configuration.wall_pattern}/{configuration.pattern_construction} "
+            f"perimeters={configuration.wall_perimeters} nozzle={configuration.nozzle_size:g}")
 
 
 def definition_report(pattern_settings=None):
@@ -99,8 +102,8 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--case", action="append", type=parse_case,
                       help="Size[xcolumns[xrows]]:height[:floor:rear], e.g. L6x2x2:2; repeatable")
-    mode.add_argument("--all", action="store_true", help="Audit all 180 native assemblies")
-    mode.add_argument("--representative", action="store_true", help="Audit the seven representative cases (default)")
+    mode.add_argument("--all", action="store_true", help="Audit all 260 native assemblies")
+    mode.add_argument("--representative", action="store_true", help="Audit the nine representative cases (default)")
     mode.add_argument("--definitions-only", action="store_true", help="Only check inexpensive scene inventory/placement")
     parser.add_argument("--output", type=Path, default=Path("research/assembly_fit.json"))
     parser.add_argument("--verbose", action="store_true", help="Print individual native pair progress")
@@ -116,8 +119,14 @@ def main():
     parser.add_argument('--pattern-depth', type=float, default=1.7)
     parser.add_argument('--pattern-line-width', type=float, default=.65)
     parser.add_argument('--pattern-faces', choices=('all', 'sides'), default='all')
+    parser.add_argument('--wall-perimeters', choices=('1', '2', 'full'),
+                        help='Use the shared thin-wall mode; omission audits historical geometry')
+    parser.add_argument('--nozzle-size', type=float, choices=(0.6, 0.8), default=0.6)
     args = parser.parse_args()
     pattern_settings = {key: getattr(args, key) for key in PATTERN_DEFAULTS}
+    pattern_settings['wall_perimeters'] = (int(args.wall_perimeters) if args.wall_perimeters in ('1', '2')
+                                          else args.wall_perimeters)
+    pattern_settings['nozzle_size'] = args.nozzle_size
     pattern_settings['box_variant'] = args.box_variant
     pattern_settings['box_rear_pattern'] = args.box_rear_pattern
     pattern_settings['facade_floor'] = .8 if args.facade_floor == '0.8' else 'default'

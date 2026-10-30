@@ -19,17 +19,17 @@ class RunnerBuildTests(unittest.TestCase):
                 self.assertEqual(expected.slug, f'x{depth}_{kind}')
                 self.assertEqual(builds.part_kind(expected), kind)
                 for family in ('S', 'M', 'L'):
-                    for height in (1, 2):
+                    for height in (1, 2, 4):
                         self.assertEqual(builds.select_spec(kind, family, depth, height), expected)
             with patch.object(cli, 'build') as build:
                 with patch('sys.argv', ['vault', 'build', '--part', kind,
-                                        '--family', 'L', '--depth-units', '7', '--height-units', '2']):
+                                        '--family', 'L', '--depth-units', '7', '--height-units', '4']):
                     cli.main()
-                build.assert_called_once_with(cli.PROJECT_ROOT / 'out', builds.select_spec(kind, 'L', 7, 2))
+                build.assert_called_once_with(cli.PROJECT_ROOT / 'out', builds.select_spec(kind, 'L', 7, 4))
 
     def test_unsupported_runner_sizes_fail_before_building(self):
         for kind in ('runner_guides', 'runner_slides'):
-            for option, value in (('--family', 'XL'), ('--depth-units', '8'), ('--height-units', '4')):
+            for option, value in (('--family', 'XL'), ('--depth-units', '8'), ('--height-units', '3')):
                 with self.subTest(kind=kind, option=option), patch.object(cli, 'build') as build:
                     with patch('sys.argv', ['vault', 'build', '--part', kind, option, value]):
                         with redirect_stderr(StringIO()), self.assertRaises(SystemExit) as error:

@@ -23,7 +23,7 @@ class AssemblyCacheTests(unittest.TestCase):
 
     def build(self, kind, *, legacy=False, floor=.8, family='S', columns=None, rows=None, height=1,
               pattern=None, pitch=14., depth=1.7, line_width=.65, faces='all', construction=None,
-              box_rear=None, box_variant='plain', facade_floor=None):
+              box_rear=None, box_variant='plain', facade_floor=None, wall_perimeters=None, nozzle_size=.6):
         self.serial += 1
         build_id = f'20261024T010000{self.serial:06d}Z-0123456789ab'
         directory = self.root / 'builds' / build_id
@@ -53,6 +53,14 @@ class AssemblyCacheTests(unittest.TestCase):
                               pattern_line_width=line_width, pattern_faces=faces)
             if construction is not None:
                 parameters['pattern_construction'] = construction
+        if kind in ('module', 'box') and wall_perimeters is not None:
+            parameters.update(wall_perimeters=wall_perimeters, nozzle_size=nozzle_size,
+                              wall_pattern=pattern or 'plain', pattern_pitch=pitch, pattern_depth=depth)
+            if kind == 'module':
+                parameters.update(pattern_line_width=round(nozzle_size + .05, 2),
+                                  pattern_faces='all', pattern_construction='corrugated')
+            else:
+                parameters['box_rear_pattern'] = pattern or 'plain'
         (directory / 'resolved-parameters.json').write_text(json.dumps(parameters))
         reports, checksums = {}, {}
         for role in roles:
@@ -68,6 +76,24 @@ class AssemblyCacheTests(unittest.TestCase):
             passed=True,build_id=build_id,parts=reports,checksums=checksums,
             git={'commit':'current','dirty':False},source_hash='same-source')))
         return build_id
+
+    @patch('vault.web_builds.git_provenance', return_value={'commit': 'current', 'dirty': False})
+    def test_plain_and_miura_caches_match_shared_perimeter_nozzle_and_pattern(self, _):
+        from dataclasses import replace
+        for kind in ('module', 'box'):
+            self.build(kind)
+        for pattern in ('plain', 'miura'):
+            config = Configuration.parse_request(dict(wall_pattern=pattern, wall_perimeters=1, nozzle_size=.8))
+            ids = {kind: self.build(kind, pattern=pattern, wall_perimeters=1, nozzle_size=.8)
+                   for kind in ('module', 'box')}
+            scene = self.files.assembly(config)
+            self.assertEqual({i['kind']: i['build_id'] for i in scene['instances']}, ids)
+            for change in ({'wall_perimeters': 2}, {'nozzle_size': .6}, {'wall_perimeters': 'full'}):
+                with self.subTest(pattern=pattern, change=change):
+                    changed = self.files.assembly(replace(config, **change))
+                    self.assertEqual(changed['instances'], [])
+            if pattern == 'miura':
+                self.assertEqual(self.files.assembly(replace(config, pattern_pitch=18))['instances'], [])
 
     def write_receipt(self, path, record):
         kinds = {build_id: self.files.describe(build_id)['kind'] for build_id in record['build_ids']}

@@ -21,12 +21,13 @@ class GeneratorTests(unittest.TestCase):
     def test_all_supported_sizes_and_no_oversize_or_untyped_values(self):
         for family in ('S', 'M', 'L'):
             for depth in range(3, 8):
-                for height in (1, 2):
+                for height in (1, 2, 4):
                     self.assertEqual(Configuration(family, depth, height).parts,
                                      ('module', 'box', 'facade', 'rails', 'runner_guides', 'runner_slides',
                                       'key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch'))
-        for values in ({'family': 'XL'}, {'height_units': 4}, {'depth_units': 8},
-                       {'depth_units': 2}, {'height_units': True}, {'depth_units': 4.0},
+        for values in ({'family': 'XL'}, {'height_units': 3}, {'height_units': 5}, {'depth_units': 8},
+                       {'depth_units': 2}, {'height_units': True}, {'height_units': 4.0},
+                       {'height_units': '4'}, {'depth_units': 4.0},
                        {'part': '../x'}, {'part': []}, {'command': 'whoami'}):
             with self.subTest(values=values), self.assertRaises(ValueError):
                 Configuration.parse(values)
@@ -83,6 +84,22 @@ class BuildFilesTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.files = BuildFiles(self.temporary.name)
+
+    def test_four_floor_builds_remain_available_in_history(self):
+        for index, kind in enumerate(('module', 'box', 'facade')):
+            build_id = f'20261024T01000000000{index}Z-0123456789ab'
+            path = Path(self.temporary.name) / 'builds' / build_id
+            path.mkdir(parents=True)
+            (path / 'manifest.json').write_text(json.dumps({
+                'passed': True, 'build_id': build_id, 'checksums': {}, 'parts': {},
+            }))
+            part = 's4f_facade' if kind == 'facade' else f's4_{kind}_4f'
+            (path / 'resolved-parameters.json').write_text(json.dumps({
+                'family': 'S', 'depth_units': 4, 'height_units': 4, 'part': part,
+            }))
+        history = self.files.history()
+        self.assertEqual({item['kind'] for item in history}, {'module', 'box', 'facade'})
+        self.assertTrue(all(item['configuration']['height_units'] == 4 for item in history))
 
     def test_runner_history_preserves_depth_without_inventing_a_width_family(self):
         for i, kind in enumerate(('runner_guides', 'runner_slides')):
@@ -190,7 +207,7 @@ class HTTPTests(unittest.TestCase):
 
     def test_floorless_gridfinity_submission_keeps_zero_and_rejects_plain(self):
         self.assertEqual(self.request('POST', '/api/jobs', {'part': 'box', 'box_floor': 0})[0], 400)
-        request = {'part': 'box', 'box_floor': 0, 'box_variant': 'gridfinity', 'box_rear_pattern': 'waffle'}
+        request = {'part': 'box', 'box_floor': 0, 'box_variant': 'gridfinity', 'wall_pattern': 'miura'}
         status, data = self.request('POST', '/api/jobs', request)
         self.assertEqual(status, 202)
         submitted = json.loads(data)['configuration']
@@ -206,27 +223,27 @@ class HTTPTests(unittest.TestCase):
         status, data = self.request('GET', '/api/assembly?family=L&depth_units=6&height_units=2&drawer_columns=2')
         self.assertEqual(status, 200)
         scene = json.loads(data)
-        self.assertEqual(scene['name'], 'L6² · 2F complete set')
+        self.assertEqual(scene['name'], 'L6² · 2F · 2 perimeters, 0.6 mm nozzle complete set')
         self.assertEqual(len(scene['missing']), 51)
         status, data = self.request('GET', '/api/assembly?family=L&depth_units=6&height_units=2&drawer_columns=2&drawer_rows=2')
         self.assertEqual(status, 200)
         scene = json.loads(data)
-        self.assertEqual(scene['name'], 'L6² · 2F · 4 drawers complete set')
+        self.assertEqual(scene['name'], 'L6² · 2F · 4 drawers · 2 perimeters, 0.6 mm nozzle complete set')
         self.assertEqual(len(scene['missing']), 67)
-        status, data = self.request('GET', '/api/assembly?wall_pattern=miura&pattern_pitch=20&pattern_depth=1.4&pattern_line_width=0.8&pattern_faces=sides&pattern_construction=corrugated')
+        status, data = self.request('GET', '/api/assembly?wall_pattern=miura&pattern_pitch=20&pattern_depth=1.4&nozzle_size=0.8&wall_perimeters=1')
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(data)['configuration']['pattern_pitch'], 20.)
         self.assertEqual(json.loads(data)['configuration']['wall_pattern'], 'miura')
         self.assertEqual(json.loads(data)['configuration']['pattern_construction'], 'corrugated')
         self.assertIn('corrugated', json.loads(data)['name'])
-        status, data = self.request('GET', '/api/assembly?box_rear_pattern=waffle&wall_pattern=miura&box_variant=gridfinity')
+        status, data = self.request('GET', '/api/assembly?wall_pattern=miura&box_variant=gridfinity')
         self.assertEqual(status, 200)
         configured = json.loads(data)
-        self.assertEqual(configured['configuration']['box_rear_pattern'], 'waffle')
+        self.assertEqual(configured['configuration']['box_rear_pattern'], 'miura')
         self.assertEqual(configured['configuration']['wall_pattern'], 'miura')
         self.assertEqual(configured['configuration']['box_variant'], 'gridfinity')
-        self.assertIn('Waffle corrugated box rear', configured['name'])
-        status, data = self.request('GET', '/api/assembly?box_floor=0&box_variant=gridfinity&box_rear_pattern=miura')
+        self.assertIn('Miura-ori', configured['name'])
+        status, data = self.request('GET', '/api/assembly?box_floor=0&box_variant=gridfinity&wall_pattern=miura')
         self.assertEqual(status, 200)
         configured = json.loads(data)
         self.assertEqual(configured['configuration']['box_floor'], 0)
@@ -244,11 +261,35 @@ class HTTPTests(unittest.TestCase):
                       'family=L&drawer_columns=3', 'family=L&drawer_columns=2.0',
                       'family=L&drawer_columns=2&drawer_rows=2', 'family=L&height_units=2&drawer_rows=2',
                       'family=L&height_units=2&drawer_columns=2&drawer_rows=2.0',
-                      'wall_pattern=unknown', 'pattern_faces=front', 'pattern_pitch=nan',
+                      'wall_pattern=unknown', 'pattern_faces=front', 'pattern_faces=sides', 'pattern_pitch=nan',
+                      'nozzle_size=0.4', 'nozzle_size=nan', 'wall_perimeters=0', 'wall_perimeters=2.0',
+                      'wall_perimeters=full&wall_perimeters=1', 'pattern_construction=recessed',
                       'wall_pattern=waffle&pattern_depth=2', 'pattern_line_width=0.3',
                       'pattern_construction=solid', 'box_rear_pattern=unknown', 'box_rear_pattern=',
                       'box_rear_pattern=plain&box_rear_pattern=waffle'):
             self.assertEqual(self.request('GET', '/api/assembly?' + query)[0], 400)
+
+    def test_four_floor_catalog_submission_and_assembly_agree(self):
+        status, body = self.request('GET', '/api/config')
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)['heights'], [1, 2, 4])
+        for family, columns in (('S', 1), ('M', 1), ('L', 1), ('L', 2)):
+            with self.subTest(family=family, columns=columns):
+                values = {'family': family, 'height_units': 4, 'drawer_columns': columns}
+                status, body = self.request('POST', '/api/jobs', values)
+                self.assertEqual(status, 202)
+                self.assertEqual(json.loads(body)['configuration']['height_units'], 4)
+                status, body = self.request(
+                    'GET', f'/api/assembly?family={family}&height_units=4&drawer_columns={columns}')
+                self.assertEqual(status, 200)
+                scene = json.loads(body)
+                self.assertEqual(scene['configuration']['height_units'], 4)
+                self.assertFalse(scene['complete'])
+                guides = [item for item in scene['missing'] if item['kind'] == 'runner_guides']
+                self.assertEqual(len(guides), 8 * columns)
+        for values in ({'height_units': 3}, {'height_units': 5}, {'height_units': 4.0},
+                       {'family': 'L', 'height_units': 4, 'drawer_columns': 2, 'drawer_rows': 2}):
+            self.assertEqual(self.request('POST', '/api/jobs', values)[0], 400)
 
     def test_multi_drawer_submission_and_catalog_agree(self):
         status, body = self.request('GET', '/api/config')

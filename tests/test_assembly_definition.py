@@ -12,7 +12,7 @@ from vault.spec import ModuleSpec
 
 class AssemblyDefinitionTests(unittest.TestCase):
     def test_all_configurations_have_complete_rigid_instances(self):
-        for family, depth, height, floor, rear in product('SML', range(3, 8), (1, 2), (.8, 3.), (.9, 2.)):
+        for family, depth, height, floor, rear in product('SML', range(3, 8), (1, 2, 4), (.8, 3.), (.9, 2.)):
             configuration = Configuration(family, depth, height, 'set', floor, rear)
             scene = assembly_definition(configuration)
             instances = scene['instances']
@@ -38,7 +38,7 @@ class AssemblyDefinitionTests(unittest.TestCase):
                     self.assertAlmostEqual(determinant, 1.)
 
     def test_runner_guide_and_slide_share_seated_datums(self):
-        for family, depth, height in product('SML', range(3, 8), (1, 2)):
+        for family, depth, height in product('SML', range(3, 8), (1, 2, 4)):
             instances = assembly_definition(Configuration(family, depth, height))['instances']
             for guide in (item for item in instances if item['kind'] == 'runner_guides'):
                 slide = next(item for item in instances if item['kind'] == 'runner_slides'
@@ -52,7 +52,7 @@ class AssemblyDefinitionTests(unittest.TestCase):
                         self.assertAlmostEqual(a, b)
 
     def test_depth_moves_facade_and_gears_but_height_does_not_repeat_gears(self):
-        for depth, height in product(range(3, 8), (1, 2)):
+        for depth, height in product(range(3, 8), (1, 2, 4)):
             instances = assembly_definition(Configuration('L', depth, height))['instances']
             facade = next(item for item in instances if item['kind'] == 'facade')
             self.assertAlmostEqual(facade['transform'][13], depth * 42 + 20.1)
@@ -68,8 +68,8 @@ class AssemblyDefinitionTests(unittest.TestCase):
         self.assertEqual(complete, selected)
 
     def test_two_columns_repeat_complete_s_drawers_at_measured_centers(self):
-        for depth, height, rear, rows in product(range(3, 8), (1, 2), (.9, 2.), (1, 2)):
-            if rows > height:
+        for depth, height, rear, rows in product(range(3, 8), (1, 2, 4), (.9, 2.), (1, 2)):
+            if rows == 2 and height != 2:
                 continue
             config = Configuration('L', depth, height, module_rear=rear,
                                    drawer_columns=2, drawer_rows=rows)
@@ -94,7 +94,7 @@ class AssemblyDefinitionTests(unittest.TestCase):
             self.assertEqual(scene['instances'][0]['transform'][12:15], [0., 0., float(48 * height - 1)])
 
     def test_module_latch_face_points_down_while_drawer_stays_upright(self):
-        for family, depth, height in product('SML', range(3, 8), (1, 2)):
+        for family, depth, height in product('SML', range(3, 8), (1, 2, 4)):
             scene = assembly_definition(Configuration(family, depth, height))
             module = scene['instances'][0]['transform']
             skin_height = 48 * height - 1
@@ -106,10 +106,10 @@ class AssemblyDefinitionTests(unittest.TestCase):
 
     def test_facade_caps_share_every_screw_axis_and_face_seat(self):
         configurations = [Configuration(family, depth, height)
-                          for family, depth, height in product('SML', range(3, 8), (1, 2))]
+                          for family, depth, height in product('SML', range(3, 8), (1, 2, 4))]
         configurations += [Configuration('L', depth, height, drawer_columns=2, drawer_rows=rows)
-                           for depth, height, rows in product(range(3, 8), (1, 2), (1, 2))
-                           if rows <= height]
+                           for depth, height, rows in product(range(3, 8), (1, 2, 4), (1, 2))
+                           if rows == 1 or height == 2]
         for config in configurations:
             module = ModuleSpec(config.family, config.depth_units, config.height_units,
                                 drawer_columns=config.drawer_columns, drawer_rows=config.drawer_rows)
@@ -130,10 +130,10 @@ class AssemblyDefinitionTests(unittest.TestCase):
                     self.assertAlmostEqual(tip[1], seat[1] - 3.8)
 
     def test_accessories_are_installed_and_repeat_by_drawer_or_module_bank(self):
-        cases = [('S', 1, 1, 1, 18), ('S', 2, 1, 1, 26),
-                 ('M', 1, 1, 1, 20), ('M', 2, 1, 1, 28),
-                 ('L', 1, 1, 1, 21), ('L', 2, 1, 1, 29),
-                 ('L', 1, 2, 1, 35), ('L', 2, 2, 1, 51), ('L', 2, 2, 2, 67)]
+        cases = [('S', 1, 1, 1, 18), ('S', 2, 1, 1, 26), ('S', 4, 1, 1, 42),
+                 ('M', 1, 1, 1, 20), ('M', 2, 1, 1, 28), ('M', 4, 1, 1, 44),
+                 ('L', 1, 1, 1, 21), ('L', 2, 1, 1, 29), ('L', 4, 1, 1, 45),
+                 ('L', 1, 2, 1, 35), ('L', 2, 2, 1, 51), ('L', 2, 2, 2, 67), ('L', 4, 2, 1, 83)]
         for family, height, columns, rows, count in cases:
             config = Configuration(family, 4, height, drawer_columns=columns, drawer_rows=rows)
             scene = assembly_definition(config)
@@ -161,10 +161,10 @@ class AssemblyDefinitionTests(unittest.TestCase):
 
     def test_lock_hardware_registers_to_facade_seats_in_every_drawer(self):
         configurations = [Configuration(family, depth, height)
-                          for family, depth, height in product('SML', range(3, 8), (1, 2))]
+                          for family, depth, height in product('SML', range(3, 8), (1, 2, 4))]
         configurations += [Configuration('L', depth, height, drawer_columns=2, drawer_rows=rows)
-                           for depth, height, rows in product(range(3, 8), (1, 2), (1, 2))
-                           if rows <= height]
+                           for depth, height, rows in product(range(3, 8), (1, 2, 4), (1, 2))
+                           if rows == 1 or height == 2]
         # Circle through the three native fork points; independent of the
         # assembly's translation constant and the family's outside width.
         fork_x = (19.9**2 - 10.6**2 - 6.325**2) / (2 * (19.9 - 10.6))
@@ -194,7 +194,7 @@ class AssemblyDefinitionTests(unittest.TestCase):
                             self.assertAlmostEqual(a, b)
 
     def test_fixed_accessories_face_into_slots_and_out_from_underside(self):
-        for family, depth, height, columns, rows in product('SML', range(3, 8), (1, 2), (1, 2), (1, 2)):
+        for family, depth, height, columns, rows in product('SML', range(3, 8), (1, 2, 4), (1, 2), (1, 2)):
             if (columns == 2 and family != 'L') or (rows == 2 and (columns != 2 or height != 2)):
                 continue
             config = Configuration(family, depth, height, drawer_columns=columns, drawer_rows=rows)

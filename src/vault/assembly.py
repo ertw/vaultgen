@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from .drawer import DrawerLayout
 from .generator import Configuration
-from .spec import DEFAULT_SPEC, ModuleSpec, WALL_PATTERNS, pattern_parameters
+from .spec import DEFAULT_SPEC, ModuleSpec, WALL_PATTERNS, pattern_parameters, wall_parameters
 
 
 SCHEMA = 'vault-assembly/v1'
@@ -66,7 +66,7 @@ def assembly_definition(configuration: Configuration):
     spec = ModuleSpec(configuration.family, configuration.depth_units,
                       configuration.height_units, configuration.module_rear,
                       configuration.drawer_columns, configuration.drawer_rows,
-                      **pattern_parameters(configuration))
+                      **{**pattern_parameters(configuration), **wall_parameters(configuration)})
     drawer_spec = ModuleSpec(configuration.drawer_family, configuration.depth_units,
                              configuration.drawer_height_units, configuration.module_rear)
     width_delta = (drawer_spec.width - DEFAULT_SPEC.width) / 2
@@ -107,7 +107,10 @@ def assembly_definition(configuration: Configuration):
                    + (' · Floorless' if configuration.box_floor == 0 else '')
                    + (' · Gridfinity' if configuration.box_variant == 'gridfinity' else '')
                    + (f' · {WALL_PATTERNS[configuration.box_rear_pattern]} corrugated rear'
-                      if configuration.box_rear_pattern != 'plain' else ''), 'drawer')
+                      if configuration.box_rear_pattern != 'plain' else '')
+                   + (f' · {configuration.wall_perimeters} perimeter{"s" if configuration.wall_perimeters == 2 else ""}, {configuration.nozzle_size:g} mm nozzle'
+                      if configuration.wall_perimeters in (1, 2) else
+                      ' · Full width' if configuration.wall_perimeters == 'full' else ''), 'drawer')
         add_drawer('facade', 'facade', 'single', f'{drawer_spec.family}{drawer_spec.height_units}F Facade', 'drawer',
                    translation=(0, spec.depth, 0), explode=(0, 65, 0))
         for index, (x, z) in enumerate(DrawerLayout(drawer_spec).screw_positions, start=1):
@@ -219,10 +222,11 @@ def build_finished_components(configuration: Configuration):
         ('module', 'single'): build_module(
             spec=ModuleSpec(configuration.family, depth, configuration.height_units, configuration.module_rear,
                             configuration.drawer_columns, configuration.drawer_rows,
-                            **pattern_parameters(configuration)), include_supports=False),
+                            **{**pattern_parameters(configuration), **wall_parameters(configuration)}), include_supports=False),
         ('box', 'single'): build_box(
             spec=BoxSpec(family, depth, height, configuration.box_floor, configuration.box_variant,
-                         configuration.box_rear_pattern),
+                         configuration.box_rear_pattern,
+                         **(wall_parameters(configuration) if configuration.wall_perimeters is not None else {})),
             include_supports=False),
         ('facade', 'single'): build_facade(spec=FacadeSpec(family, height,
                                                         facade_floor=configuration.facade_floor)),

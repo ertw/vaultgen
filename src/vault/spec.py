@@ -13,6 +13,7 @@ from types import MappingProxyType
 
 DEPTH_PITCH = 42.0
 TIER_PITCH = 48.0
+DRAWER_HEIGHTS = (1, 2, 4)
 WALL_PATTERNS = MappingProxyType({'plain': 'Plain', 'waffle': 'Waffle', 'miura': 'Miura-ori'})
 PATTERN_CONSTRUCTIONS = MappingProxyType({'recessed': 'Recessed', 'corrugated': 'Two-perimeter corrugated'})
 # New user selections favor paired thin walls. Historical data and native
@@ -27,10 +28,73 @@ PATTERN_RANGES = MappingProxyType({
     'pattern_pitch': (8.0, 40.0), 'pattern_depth': (0.2, 2.0),
     'pattern_line_width': (0.6, 1.0),
 })
+WALL_PERIMETERS = (1, 2, 'full')
+NOZZLE_SIZES = (0.6, 0.8)
+WALL_FIELDS = ('wall_perimeters', 'nozzle_size', 'wall_pattern', 'pattern_pitch', 'pattern_depth')
+
+
+def validate_wall_settings(configuration):
+    """Resolve the shared panel settings, leaving old saved requests intact."""
+    count = getattr(configuration, 'wall_perimeters', None)
+    nozzle = getattr(configuration, 'nozzle_size', .6)
+    if type(nozzle) not in (int, float) or nozzle not in NOZZLE_SIZES:
+        raise ValueError('nozzle_size must be 0.6 or 0.8 mm')
+    if count is None:
+        if hasattr(configuration, 'nozzle_size'):
+            object.__setattr__(configuration, 'nozzle_size', .6)
+        return
+    if not (type(count) is int and count in (1, 2) or type(count) is str and count == 'full'):
+        raise ValueError('wall_perimeters must be 1, 2, or full')
+    if configuration.wall_pattern not in ('plain', 'miura'):
+        raise ValueError('wall_pattern must be plain or miura')
+    for key in ('pattern_pitch', 'pattern_depth'):
+        value = getattr(configuration, key)
+        low, high = PATTERN_RANGES[key]
+        if type(value) not in (int, float) or not math.isfinite(value) or not low <= value <= high:
+            raise ValueError(f'{key} must be a finite number from {low:g} to {high:g} mm')
+        object.__setattr__(configuration, key, float(value))
+    if count == 'full':
+        object.__setattr__(configuration, 'wall_pattern', 'plain')
+        object.__setattr__(configuration, 'nozzle_size', .6)
+    else:
+        object.__setattr__(configuration, 'nozzle_size', float(nozzle))
+    if configuration.wall_pattern == 'plain':
+        for key in ('pattern_pitch', 'pattern_depth'):
+            object.__setattr__(configuration, key, PATTERN_DEFAULTS[key])
+    for key, value in (('pattern_faces', 'all'), ('pattern_construction', 'corrugated'),
+                       ('pattern_line_width', round(configuration.nozzle_size + .05, 2))):
+        if hasattr(configuration, key):
+            object.__setattr__(configuration, key, value)
+
+
+def wall_parameters(configuration):
+    return {key: getattr(configuration, key) for key in WALL_FIELDS}
+
+
+def wall_target_thickness(configuration):
+    """Nominal Arachne goal; actual path count still depends on slicer settings."""
+    count = getattr(configuration, 'wall_perimeters', None)
+    if count == 'full':
+        return None
+    if count is None:
+        return 2 * getattr(configuration, 'pattern_line_width', .65)
+    return round(count * (configuration.nozzle_size + .05), 2)
+
+
+def wall_setting_suffix(configuration):
+    if configuration.wall_perimeters == 'full':
+        return '_walls_full'
+    suffix = f'_{configuration.wall_pattern}_walls_{configuration.wall_perimeters}p_n{configuration.nozzle_size:g}'
+    suffix = suffix.replace('.', 'p')
+    if configuration.wall_pattern == 'miura' and (configuration.pattern_pitch, configuration.pattern_depth) != (14., 1.7):
+        values = (float(configuration.pattern_pitch), float(configuration.pattern_depth))
+        suffix += '_' + hashlib.sha256(json.dumps(values).encode()).hexdigest()[:12]
+    return suffix
 
 
 def validate_wall_pattern(configuration):
     """Validate request settings without importing the CAD runtime."""
+    validate_wall_settings(configuration)
     if not isinstance(configuration.wall_pattern, str) or configuration.wall_pattern not in WALL_PATTERNS:
         raise ValueError('wall_pattern must be plain, waffle, or miura')
     if not isinstance(configuration.pattern_faces, str) or configuration.pattern_faces not in ('all', 'sides'):
@@ -43,7 +107,8 @@ def validate_wall_pattern(configuration):
         if type(value) not in (int, float) or not math.isfinite(value) or not minimum <= value <= maximum:
             raise ValueError(f'{key} must be a finite number from {minimum:g} to {maximum:g} mm')
         object.__setattr__(configuration, key, float(value))
-    if configuration.pattern_depth + 2 * configuration.pattern_line_width > 3.0 + 1e-9:
+    if (getattr(configuration, 'wall_perimeters', None) is None
+            and configuration.pattern_depth + 2 * configuration.pattern_line_width > 3.0 + 1e-9):
         raise ValueError('Pattern depth plus two line widths must fit within the 3 mm wall')
 
 
@@ -93,10 +158,12 @@ class ModuleSpec:
     pattern_line_width: float = 0.65
     pattern_faces: str = 'all'
     pattern_construction: str = 'recessed'
+    wall_perimeters: int | str | None = None
+    nozzle_size: float = 0.6
 
     def __post_init__(self):
         validate_wall_pattern(self)
-        if self.wall_pattern == 'plain':
+        if self.wall_pattern == 'plain' and self.wall_perimeters is None:
             # Unused controls must not create competing cache identities for
             # the unchanged plain module.
             for key, value in PATTERN_DEFAULTS.items():
@@ -172,10 +239,15 @@ class ModuleSpec:
         pattern = f' · {WALL_PATTERNS[self.wall_pattern]}' if self.wall_pattern != 'plain' else ''
         if pattern and self.pattern_construction == 'corrugated':
             pattern += ' corrugated'
+        if self.wall_perimeters is not None:
+            pattern += (' · Full width' if self.wall_perimeters == 'full' else
+                        f' · {self.wall_perimeters} perimeter{ "s" if self.wall_perimeters == 2 else ""}, {self.nozzle_size:g} mm nozzle')
         return f"{self.family}{self.depth_units}{columns} Module {self.height_units}F" + (" · 2 mm rear" if self.module_rear == 2 else "") + pattern
 
     @property
     def pattern_suffix(self) -> str:
+        if self.wall_perimeters is not None:
+            return wall_setting_suffix(self)
         if self.wall_pattern == 'plain':
             return ''
         values = pattern_parameters(self)

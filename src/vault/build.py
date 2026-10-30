@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 
 from .project import PROJECT_ROOT
-from .spec import DEFAULT_SPEC, ModuleSpec
+from .spec import DEFAULT_SPEC, DRAWER_HEIGHTS, ModuleSpec
 from ._build import run_build, source_hashes, verify_files
 
 
@@ -125,7 +125,16 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
         manifest['print_orientation'] += ' ' + PRINT_NOTE
         (output / 'printing.txt').write_text(manifest['print_orientation'] + '\n')
         manifest['print_instructions'] = 'printing.txt'
-    if isinstance(spec, ModuleSpec) and spec.wall_pattern != 'plain':
+    if getattr(spec, 'wall_perimeters', None) is not None:
+        if spec.wall_perimeters == 'full':
+            manifest['print_orientation'] += ' Full width retains the original solid walls without pattern relief.'
+        else:
+            from .spec import wall_target_thickness
+            manifest['print_orientation'] += (
+                f' Thin wall sections target {wall_target_thickness(spec):g} mm for '
+                f'{spec.wall_perimeters} perimeter{"s" if spec.wall_perimeters == 2 else ""} with a {spec.nozzle_size:g} mm nozzle and Arachne wall generation. '
+                'Folds, transitions and structural lands remain thicker. Verify the actual perimeter paths in your slicer.')
+    elif isinstance(spec, ModuleSpec) and spec.wall_pattern != 'plain':
         manifest['print_orientation'] += (
             f' Corrugated patterned facets target {2 * spec.pattern_line_width:g} mm normal thickness '
             f'for two {spec.pattern_line_width:g} mm extrusion lines with a 0.6 mm nozzle; '
@@ -142,7 +151,8 @@ def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAUL
             + ('The 5 mm grid has no closed floor. ' if spec.box_floor == 0 else
                'The grid rises 5 mm above the selected floor. ')
             + 'Check bin height and printed fit before filling the drawer.')
-    if part_kind(spec) == 'box' and getattr(spec, 'box_rear_pattern', 'plain') != 'plain':
+    if (part_kind(spec) == 'box' and getattr(spec, 'wall_perimeters', None) is None
+            and getattr(spec, 'box_rear_pattern', 'plain') != 'plain'):
         manifest['print_orientation'] += (
             ' The corrugated rear wall uses a 14 mm pattern pitch and targets 1.3 mm '
             'normal facet thickness for two 0.65 mm extrusion lines with a 0.6 mm nozzle. '
@@ -303,7 +313,8 @@ def selected_build(output, spec):
 def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.8, module_rear=0.9,
                 drawer_columns=1, drawer_rows=1, wall_pattern='plain', pattern_pitch=14.0,
                 pattern_depth=1.7, pattern_line_width=0.65, pattern_faces='all', pattern_construction='recessed',
-                box_variant='plain', box_rear_pattern='plain', facade_floor='default'):
+                box_variant='plain', box_rear_pattern='plain', facade_floor='default',
+                wall_perimeters=None, nozzle_size=0.6):
     """Resolve the same native constructors for the CLI and web generator."""
     from .generator import ACCESSORY_PARTS
     if part in ACCESSORY_PARTS:
@@ -311,7 +322,7 @@ def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.
         return AccessorySpec(part)
     module_spec = ModuleSpec(family, depth_units, height_units, module_rear, drawer_columns, drawer_rows,
                              wall_pattern, pattern_pitch, pattern_depth, pattern_line_width, pattern_faces,
-                             pattern_construction)
+                             pattern_construction, wall_perimeters=wall_perimeters, nozzle_size=nozzle_size)
     if part == 'module':
         from dataclasses import replace
         return replace(module_spec, drawer_rows=1)
@@ -319,7 +330,10 @@ def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.
     height_units = module_spec.drawer_height_units
     if part == 'box':
         from .box import BoxSpec
-        return BoxSpec(family, depth_units, height_units, box_floor, box_variant, box_rear_pattern)
+        settings = (dict(wall_perimeters=wall_perimeters, nozzle_size=nozzle_size,
+                         wall_pattern=wall_pattern, pattern_pitch=pattern_pitch, pattern_depth=pattern_depth)
+                    if wall_perimeters is not None else {})
+        return BoxSpec(family, depth_units, height_units, box_floor, box_variant, box_rear_pattern, **settings)
     if part == 'facade':
         from .facade import FacadeSpec
         return FacadeSpec(family, height_units, facade_floor=facade_floor)
@@ -327,8 +341,8 @@ def select_spec(part, family='S', depth_units=4, height_units=1, *, box_floor=0.
         from .geared_rails import GearRailSpec
         return GearRailSpec(family)
     if part in ('runner_guides', 'runner_slides'):
-        if family not in ('S', 'M', 'L') or type(height_units) is not int or height_units not in (1, 2):
-            raise ValueError('Runner pairs support S/M/L drawers in 1F or 2F')
+        if family not in ('S', 'M', 'L') or type(height_units) is not int or height_units not in DRAWER_HEIGHTS:
+            raise ValueError('Runner pairs support S/M/L drawers in 1F, 2F, or 4F')
         if part == 'runner_guides':
             from .runner_guides import RunnerGuideSpec
             return RunnerGuideSpec(depth_units)

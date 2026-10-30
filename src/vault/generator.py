@@ -1,7 +1,7 @@
 """Bounded generator requests shared by HTTP and the isolated CAD worker."""
 from dataclasses import dataclass, asdict
 
-from .spec import FAMILIES, NEW_PATTERN_CONSTRUCTION, PATTERN_CONSTRUCTIONS, PATTERN_DEFAULTS, PATTERN_RANGES, WALL_PATTERNS, validate_wall_pattern
+from .spec import DRAWER_HEIGHTS, FAMILIES, PATTERN_DEFAULTS, PATTERN_RANGES, WALL_PATTERNS, validate_wall_pattern
 
 # Keep request validation independent of the CAD runtime.
 ACCESSORY_PARTS = ('key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch')
@@ -33,9 +33,13 @@ class Configuration:
     box_variant: str = 'plain'
     box_rear_pattern: str = 'plain'
     facade_floor: float | str = 'default'
+    wall_perimeters: int | str | None = None
+    nozzle_size: float = 0.6
 
     def __post_init__(self):
         validate_wall_pattern(self)
+        if self.wall_perimeters is not None:
+            object.__setattr__(self, 'box_rear_pattern', self.wall_pattern)
         if self.box_variant not in ('plain', 'gridfinity'):
             raise ValueError('Box variant must be plain or gridfinity')
         if not isinstance(self.box_rear_pattern, str) or self.box_rear_pattern not in WALL_PATTERNS:
@@ -57,8 +61,8 @@ class Configuration:
             raise ValueError('Two drawer columns require family L')
         if type(self.depth_units) is not int or self.depth_units not in range(3, 8):
             raise ValueError('Depth must be an integer from 3 to 7')
-        if type(self.height_units) is not int or self.height_units not in (1, 2):
-            raise ValueError('Height must be 1F or 2F; L × 2F is the maximum size')
+        if type(self.height_units) is not int or self.height_units not in DRAWER_HEIGHTS:
+            raise ValueError('Height must be 1F, 2F, or 4F')
         if type(self.drawer_rows) is not int or self.drawer_rows not in (1, 2):
             raise ValueError('Drawer rows must be 1 or 2')
         if self.drawer_rows == 2 and (self.family, self.height_units, self.drawer_columns) != ('L', 2, 2):
@@ -82,7 +86,18 @@ class Configuration:
     def parse_request(cls, value):
         """Default fresh selections to thin walls without reinterpreting history."""
         if isinstance(value, dict):
-            value = {'pattern_construction': NEW_PATTERN_CONSTRUCTION, **value}
+            value = {'wall_perimeters': 2, 'nozzle_size': 0.6, **value}
+            if value['wall_perimeters'] is None:
+                raise ValueError('wall_perimeters must be 1, 2, or full')
+            for key, expected in (('pattern_faces', 'all'), ('pattern_construction', 'corrugated')):
+                if key in value and value[key] != expected:
+                    raise ValueError(f'{key} is no longer selectable; use the shared Wall pattern setting')
+            if 'box_rear_pattern' in value and value['box_rear_pattern'] != value.get('wall_pattern', 'plain'):
+                raise ValueError('Use wall_pattern to select the same pattern for the box and module')
+            if ('pattern_line_width' in value and
+                    (type(value['nozzle_size']) not in (int, float) or
+                     value['pattern_line_width'] != round(value['nozzle_size'] + 0.05, 2))):
+                raise ValueError('Line width is derived from nozzle_size; choose a 0.6 or 0.8 mm nozzle')
         return cls.parse(value)
 
     @property
@@ -123,7 +138,7 @@ class Configuration:
 def catalog():
     return {'families': [{'id': key, 'width_mm': FAMILIES[key].width}
                          for key in ('S', 'M', 'L')],
-            'depths': list(range(3, 8)), 'heights': [1, 2],
+            'depths': list(range(3, 8)), 'heights': list(DRAWER_HEIGHTS),
             'drawer_layouts': [
                 {'columns': 1, 'rows': 1, 'name': 'One drawer', 'families': ['S', 'M', 'L']},
                 {'columns': 2, 'rows': 1, 'name': 'Two drawers', 'families': ['L'], 'drawer_family': 'S'},
@@ -134,18 +149,18 @@ def catalog():
             'thicknesses': {'box_floor': [0.0, 0.8, 3.0], 'module_rear': [0.9, 2.0],
                            'facade_floor': [0.8, 'default']},
             'thickness_applicability': {'minimum_floor': ['box', 'facade'],
-                                        'perimeters': ['module']},
+                                        'perimeters': ['module', 'box']},
             'box_variants': [{'id': 'plain', 'name': 'Plain'},
                              {'id': 'gridfinity', 'name': 'Gridfinity'}],
-            'box_rear_patterns': [{'id': key, 'name': value} for key, value in WALL_PATTERNS.items()],
-            'wall_patterns': [{'id': key, 'name': value} for key, value in WALL_PATTERNS.items()],
-            'pattern_constructions': [{'id': key, 'name': value} for key, value in PATTERN_CONSTRUCTIONS.items()],
-            'pattern_faces': [{'id': 'all', 'name': 'All four long faces'},
-                              {'id': 'sides', 'name': 'Left and right sides'}],
+            'wall_patterns': [{'id': key, 'name': WALL_PATTERNS[key]} for key in ('plain', 'miura')],
+            'wall_perimeters': [{'id': 1, 'name': '1 perimeter'},
+                                {'id': 2, 'name': '2 perimeters'},
+                                {'id': 'full', 'name': 'Full width'}],
+            'nozzle_sizes': [0.6, 0.8],
             'pattern_settings': {
                 **{key.removeprefix('pattern_'): {'min': bounds[0], 'max': bounds[1],
                                                 'default': PATTERN_DEFAULTS[key]}
-                   for key, bounds in PATTERN_RANGES.items()},
+                   for key, bounds in PATTERN_RANGES.items() if key != 'pattern_line_width'},
                 'wall_thickness': 3.0,
             },
             'defaults': Configuration.parse_request({}).as_dict()}

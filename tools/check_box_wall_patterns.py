@@ -19,6 +19,7 @@ from OCP.gp import gp_Lin
 from vault.box import BoxSpec, build_box
 from vault.box_wall_patterns import apply_box_rear_pattern
 from vault.drawer import DrawerLayout
+from vault.spec import wall_target_thickness
 if __package__:
     from .check_wall_patterns import box_between, intersection_volume, volume
 else:
@@ -29,9 +30,27 @@ def allowed_rear_volume(spec):
     """Independent removal bounds leaving corners, floor fillet and rim intact."""
     layout = DrawerLayout(spec)
     # Inner cavity is 63.6+dx wide with R3.5 corners. Keep another 3 mm land.
-    half = 63.6 + layout.width_delta - 3.5 - 3.0
+    backing = wall_target_thickness(spec) if spec.wall_perimeters in (1, 2) else 1.3
+    half = 64.9 - backing + layout.width_delta - 3.5 - 3.0
     return box_between((-half, 2.3, 5 + max(.8, spec.box_floor) + 1 + 3),
                        (half, 5.3, 42.5 + layout.height_delta - 3))
+
+
+def allowed_side_volumes(spec):
+    """Only the interior cavity may move to change runner backing thickness.
+
+    The channel surfaces start at |X|=64.9+width_delta and stay fixed. These
+    bounds include the inside cavity's rear/front corner radii and floor fillet,
+    but exclude all exterior runner surfaces, supports and front hardware.
+    """
+    if spec.wall_perimeters not in (1, 2):
+        return []
+    layout = DrawerLayout(spec)
+    inner = min(63.6, 64.9-wall_target_thickness(spec)) - 3.5 - 1.0 + layout.width_delta
+    return [box_between((lo, 5.3, 5+max(.8, spec.box_floor)),
+                         (hi, 181.5+layout.depth_delta, 42.5+layout.height_delta))
+            for lo, hi in ((inner, 64.9+layout.width_delta),
+                           (-64.9-layout.width_delta, -inner))]
 
 
 def rear_normal_web_samples(patterned, spec, limit=12):
@@ -70,8 +89,8 @@ def rear_normal_web_samples(patterned, spec, limit=12):
         seen.add(key)
         samples.append({'point_mm': tuple(point), 'normal': tuple(normal),
                         'thickness_mm': thickness,
-                        'minimum_passed': thickness >= 1.29,
-                        'at_nominal_two_lines': abs(thickness-1.3) <= .02})
+                        'minimum_passed': thickness >= wall_target_thickness(spec)-.01,
+                        'at_nominal_two_lines': abs(thickness-wall_target_thickness(spec)) <= .02})
     return samples
 
 
@@ -79,8 +98,14 @@ def audit_box_rear_pattern(plain, patterned, spec):
     """Check complete box geometry, including supports and optional base."""
     permitted = allowed_rear_volume(spec)
     removed = plain.cut(patterned)
-    added_volume = volume(patterned.cut(plain))
-    outside_volume = volume(removed.cut(permitted))
+    added = patterned.cut(plain)
+    added_volume = volume(added)
+    sides = allowed_side_volumes(spec)
+    outside_volume = volume(removed.cut(permitted, *sides))
+    added_outside = 0.0
+    if added_volume > 1e-8:
+        added_outside = volume(added.cut(*sides) if sides else added)
+        outside_volume += added_outside
     bounds_error = max(abs(a-b) for end in ('min', 'max') for a, b in zip(
         getattr(plain.bounding_box(), end), getattr(patterned.bounding_box(), end)))
     samples = rear_normal_web_samples(patterned, spec)
@@ -92,6 +117,11 @@ def audit_box_rear_pattern(plain, patterned, spec):
         ('runners_and_supports', box_between((-200, 25, 15),
                                              (200, 170+layout.depth_delta, 85))),
     ]
+    if sides:
+        # A thicker backing adds material inside the cavity, and a thinner one
+        # removes it there. The floor plane, runner profile and front mechanisms
+        # remain independently protected outside those explicit cavity bands.
+        protected = [(name, envelope.cut(*sides)) for name, envelope in protected]
     if spec.box_variant == 'gridfinity':
         from vault.gridfinity import GridfinityLayout
         grid = GridfinityLayout(spec)
@@ -101,6 +131,8 @@ def audit_box_rear_pattern(plain, patterned, spec):
     protected_checks = []
     for name, envelope in protected:
         amount = intersection_volume(removed, envelope)
+        if added_volume > 1e-8:
+            amount += intersection_volume(added, envelope)
         protected_checks.append({'feature': name, 'removed_mm3': amount,
                                  'passed': amount <= 1e-5})
     checks = {
@@ -108,14 +140,15 @@ def audit_box_rear_pattern(plain, patterned, spec):
         'one_solid': len(patterned.solids()) == 1,
         'one_shell': len(patterned.shells()) == 1,
         'unchanged_bounds': bounds_error < 1e-6,
-        'only_removes_material': added_volume <= 1e-5,
-        'changes_confined_to_rear_panel': outside_volume <= 1e-5,
+        'additions_confined_to_cavity_backing': added_outside <= 1e-5,
+        'changes_confined_to_wall_panels': outside_volume <= 1e-5,
         'positive_relief': volume(removed) > 1,
-        'minimum_two_line_web': (len(samples) >= 2
+        'minimum_requested_web': (len(samples) >= (1 if spec.wall_pattern == 'plain' and spec.wall_perimeters is not None else 2)
                                  and all(item['minimum_passed'] for item in samples)
                                  and any(item['at_nominal_two_lines'] for item in samples)),
     }
     return {'specification': asdict(spec), 'checks': checks,
+            'target_web_mm': wall_target_thickness(spec),
             'removed_volume_mm3': volume(removed), 'added_volume_mm3': added_volume,
             'outside_permitted_panel_mm3': outside_volume, 'bounds_error_mm': bounds_error,
             'minimum_web_mm': min((item['thickness_mm'] for item in samples), default=None),
@@ -125,21 +158,24 @@ def audit_box_rear_pattern(plain, patterned, spec):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--pattern', choices=('waffle', 'miura'), default='waffle')
+    parser.add_argument('--pattern', choices=('plain', 'waffle', 'miura'), default='miura')
     parser.add_argument('--family', choices=('S', 'M', 'L'), default='S')
     parser.add_argument('--depth-units', type=int, choices=range(3, 8), default=4)
     parser.add_argument('--height-units', type=int, choices=(1, 2), default=1)
     parser.add_argument('--box-floor', type=float, choices=(0., .8, 3.), default=.8)
     parser.add_argument('--box-variant', choices=('plain', 'gridfinity'), default='plain')
+    parser.add_argument('--wall-perimeters', type=int, choices=(1, 2))
+    parser.add_argument('--nozzle-size', type=float, choices=(.6, .8), default=.6)
     parser.add_argument('--baseline-step', type=Path)
     parser.add_argument('--pattern-step', type=Path)
     parser.add_argument('--output', type=Path, default=Path('out/reviews/box-wall-patterns.json'))
     args = parser.parse_args()
     spec = BoxSpec(args.family, args.depth_units, args.height_units, args.box_floor,
-                   args.box_variant, box_rear_pattern=args.pattern)
+                   args.box_variant, box_rear_pattern=args.pattern, wall_pattern=args.pattern,
+                   wall_perimeters=args.wall_perimeters, nozzle_size=args.nozzle_size)
     plain = import_step(args.baseline_step) if args.baseline_step else build_box(
-        spec=replace(spec, box_rear_pattern='plain'))
-    patterned = import_step(args.pattern_step) if args.pattern_step else apply_box_rear_pattern(plain, spec)
+        spec=replace(spec, box_rear_pattern='plain', wall_pattern='plain', wall_perimeters=None))
+    patterned = import_step(args.pattern_step) if args.pattern_step else build_box(spec=spec)
     print(f'Auditing {spec.name}', flush=True)
     report = audit_box_rear_pattern(plain, patterned, spec)
     report['schema'] = 'vault-box-wall-pattern-audit/v1'

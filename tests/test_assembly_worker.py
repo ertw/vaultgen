@@ -105,7 +105,7 @@ class AssemblyWorkerTests(unittest.TestCase):
         })
         for call in self.select_spec.call_args_list:
             self.assertEqual(call.args[1:], ('L', 6, 2))
-            self.assertEqual(call.kwargs, {'box_floor': 3., 'box_variant': 'plain', 'box_rear_pattern': 'plain', 'module_rear': 2.,
+            self.assertEqual(call.kwargs, {'wall_perimeters': None, 'nozzle_size': .6, 'box_floor': 3., 'box_variant': 'plain', 'box_rear_pattern': 'plain', 'module_rear': 2.,
                                           'facade_floor': 'default',
                                           'drawer_columns': 1, 'drawer_rows': 1, **PATTERN_DEFAULTS})
 
@@ -125,6 +125,10 @@ class AssemblyWorkerTests(unittest.TestCase):
         self.assert_configuration_preserved(Configuration(
             wall_pattern='miura', pattern_pitch=20, pattern_depth=1.4, pattern_line_width=.8,
             pattern_faces='sides', pattern_construction='corrugated'))
+
+    def test_shared_walls_preserve_nozzle_count_and_pattern_in_worker_and_receipt(self):
+        self.assert_configuration_preserved(Configuration.parse_request(dict(
+            wall_pattern='miura', wall_perimeters=1, nozzle_size=.8, pattern_pitch=20)))
 
     def test_gridfinity_variant_is_preserved_in_selection_and_fit_receipt(self):
         self.assert_configuration_preserved(Configuration(box_variant='gridfinity'))

@@ -7,6 +7,7 @@ import re
 import zipfile
 
 from .generator import Configuration
+from .spec import DRAWER_HEIGHTS
 from .project import PROJECT_ROOT
 from ._build import git_provenance
 
@@ -75,8 +76,13 @@ class BuildFiles:
         builds = self.history(repository)
         from .spec import PATTERN_FIELDS
         module_pattern_fields = PATTERN_FIELDS if configuration.wall_pattern != 'plain' else ('wall_pattern',)
-        keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear', 'drawer_columns', *module_pattern_fields),
-                'box': ('family', 'depth_units', 'height_units', 'box_floor', 'box_variant', 'box_rear_pattern'),
+        shared_wall_fields = ('wall_perimeters', 'nozzle_size')
+        box_pattern_fields = (('wall_pattern', 'pattern_pitch', 'pattern_depth')
+                              if configuration.wall_perimeters is not None else ())
+        keys = {'module': ('family', 'depth_units', 'height_units', 'module_rear', 'drawer_columns',
+                           *module_pattern_fields, *shared_wall_fields),
+                'box': ('family', 'depth_units', 'height_units', 'box_floor', 'box_variant', 'box_rear_pattern',
+                        *shared_wall_fields, *box_pattern_fields),
                 'facade': ('family', 'height_units', 'facade_floor'), 'rails': ('family',),
                 'runner_guides': ('depth_units',), 'runner_slides': ('depth_units',),
                 **{kind: () for kind in ACCESSORY_PARTS}}
@@ -141,8 +147,11 @@ class BuildFiles:
             pattern += ' corrugated'
         if configuration.box_variant == 'gridfinity':
             pattern += ' · Floorless Gridfinity' if configuration.box_floor == 0 else ' · Gridfinity'
-        if configuration.box_rear_pattern != 'plain':
+        if configuration.box_rear_pattern != 'plain' and configuration.wall_perimeters is None:
             pattern += f' · {WALL_PATTERNS[configuration.box_rear_pattern]} corrugated box rear'
+        if configuration.wall_perimeters is not None:
+            pattern += (' · Full width' if configuration.wall_perimeters == 'full' else
+                        f' · {configuration.wall_perimeters} perimeter{"s" if configuration.wall_perimeters == 2 else ""}, {configuration.nozzle_size:g} mm nozzle')
         if configuration.facade_floor == 0.8:
             pattern += ' · 0.8 mm facade floor'
         return {**definition, 'name': f'{configuration.family}{configuration.depth_units}{columns} · {configuration.height_units}F{rows}{pattern} complete set',
@@ -174,6 +183,12 @@ class BuildFiles:
             config['box_floor'] = parameters.get('box_floor', 0.8)
             config['box_variant'] = parameters.get('box_variant', 'plain')
             config['box_rear_pattern'] = parameters.get('box_rear_pattern', 'plain')
+        if kind in ('module', 'box'):
+            config['wall_perimeters'] = parameters.get('wall_perimeters')
+            config['nozzle_size'] = parameters.get('nozzle_size', 0.6)
+            if kind == 'box' and config['wall_perimeters'] is not None:
+                config.update({key: parameters.get(key, default) for key, default in
+                               (('wall_pattern', 'plain'), ('pattern_pitch', 14.), ('pattern_depth', 1.7))})
         if kind == 'facade':
             config['facade_floor'] = parameters.get('facade_floor', 'default')
         if kind == 'module':
@@ -234,7 +249,7 @@ class BuildFiles:
                 config = item['configuration']
                 if (config['part'] in ('label', 'gridfinity_bins', 'key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch') or ((config.get('family') in ('S', 'M', 'L')
                      or (config['part'] in ('runner_guides', 'runner_slides') and 'family' not in config))
-                        and config.get('height_units', 1) in (1, 2)
+                        and config.get('height_units', 1) in DRAWER_HEIGHTS
                         and config.get('depth_units', 4) in range(3, 8)
                         and (config.get('drawer_columns', 1) == 1 or
                              (config.get('drawer_columns') == 2 and config.get('family') == 'L'))

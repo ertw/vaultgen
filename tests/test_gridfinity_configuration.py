@@ -12,7 +12,7 @@ from vault import __main__ as cli, build as builds
 from vault.assembly import assembly_definition, build_finished_components
 from vault.assembly_validation import definition_errors, validation_signature
 from vault.box import BoxSpec
-from vault.generator import ASSEMBLY_PARTS, Configuration, catalog
+from vault.generator import ACCESSORY_PARTS, ASSEMBLY_PARTS, Configuration, catalog
 from vault.web import BuildFiles
 from tools import check_assembly
 
@@ -61,7 +61,7 @@ class GridfinityConfigurationTests(unittest.TestCase):
         build.assert_not_called()
         with patch.object(cli, 'build') as build, patch('sys.argv', [*argv, '--box-variant', 'gridfinity']):
             cli.main()
-        build.assert_called_once_with(cli.PROJECT_ROOT/'out', BoxSpec(box_floor=0, box_variant='gridfinity'))
+        build.assert_called_once_with(cli.PROJECT_ROOT/'out', BoxSpec(box_floor=0, box_variant='gridfinity', wall_perimeters=2))
         with tempfile.TemporaryDirectory() as directory, patch('sys.argv', [
                 'check_assembly', '--case', 'S4:1', '--box-variant', 'gridfinity', '--box-floor', '0',
                 '--box-rear-pattern', 'waffle', '--output', str(Path(directory)/'audit.json')]), \
@@ -110,7 +110,7 @@ class GridfinityConfigurationTests(unittest.TestCase):
                 '--height-units', '2', '--box-variant', 'gridfinity', '--box-floor', '3']):
             cli.main()
         build.assert_called_once_with(cli.PROJECT_ROOT / 'out',
-                                      builds.select_spec('box', 'M', 5, 2, box_variant='gridfinity', box_floor=3.))
+                                      builds.select_spec('box', 'M', 5, 2, box_variant='gridfinity', box_floor=3., wall_perimeters=2))
 
     def test_assembly_preserves_placements_and_separates_fit_receipts(self):
         for config in (Configuration(), Configuration('M', 3, 2),
@@ -139,7 +139,7 @@ class GridfinityCacheTests(unittest.TestCase):
         directory.mkdir(parents=True)
         slug = {'module': 's4_module_1f', 'box': 's4_box_1f', 'facade': 's1f_facade',
                 'rails': 's_geared_rails', 'runner_guides': 'x4_runner_guides',
-                'runner_slides': 'x4_runner_slides'}[kind]
+                'runner_slides': 'x4_runner_slides'}.get(kind, kind)
         parameters = dict(family='S', depth_units=4, height_units=1, part=slug)
         if kind == 'box':
             parameters['box_floor'] = floor
@@ -147,7 +147,7 @@ class GridfinityCacheTests(unittest.TestCase):
                 parameters['box_variant'] = variant
         (directory / 'resolved-parameters.json').write_text(json.dumps(parameters))
         roles = {'rails': ('plain', 'retained'), 'runner_guides': ('left', 'right'),
-                 'runner_slides': ('left', 'right')}.get(kind, ('single',))
+                 'runner_slides': ('left', 'right'), 'key': ('key',)}.get(kind, ('single',))
         parts, checksums = {}, {}
         for role in roles:
             path = f'preview/assembly/{role}.stl'
@@ -162,6 +162,7 @@ class GridfinityCacheTests(unittest.TestCase):
     @patch('vault.web_builds.git_provenance', return_value={'commit': 'current', 'dirty': False})
     def test_old_boxes_stay_plain_and_gridfinity_caches_never_replace_them(self, _):
         common = [self.save(kind) for kind in ASSEMBLY_PARTS if kind != 'box']
+        accessories = [self.save(kind) for kind in ACCESSORY_PARTS]
         plain = self.save('box')
         self.assertEqual(self.files.describe(plain)['configuration']['box_variant'], 'plain')
         grid_config = Configuration(box_variant='gridfinity')
@@ -173,18 +174,19 @@ class GridfinityCacheTests(unittest.TestCase):
         for config, expected in ((Configuration(), plain), (grid_config, grid)):
             scene = self.files.assembly(config)
             self.assertTrue(scene['complete'])
-            self.assertEqual({item['build_id'] for item in scene['instances']}, {*common, expected})
+            self.assertEqual({item['build_id'] for item in scene['instances']}, {*common, *accessories, expected})
         receipt = self.root / 'web' / 'assemblies' / 'gridfinity.json'
         receipt.parent.mkdir(parents=True)
         receipt.write_text(json.dumps({'configuration': grid_config.as_dict(),
                                       'validation_signature': validation_signature(grid_config),
-                                      'build_ids': [*common, grid], 'validation': {'passed': True}}))
+                                      'build_ids': [*common, grid], 'accessory_build_ids': accessories, 'validation': {'passed': True}}))
         self.assertTrue(self.files.assembly(grid_config)['validation']['passed'])
         self.assertIsNone(self.files.assembly(Configuration())['validation'])
 
     @patch('vault.web_builds.git_provenance', return_value={'commit': 'current', 'dirty': False})
     def test_floorless_and_closed_gridfinity_caches_do_not_replace_each_other(self, _):
         common = [self.save(kind) for kind in ASSEMBLY_PARTS if kind != 'box']
+        accessories = [self.save(kind) for kind in ACCESSORY_PARTS]
         thin = self.save('box', variant='gridfinity')
         thick = self.save('box', variant='gridfinity', floor=3)
         floorless_config = Configuration(box_variant='gridfinity', box_floor=0)
@@ -196,12 +198,12 @@ class GridfinityCacheTests(unittest.TestCase):
         for floor, expected in ((0, floorless), (.8, thin), (3, thick)):
             scene = self.files.assembly(replace(floorless_config, box_floor=floor))
             self.assertTrue(scene['complete'])
-            self.assertEqual({item['build_id'] for item in scene['instances']}, {*common, expected})
+            self.assertEqual({item['build_id'] for item in scene['instances']}, {*common, *accessories, expected})
         receipt = self.root/'web/assemblies/floorless.json'
         receipt.parent.mkdir(parents=True)
         receipt.write_text(json.dumps({'configuration': floorless_config.as_dict(),
                                       'validation_signature': validation_signature(floorless_config),
-                                      'build_ids': [*common, floorless], 'validation': {'passed': True}}))
+                                      'build_ids': [*common, floorless], 'accessory_build_ids': accessories, 'validation': {'passed': True}}))
         scene = self.files.assembly(floorless_config)
         self.assertTrue(scene['validation']['passed'])
         self.assertIn('Floorless Gridfinity', scene['name'])

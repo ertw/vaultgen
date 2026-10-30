@@ -65,9 +65,11 @@ def handler(jobs):
                         for key in ('depth_units', 'height_units', 'drawer_columns', 'drawer_rows'):
                             if key in values:
                                 values[key] = int(values[key])
-                        for key in ('box_floor', 'module_rear', 'pattern_pitch', 'pattern_depth', 'pattern_line_width'):
+                        for key in ('box_floor', 'module_rear', 'pattern_pitch', 'pattern_depth', 'pattern_line_width', 'nozzle_size'):
                             if key in values:
                                 values[key] = float(values[key])
+                        if 'wall_perimeters' in values and values['wall_perimeters'] != 'full':
+                            values['wall_perimeters'] = int(values['wall_perimeters'])
                         if 'facade_floor' in values and values['facade_floor'] != 'default':
                             values['facade_floor'] = float(values['facade_floor'])
                         values.setdefault('part', 'set')

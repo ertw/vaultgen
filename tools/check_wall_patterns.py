@@ -20,7 +20,7 @@ from OCP.gp import gp_Lin
 from vault.connectors import ConnectorParameters, build_connectors, build_connector_cutters
 from vault.model import build_module
 from vault.shell import ShellDimensions
-from vault.spec import ModuleSpec
+from vault.spec import ModuleSpec, wall_target_thickness
 from vault.wall_patterns import apply_wall_pattern
 
 
@@ -178,8 +178,8 @@ def normal_web_samples(patterned, spec, dimensions, limit_per_face=6):
             thickness = distinct[1]-distinct[0]
             samples.append({'face': name, 'point_mm': tuple(point), 'normal': tuple(normal),
                             'thickness_mm': thickness,
-                            'minimum_passed': thickness >= 2*spec.pattern_line_width-.01,
-                            'at_nominal_two_lines': abs(thickness-2*spec.pattern_line_width) <= .02})
+                            'minimum_passed': thickness >= wall_target_thickness(spec)-.01,
+                            'at_nominal_two_lines': abs(thickness-wall_target_thickness(spec)) <= .02})
             counts[name] += 1
     return samples
 
@@ -227,8 +227,9 @@ def audit_pattern(plain, patterned, spec, dimensions=None, parameters=None):
               'changes_confined_to_permitted_skins': outside_volume <= TOLERANCE_MM3,
               'positive_relief': volume(removed) > 1,
               'all_requested_faces_have_relief': all(amount > 1 for amount in face_removals.values()),
-              'minimum_two_line_web': web_passed}
+              'minimum_requested_web': web_passed}
     return {'specification': asdict(spec), 'checks': checks,
+            'target_web_mm': wall_target_thickness(spec),
             'added_volume_mm3': added_volume, 'removed_volume_mm3': volume(removed),
             'outside_permitted_skins_mm3': outside_volume, 'bounds_error_mm': bounds_error,
             'removed_by_face_mm3': face_removals,
@@ -239,7 +240,7 @@ def audit_pattern(plain, patterned, spec, dimensions=None, parameters=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--pattern', choices=('waffle', 'miura'), default='waffle')
+    parser.add_argument('--pattern', choices=('plain', 'waffle', 'miura'), default='miura')
     parser.add_argument('--family', choices=('S', 'M', 'L'), default='S')
     parser.add_argument('--depth-units', type=int, default=4)
     parser.add_argument('--height-units', type=int, choices=(1, 2), default=1)
@@ -249,6 +250,8 @@ def main():
     parser.add_argument('--pattern-pitch', type=float, default=14.0)
     parser.add_argument('--pattern-depth', type=float, default=1.7)
     parser.add_argument('--pattern-line-width', type=float, default=.65)
+    parser.add_argument('--wall-perimeters', type=int, choices=(1, 2))
+    parser.add_argument('--nozzle-size', type=float, choices=(.6, .8), default=.6)
     parser.add_argument('--module-rear', type=float, choices=(.9, 2.0), default=.9)
     parser.add_argument('--baseline-step', type=Path)
     parser.add_argument('--pattern-step', type=Path)
@@ -258,8 +261,8 @@ def main():
                       drawer_columns=args.drawer_columns, wall_pattern=args.pattern, pattern_faces=args.faces,
                       pattern_construction=args.construction, pattern_pitch=args.pattern_pitch,
                       pattern_depth=args.pattern_depth, pattern_line_width=args.pattern_line_width,
-                      module_rear=args.module_rear)
-    plain = import_step(args.baseline_step) if args.baseline_step else build_module(replace(spec, wall_pattern='plain'))
+                      module_rear=args.module_rear, wall_perimeters=args.wall_perimeters, nozzle_size=args.nozzle_size)
+    plain = import_step(args.baseline_step) if args.baseline_step else build_module(replace(spec, wall_pattern='plain', wall_perimeters=None))
     patterned = (import_step(args.pattern_step) if args.pattern_step else
                  apply_wall_pattern(plain, spec, ShellDimensions(back_wall=spec.module_rear), ConnectorParameters()))
     print(f'Auditing {spec.name}', flush=True)

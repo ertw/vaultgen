@@ -6,16 +6,16 @@ storage as the CAD CLI. It does not read purchased STL files to generate parts.
 The existing cad.erik.cl catalog remains available separately.
 
 The selector supports S/M/L widths, depth units 3 through 7 (146.1–314.1 mm),
-and heights 1F/2F (47/95 mm outside skins, excluding connectors). L×2F is the
-largest family/height offered. These are nominal dimensions; the downloads show
-each part's actual print bounding box. XL and 4F are unavailable in both the web
+and heights 1F/2F/4F (47/95/191 mm outside skins, excluding connectors). L×4F is
+the largest family/height offered. These are nominal dimensions; the downloads show
+each part's actual print bounding box. XL and other heights are unavailable in the web
 controls and the server validation. The original lower-level module constructor
 retains its broader research capabilities for compatibility.
 
 Choose an individual module, box, facade, geared rail pair, runner guides,
 runner slides, key, spring, runner stop, facade cap, key cap, latch, or a complete set. A facade depends on family and height, geared
 rails depend only on family, and runner guides/slides depend only on depth.
-Changing S/M/L or 1F/2F does not alter the guides or slides for a given depth.
+Changing S/M/L or 1F/2F/4F does not alter the guides or slides for a given depth.
 The complete set includes printable files for all twelve groups, with separate
 STLs for components that need their own print orientation. Runner exports contain
 one left/right pair of guides and one left/right pair of slides. Use one pair of
@@ -34,7 +34,7 @@ extend along the wider facade recess while retaining their rounded end and
 | M | 91.6 mm |
 | L | 129.4 mm |
 
-The same label size suits 1F and 2F facades; drawer depth does not affect it.
+The same label size suits 1F, 2F and 4F facades; drawer depth does not affect it.
 Changing size updates the live preview and available text area without stretching
 the lettering. Previous designs without a size selection remain S labels.
 Labels are independent jobs and are not included in a complete drawer set.
@@ -72,11 +72,17 @@ check the first label on your intended facade, printer, and material.
 **Minimum floor** offers **0.8 mm** or **Default** for boxes, facades, and
 complete sets. The thin choice selects the 0.8 mm box floor and a shelled
 facade with a 0.8 mm front skin; Default restores the 3 mm box floor and the
-original facade pockets. The browser starts with the thin choice. **Perimeters**
-offers **0.9 mm** or **Default** for modules and complete sets; it selects the
-module's rear panel thickness, with Default restoring 2 mm. It does not change
-the long sleeve walls or the separate wall-pattern settings. Both controls
-are hidden for parts without a corresponding variant.
+original facade pockets. The browser starts with the thin choice.
+
+**Perimeters** offers **1 perimeter**, **2 perimeters** (the default), or
+**Full width** for boxes, modules, and complete sets. **Nozzle size** offers
+**0.6 mm** (the default) and **0.8 mm**. These choices target thin sections with
+one or two nominal extrusion lines: 0.65/1.30 mm for the 0.6 mm nozzle and
+0.85/1.70 mm for the 0.8 mm nozzle. They apply to Plain and Miura-ori walls.
+Full width retains the original solid wall geometry. Select a numbered
+perimeter choice to make Miura-ori available again. Controls are hidden for unrelated parts.
+The module's bed-facing rear panel remains a separate floor dimension, rather
+than being sized as a vertical extrusion wall.
 
 The API retains `box_floor` (0.8 or 3), `module_rear` (0.9 or 2), and adds
 `facade_floor` (0.8 or `"default"`). Omitting `facade_floor` retains the original
@@ -133,41 +139,37 @@ python tools/check_assembly.py --definitions-only --box-variant gridfinity
 python tools/check_assembly.py --case S4:1 --box-variant gridfinity
 ```
 
-For a box or complete set, **Box rear wall** selects Plain, Waffle, or
-Miura-ori independently of the box base and module pattern. Waffle and
-Miura-ori use two-perimeter corrugation with fixed 14 mm pitch and 1.3 mm
-facets for two 0.65 mm extrusion lines. Floor, corner and top bands remain
-solid. The API field is `box_rear_pattern` (`plain`, `waffle`, or `miura`);
-older requests and cached boxes default to `plain`. Patterned rear walls
-have separate build identities and are matched in assembly previews and
-fit receipts. The CLI option is `--box-rear-pattern`. Regenerate the box
-to include the chosen rear wall, the lower rail arches and denser support teeth.
+**Wall pattern** selects **Plain** or **Miura-ori** for both the module and
+box. Every eligible module face is included; connector roots, runner lips,
+stopper regions, corners and other mechanical lands remain solid. Box patterns
+apply to the nonmating rear panel, and the plain backing behind its side runner
+channels follows the same perimeter target. The floor, rear corners, top rim,
+runner profiles and front attachment features remain protected. With two
+perimeters and a 0.8 mm nozzle, the box cavity is 0.8 mm narrower overall;
+existing drawer-fit inserts designed for the original cavity need resizing.
 
-For a module or complete set, **Module wall pattern** selects Plain, Waffle,
-or Miura-ori. Patterned variants also select **Recessed** or **Two-perimeter
-corrugated** construction, pitch, maximum recess depth, extrusion line width,
-and either all four long sleeve faces or just the left/right sides. Defaults are
-Recessed, all four faces, 14 mm pitch, 1.7 mm depth, and 0.65 mm line width for a
-0.6 mm nozzle. Recessed valleys retain a 1.3 mm minimum web for two nominal lines;
-crests are thicker and original inner surfaces remain. Corrugated construction
-relieves both sides of the nonmating panels, targeting 1.3 mm normal facet
-thickness throughout their thin areas. Fold junctions and transitions can be
-thicker. Both choices stay within the existing 3 mm wall. Front lips, stopper
-regions, connector roots and other mechanical lands remain full thickness with
-tapered transitions. Miura-ori is a rigid crease relief, not a folding mechanism;
-its corrugated fold height is reduced as needed to fit the normal thickness within
-the selected maximum recess envelope. Inspect the slicer's actual perimeter paths
-before printing; full-thickness lands intentionally need more than two lines.
+Plain walls have flat thin panels. Miura-ori pairs native reliefs on both faces
+to target the selected thickness normal to each facet. Fold junctions and
+transitions into structural lands can be thicker. Pitch accepts 8–40 mm and
+maximum relief depth accepts 0.2–2 mm, defaulting to 14 mm and 1.7 mm. Fold height
+is reduced as needed to fit the selected thickness inside the existing wall
+envelope. Miura-ori is a rigid crease relief, not a folding mechanism.
 
-Pitch accepts 8–40 mm, depth 0.2–2 mm, and line width 0.6–1 mm. Depth plus two line
-widths must fit within the 3 mm wall. A pattern must also fit the protected panels;
-the geometry builder rejects a selection that leaves no complete pattern.
-Pattern settings affect only module geometry. Plain retains its existing identity;
-patterned modules record all settings and use distinct build aliases, including
-custom parameter values. Matching assembly previews and fit receipts retain the
-selected pattern and exact module build. Two- and four-drawer L² sets share a
-module only when their wall settings also agree. The separate CAD viewer's fixed
-catalog stays unchanged; use this configurator or the CLI for patterned variants.
+These are geometry targets for the **Arachne** wall generator. Arachne varies
+extrusion width and transitions between line counts, so inspect the actual
+sliced paths with the chosen nozzle and print profile. Structural lands need
+additional lines; CAD checks do not establish printed fit or stiffness. See
+[Prusa's Arachne documentation](https://help.prusa3d.com/article/arachne-perimeter-generator_352769).
+
+Fresh API requests use `wall_pattern` (`plain` or `miura`), `wall_perimeters`
+(`1`, `2`, or `"full"`), and `nozzle_size` (`0.6` or `0.8`). Line width is derived
+from the nozzle; construction and patterned-face controls are no longer offered.
+The CLI equivalents are `--wall-pattern`, `--wall-perimeters`, and `--nozzle-size`.
+New builds record the resolved settings in their identities and manifests, and
+assembly previews and fit receipts match those exact component variants.
+Older saved requests retain their historical independent box/module patterns
+and thicknesses. Existing immutable builds are not changed or reused as a
+new thin-wall selection. The separate viewer catalog remains unchanged.
 
 Changing the selection previews the newest matching cached part, or shows
 “not generated yet.” Complete sets show the matching finished parts together in an assembled view,
@@ -189,7 +191,7 @@ The module keeps the 329.6 mm L width. Boxes, facades and geared rails resolve
 to the matching S parts. With an L 2F module, **Four S drawers** selects a
 2 × 2 arrangement of S1F drawers. Both layouts use the same open L² 2F module
 and shadow-gap pattern for four S1F facades, sharing its build and STL/STEP downloads
-for the same depth and rear thickness. The layout changes drawer parts,
+for the same depth, rear thickness, and wall settings. The layout changes drawer parts,
 quantities and placement. Module-only previews and downloads therefore stay
 the same when switching between two and four drawers. Other families offer
 one drawer. Each complete-set ZIP
@@ -204,8 +206,9 @@ and immutable component meshes retain their original coordinates.
 Facade caps sit in the documented screw seats. Keys and their caps occupy the
 front lock, with the spring pair seated behind each facade. Runner stops occupy
 the module's side slots, and latches sit on its underside connector banks.
-Only screws are omitted. S scenes have 18/26 instances for 1F/2F; M has 20/28 and L has 21/29.
-L² has 35/51 instances with two drawers, or 67 with four S1F drawers.
+Only screws are omitted. S scenes have 18/26/42 instances for 1F/2F/4F;
+M has 20/28/44 and L has 21/29/45. L² has 35/51/83 instances with two
+drawers, or 67 with four S1F drawers in a 2F module.
 Each drawer has two springs and a left/right runner pair on every tier;
 latch quantities follow the module's connector banks, independently of drawer count.
 The drawer group moves forward while the explosion separates its facade,
@@ -234,17 +237,17 @@ immutable component build IDs, assembly definition and validator revision. Faile
 mark the job failed. The scene warns when its cache combination has no passing
 receipt. These checks verify the closed assembled pose, not printed fit or motion.
 
-Assembly audits can also be run independently:
+Assembly audits can also be run independently. Include `--wall-perimeters 2`
+to audit the new default walls; omitting it retains historical native geometry:
 
 ```bash
 python tools/check_assembly.py --definitions-only
 python tools/check_assembly.py --case S4:1 --case L7:2:3:2
 python tools/check_assembly.py --case L6x2:2 --case L3x2:1:3:2
 python tools/check_assembly.py --case L6x2x2:2
-python tools/check_assembly.py --case S4:1 --wall-pattern waffle
-python tools/check_assembly.py --case S4:1 --wall-pattern miura
-python tools/check_assembly.py --case S4:1 --wall-pattern miura --pattern-construction corrugated
-python tools/check_assembly.py --all  # all 180 native assemblies; expensive
+python tools/check_assembly.py --case S4:1 --wall-pattern plain --wall-perimeters 1 --nozzle-size 0.6
+python tools/check_assembly.py --case S4:1 --wall-pattern miura --wall-perimeters 2 --nozzle-size 0.8
+python tools/check_assembly.py --all  # all 260 native assemblies; expensive
 ```
 
 Recorded evidence in [`research/assembly_fit.json`](../research/assembly_fit.json)
@@ -440,7 +443,7 @@ spring, latch or stop installation, insertion motion, retention, or printed fit.
 New facade builds include native lock and unlock icons as flush 0.6 mm inlays.
 The body uses **Primary** and both icons use **Secondary** in the complete-set
 view. These parts move, highlight and hide together as one facade. The markings
-stay beside the bottom-tier lock across S/M/L and both heights.
+stay beside the bottom-tier lock across S/M/L and all three heights.
 
 Choose **Download 3MF** from a generated facade, or use its 3MF in the complete
 ZIP. Open it as one multipart object and assign the named primary and secondary

@@ -18,7 +18,7 @@
   rather than stretching mating profiles. Preserve intentional handedness,
   clearances, print orientation, and removable supports unless the task changes
   them. CAD validity and sampled source agreement do not establish printed fit.
-- The generator supports S/M/L, depths 3–7, and heights 1F/2F. Keep browser
+- The generator supports S/M/L, depths 3–7, and heights 1F/2F/4F. Keep browser
   choices and server validation consistent. Broader lower-level research APIs
   do not imply that a size is supported by the generator.
 - Completed builds in `out/builds/` are immutable. Never edit published

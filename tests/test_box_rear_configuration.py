@@ -17,8 +17,7 @@ class BoxRearConfigurationTests(unittest.TestCase):
     def test_plain_default_and_invalid_values_agree_between_native_and_api(self):
         self.assertEqual(Configuration.parse({}).box_rear_pattern, 'plain')
         self.assertEqual(catalog()['defaults']['box_rear_pattern'], 'plain')
-        self.assertEqual([item['id'] for item in catalog()['box_rear_patterns']],
-                         ['plain', 'waffle', 'miura'])
+        self.assertNotIn('box_rear_patterns', catalog())
         for value in ('unknown', 'Waffle', '', None, True, 1, [], {}):
             for constructor in (BoxSpec, Configuration):
                 with self.subTest(value=value, constructor=constructor.__name__), self.assertRaises(ValueError):
@@ -52,9 +51,9 @@ class BoxRearConfigurationTests(unittest.TestCase):
         with patch.object(cli, 'build') as build, patch('sys.argv', [
                 'vault', 'build', '--part', 'box', '--family', 'M', '--depth-units', '5',
                 '--height-units', '2', '--box-variant', 'gridfinity', '--box-floor', '3',
-                '--box-rear-pattern', 'miura']):
+                '--wall-pattern', 'miura']):
             cli.main()
-        selected = BoxSpec('M', 5, 2, 3, 'gridfinity', 'miura')
+        selected = BoxSpec('M', 5, 2, 3, 'gridfinity', wall_pattern='miura', wall_perimeters=2)
         build.assert_called_once_with(cli.PROJECT_ROOT/'out', selected)
         with patch.object(builds, 'run_build') as transaction:
             builds.build(Path('/tmp/box-rear-publication-test'), selected)
