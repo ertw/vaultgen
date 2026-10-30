@@ -110,7 +110,7 @@ class LabelConfigurationTests(unittest.TestCase):
             for family, job in submitted.items():
                 saved = restored.get(job['id'])
                 self.assertEqual(saved['configuration']['family'], family)
-                self.assertEqual(saved['status'], 'failed')
+                self.assertEqual(saved['status'], 'queued')
 
     def test_label_jobs_deduplicate_and_share_drawer_queue_capacity(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -125,7 +125,7 @@ class LabelConfigurationTests(unittest.TestCase):
                 jobs.submit(Configuration(depth_units=3))
             restored = Jobs(directory, start_worker=False)
             interrupted = restored.get(first['id'])
-            self.assertEqual(interrupted['status'], 'failed')
+            self.assertEqual(interrupted['status'], 'queued')
             self.assertEqual(interrupted['configuration'], config.as_dict())
 
 
@@ -287,7 +287,10 @@ class LabelHTTPTests(unittest.TestCase):
     def test_completed_bundle_includes_registered_colors_and_instructions(self):
         build_id, config = self.label_build()
         job = self.jobs.submit(parse_configuration(config))
-        self.jobs.items[job['id']].update(status='completed', build_ids=[build_id])
+        with self.jobs.store.transaction() as db:
+            stored = self.jobs.store._job(db, job['id'])
+            stored.update(status='completed', build_ids=[build_id])
+            self.jobs.store._write_job(db, stored)
         status, body, _ = self.request('GET', f'/api/jobs/{job["id"]}/bundle.zip')
         self.assertEqual(status, 200)
         with zipfile.ZipFile(BytesIO(body)) as bundle:

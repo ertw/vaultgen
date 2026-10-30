@@ -26,6 +26,23 @@ remain read-only. Build jobs use immutable `cad_build` storage. Restarting the
 service interrupts active jobs, so wait for builds to finish before deploying
 Python changes. Static frontend changes are loaded on browser refresh.
 
+The queue uses Python's bundled SQLite library; no additional service or
+dependency installation is required. On first startup, `out/web/jobs.sqlite3`
+imports legacy job JSON and receipts, leaving the original files unchanged.
+Keep the SQLite database and its `-wal`/`-shm` files on local storage. Back up
+a running database with SQLite's backup API; a raw database-only copy can omit
+uncheckpointed WAL transactions. Normal immutable builds and fit receipts must
+be backed up alongside the queue state.
+
+The server defaults to two concurrent CAD task processes and four active jobs.
+`--workers 1` restores serial execution; `--workers 2 --queue-capacity 8` permits
+more waiting jobs without increasing CAD concurrency. Worker counts are bounded
+to 1–4 because each native CAD process can consume substantial memory and kernel
+threads. Do not run a second scheduler against the same `--output`: an exclusive
+lock rejects it. Use a separate output directory and port for development.
+Queued jobs survive restarts; running jobs fail explicitly with partial builds
+retained. Drain active work before normal service restarts.
+
 ```bash
 systemctl status vaultgen.service --no-pager
 curl --fail http://127.0.0.1:3941/api/config
@@ -51,6 +68,18 @@ and Chromium for browser validation. The application itself has no CDN or browse
 package dependency.
 
 ## Browser checks
+
+The queue page has a fixture check for status filtering, pagination, per-part
+timings/errors, cancellation/retry, polling recovery and desktop/mobile layout:
+
+```bash
+nix develop path:/home/ertw/src/cad/cad-tooling -c \
+  /home/ertw/src/cad/cad-tooling/.venv/bin/python tools/browser_queue.py
+```
+
+It submits no real CAD work. Queue lifecycle/API tests use temporary SQLite
+databases and output directories; scheduler tests use lightweight fixture
+processes. Native integration checks should use a separate `--output` directory.
 
 With the local server running, use the shared tooling environment's browser
 dependencies. Neither check submits real CAD builds:

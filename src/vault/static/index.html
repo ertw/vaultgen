@@ -19,7 +19,7 @@
 
   <header class="site-header">
     <h1 id="page-title">Vault generator</h1>
-    <nav class="catalog-link" aria-label="Generator"><a href="/labels">Labels</a><span aria-hidden="true">·</span><a href="/gridfinity">Gridfinity</a><span aria-hidden="true">·</span><a href="https://cad.erik.cl/" target="_blank" rel="noreferrer">CAD library ↗</a></nav>
+    <nav class="catalog-link" aria-label="Generator"><a href="/labels">Labels</a><span aria-hidden="true">·</span><a href="/gridfinity">Gridfinity</a><span aria-hidden="true">·</span><a href="/queue">Queue</a><span aria-hidden="true">·</span><a href="https://cad.erik.cl/" target="_blank" rel="noreferrer">CAD library ↗</a></nav>
   </header>
 
   <main>
@@ -97,7 +97,7 @@
       </section>
     </div>
 
-    <section id="job-panel" class="job-panel panel" aria-labelledby="job-title" hidden><div class="job-heading"><span id="job-indicator" class="job-indicator"></span><div><h2 id="job-title">Generating parts</h2><p id="job-description"></p></div><span id="job-status" class="badge">Running</span></div><p id="job-error" class="error-message" role="alert" hidden></p><div class="job-actions"><button id="job-artifacts-button" class="text-button" type="button" hidden>View generated parts <svg class="icon"><use href="#i-arrow"/></svg></button><a id="job-bundle-download" class="text-button" hidden><svg class="icon"><use href="#i-download"/></svg>Download complete ZIP</a></div><details id="build-log-details"><summary>Build log <span id="log-line-count"></span></summary><pre id="build-log" aria-label="Build output"></pre></details></section>
+    <section id="job-panel" class="job-panel panel" aria-labelledby="job-title" hidden><div class="job-heading"><span id="job-indicator" class="job-indicator"></span><div><h2 id="job-title">Generating parts</h2><p id="job-description"></p></div><span id="job-status" class="badge">Running</span></div><p id="job-error" class="error-message" role="alert" hidden></p><div class="job-actions"><a id="job-queue-link" href="/queue" class="text-button">View in queue →</a><button id="job-artifacts-button" class="text-button" type="button" hidden>View generated parts <svg class="icon"><use href="#i-arrow"/></svg></button><a id="job-bundle-download" class="text-button" hidden><svg class="icon"><use href="#i-download"/></svg>Download complete ZIP</a></div><details id="build-log-details"><summary>Build log <span id="log-line-count"></span></summary><pre id="build-log" aria-label="Build output"></pre></details></section>
 
     <section class="history-section" aria-labelledby="history-title"><div class="section-heading"><h2 id="history-title">Recent builds</h2><button id="refresh-history" class="text-button" type="button"><svg class="icon"><use href="#i-reset"/></svg>Refresh</button></div><div id="history-list" class="history-list"><p class="empty-history">No completed builds.</p></div></section>
 

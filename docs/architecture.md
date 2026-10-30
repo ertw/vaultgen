@@ -1,17 +1,18 @@
 # Vault architecture
 
-Vault is a native build123d CAD library with a command-line builder and two
-browser workflows: the drawer configurator and the multicolor label editor.
-Both publish through the same checked, immutable build storage. The separate
+Vault is a native build123d CAD library with a command-line builder, browser
+editors for drawers, multicolor labels and containers, and a shared queue page.
+All publish through the same checked, immutable build storage. The separate
 CAD catalog/viewer and the shared storage implementation live in
 `../../cad-tooling/`.
 
 ```mermaid
 flowchart TD
-    Browser[Configurator and label editor] --> HTTP[web: HTTP API]
+    Browser[Editors and queue page] --> HTTP[web: HTTP API]
     HTTP --> Jobs[web_jobs: persistent queue]
     HTTP --> Files[web_builds: history, downloads, assembly scenes]
-    Jobs --> Worker[web_worker: isolated CAD process]
+    Jobs --> SQLite[(SQLite jobs and dependent tasks)]
+    Jobs --> Worker[web_worker: bounded pool of CAD processes]
     CLI[__main__: command line] --> Build[build: selection and build orchestration]
     Worker --> Build
     Worker --> Labels[label_build: material exports]
@@ -38,17 +39,20 @@ flowchart TD
 | Export and rendering | `exports.py`, `tessellation.py`, `mesh_cleanup.py`, `render.py`, `native_renderer.py` | Check STEP round trips, produce watertight print meshes and review images. The native rasterizer has a Python fallback. |
 | Shared storage adapter | `_build.py`, `project.py` | Load the sibling `cad_build` package and identify the project root without importing research or CAD dependencies. |
 | Web transport | `web.py` | Loopback HTTP, same-origin JSON submission, bounded requests, local static files and response streaming. |
-| Job lifecycle | `web_jobs.py`, `web_worker.py` | Persist jobs, limit and deduplicate the queue, run one isolated CAD subprocess, retain partial success, check cache provenance and produce fit receipts. |
+| Job lifecycle | `job_store.py`, `web_jobs.py`, `web_worker.py`, `build_events.py` | Transactional SQLite job/task claims, bounded process scheduling, cancellation and recovery, structured timing/error events, retained partial results and revision-pinned fit receipts. |
 | Build access | `web_builds.py` | Describe saved builds, resolve matching assembly assets, check download hashes and compose printable ZIPs. |
-| Browser | `static/app.js`, `static/labels.js`, `static/client.js`, `static/stl-viewer.js` | Page-specific selection/editing state, shared API/download behavior and shared local STL rendering. No browser package or CDN dependency. |
+| Browser | `static/app.js`, `static/labels.js`, `static/gridfinity.js`, `static/queue.js`, `static/client.js`, `static/stl-viewer.js` | Configurators, queue inspection and actions, shared API/download behavior and local STL rendering. No browser package or CDN dependency. |
 | Research | `reference.py`, `validation.py`, `research/`, measurement/check tools | Compare native parts with local reference evidence. Purchased meshes and measured profiles are never constructor inputs or public downloads. |
 
 ## Build and request flow
 
 1. `Configuration` or `LabelConfiguration` validates a browser request. The
-   drawer generator supports S/M/L, depths 3–7 and heights 1F/2F. Broader native
+   drawer generator supports S/M/L, depths 3–7 and heights 1F/2F/4F. Broader native
    research specifications do not expand that web contract.
-2. `Jobs` persists and queues the request. `web_worker` resolves part specs via
+2. `JobStore` atomically deduplicates/submits a job and its dependent tasks in
+   SQLite. `Jobs` claims ready tasks for a bounded global process pool, sharing
+   two slots across independent parts and jobs. A set's assembly task waits for
+   every requested part. `web_worker` resolves part specs via
    `build.select_spec`, reusing a cached build only when its checksums, source
    digest and clean Git provenance agree.
 3. Constructors produce native geometry. Export code checks solids, STEP
@@ -67,6 +71,21 @@ Runtime jobs and fit receipts live in `out/web/`. Successful artifacts in
 comes from `partcad.json` and `cad-builds.json`, independently of saved files.
 The historical `vault.__main__.build_preview` catalog entry remains available;
 new Python callers should import reusable build functions from `vault.build`.
+
+`out/web/jobs.sqlite3` uses WAL, foreign keys and immediate write transactions;
+the indexed job/task status columns drive claims and deduplication. An exclusive
+`scheduler.lock` prevents two services from owning the same output directory.
+Opening the database for inspection does not recover or alter running work.
+Only the scheduler owner recovers interrupted executions; unstarted jobs stay
+queued. The first database initialization imports legacy JSON history and
+receipts without modifying them. Unknown historical durations remain null.
+
+Workers emit structured stage/error events over stdout. The scheduler persists
+them with bounded per-part and per-job logs; workers do not write the database.
+`GET /api/queue` returns paginated summaries; `/api/jobs/<id>` returns task
+details and checked downloads. Cancellation/retry use same-origin JSON POSTs.
+Job timeouts cover all execution stages, including assembly validation, while
+per-part timings distinguish construction, checked exports and image rendering.
 
 ## Testing and maintenance
 

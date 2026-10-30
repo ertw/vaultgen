@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111315">
+  <title>Build queue · Vault generator</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/queue.css">
+  <script type="module" src="/static/queue.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1><a href="/">Vault generator</a></h1>
+    <nav class="queue-navigation" aria-label="Generator"><a href="/">Parts</a><a href="/labels">Labels</a><a href="/gridfinity">Gridfinity</a><a href="/queue" aria-current="page">Queue</a><a href="https://cad.erik.cl/" target="_blank" rel="noreferrer">CAD library ↗</a></nav>
+  </header>
+  <main>
+    <div class="queue-intro"><div><p class="eyebrow">BUILD ACTIVITY</p><h2>Queue</h2><p>Follow each part from construction to checked downloads.</p></div><div class="queue-refresh"><span id="refresh-status" role="status">Connecting…</span><button id="refresh-queue" class="button button-outline" type="button">Refresh</button></div></div>
+    <p id="connection-error" class="error-message" role="alert" hidden></p>
+    <section class="queue-overview" aria-label="Queue overview">
+      <div><span>RUNNING JOBS</span><strong id="count-running">—</strong></div>
+      <div><span>WAITING JOBS</span><strong id="count-queued">—</strong></div>
+      <div><span>FAILED JOBS</span><strong id="count-failed">—</strong></div>
+      <div><span>PARALLEL TASKS</span><strong id="worker-count">—</strong></div>
+    </section>
+    <p id="capacity-note" class="queue-help">Parts can build in parallel. Assembly checks wait for their required parts.</p>
+    <div class="queue-workspace">
+      <section class="queue-list-panel panel" aria-labelledby="jobs-title">
+        <div class="queue-list-heading"><h2 id="jobs-title">Jobs</h2><label for="queue-filter" class="sr-only">Filter jobs</label><select id="queue-filter"><option value="all">All jobs</option><option value="active">Active</option><option value="failed">Failed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div>
+        <p id="queue-empty" class="queue-empty" role="status">Loading jobs…</p>
+        <div id="queue-list" class="queue-list" aria-label="Build jobs"></div>
+        <div class="queue-pagination"><span id="page-range"></span><div><button id="previous-page" class="text-button" type="button" disabled>Previous</button><button id="next-page" class="text-button" type="button" disabled>Next</button></div></div>
+      </section>
+      <section class="queue-detail panel" aria-labelledby="detail-title">
+        <div id="detail-empty" class="detail-empty"><h2 id="detail-title">Select a job</h2><p>Part timings, errors and downloads appear here.</p></div>
+        <div id="job-detail" hidden>
+          <div class="detail-heading"><div><p class="eyebrow" id="detail-kind"></p><h2 id="detail-name"></h2><p id="detail-created" class="queue-muted"></p></div><span id="detail-status" class="queue-status"></span></div>
+          <p id="detail-progress" class="detail-progress"></p>
+          <dl class="job-timings"><div><dt>Wait time</dt><dd id="detail-wait">—</dd></div><div><dt>Run time</dt><dd id="detail-elapsed">—</dd></div><div><dt>Preview rendering</dt><dd id="detail-render">—</dd></div></dl>
+          <p class="timing-note">Run time includes construction, exports and checks. Preview rendering is the time spent drawing review images. Parallel part times may add up to more than the job run time.</p>
+          <p id="detail-error" class="error-message" hidden></p>
+          <div class="queue-actions"><button id="cancel-job" class="button button-outline" type="button" hidden>Cancel job</button><button id="retry-job" class="button button-dark" type="button" hidden>Retry job</button><a id="job-download" class="button button-dark" hidden>Download complete ZIP ↓</a><a id="job-permalink" class="text-button">Link to this job ↗</a></div>
+          <section class="task-section" aria-labelledby="tasks-title"><div class="task-section-heading"><h3 id="tasks-title">Parts &amp; validation</h3><span id="tasks-count" class="queue-muted"></span></div><p id="legacy-note" class="queue-help" hidden>Timings appear as tasks run. Older jobs may not have detailed recordings; their original logs and completed downloads are retained.</p><div id="task-list"></div></section>
+          <section id="job-downloads" class="queue-downloads" aria-labelledby="downloads-title" hidden><h3 id="downloads-title">Completed downloads</h3><p class="queue-help">Successfully checked parts remain available if another part fails.</p><div id="download-list"></div></section>
+          <details id="job-log-details"><summary>Full job log</summary><pre id="job-log" aria-label="Full job log">No output yet.</pre></details>
+          <details id="configuration-details"><summary>Build configuration</summary><pre id="job-configuration" aria-label="Build configuration"></pre></details>
+          <p id="detail-id" class="detail-id"></p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>

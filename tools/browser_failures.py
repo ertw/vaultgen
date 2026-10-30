@@ -55,7 +55,10 @@ with sync_playwright() as p:
         fixture['hold']=False
         fixture['pending'].fulfill(json=fixture['job'],status=202)
     expect(page.locator('#job-status')).to_have_text('Running')
-    expect(page.locator('#build-button')).to_be_disabled()
+    # Editing the family while the first submission was pending creates a
+    # different configuration, which can be queued once the POST completes.
+    expect(page.locator('#build-button')).to_be_enabled()
+    expect(page.locator('#build-button-text')).to_have_text('Add to queue')
     page.locator('.history-card').nth(1).click()
     saved=page.locator('#preview-title').inner_text()
     fixture['status']='completed'

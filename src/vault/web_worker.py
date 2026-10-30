@@ -1,47 +1,56 @@
-"""Run a generator job outside the HTTP process, retaining checked exports."""
+"""Run a generator task outside HTTP, retaining exact checked exports."""
 import argparse
 import json
+import traceback
 from pathlib import Path
 
+from .build_events import emit, event_output, stage
 from .generator import parse_configuration
 from .spec import pattern_parameters, wall_parameters
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--configuration', required=True)
-    parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--receipt', type=Path, required=True)
-    args = parser.parse_args()
-    config = parse_configuration(json.loads(args.configuration))
-    from .build import build, select_spec
-    from ._build import source_hashes, source_digest, verify_files, git_provenance
+def _write_receipt(path, value):
+    """A scheduler must never observe a partially written result."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + '.tmp')
+    temporary.write_text(json.dumps(value, allow_nan=False))
+    temporary.replace(path)
+
+
+def _check_source(digest, *, assembly=False):
+    from ._build import source_hashes, source_digest
     from .project import PROJECT_ROOT
-    digest = source_digest(source_hashes(PROJECT_ROOT))
-    builds = []
-    for part in config.parts:
-        if source_digest(source_hashes(PROJECT_ROOT)) != digest:
-            raise RuntimeError('Generator source changed during this set. Generate again to use one revision.')
-        if part == 'label':
-            from .label_build import build_label
-            spec = config
-            generate = build_label
-        elif part == 'gridfinity_bins':
-            from .bin_build import build_bins
-            spec = config
-            generate = build_bins
-        else:
-            spec = select_spec(part, config.family, config.depth_units, config.height_units,
-                               box_floor=config.box_floor, box_variant=config.box_variant,
-                               box_rear_pattern=config.box_rear_pattern,
-                               facade_floor=config.facade_floor,
-                               module_rear=config.module_rear,
-                               drawer_columns=config.drawer_columns, drawer_rows=config.drawer_rows,
-                               **{**pattern_parameters(config), **wall_parameters(config)})
-            generate = build
-        print(f'Preparing {"multicolor label" if part == "label" else spec.name}', flush=True)
-        previous = args.output / 'latest' / spec.slug
-        reused = False
+    if source_digest(source_hashes(PROJECT_ROOT)) != digest:
+        if assembly:
+            raise RuntimeError('Generator source changed during assembly validation. Generate again.')
+        raise RuntimeError('Generator source changed during this set. Generate again to use one revision.')
+
+
+def _build_part(config, part, output, digest):
+    from .build import build, select_spec
+    from ._build import verify_files, git_provenance
+    from .project import PROJECT_ROOT
+
+    _check_source(digest)
+    if part == 'label':
+        from .label_build import build_label
+        spec, generate = config, build_label
+    elif part == 'gridfinity_bins':
+        from .bin_build import build_bins
+        spec, generate = config, build_bins
+    else:
+        spec = select_spec(part, config.family, config.depth_units, config.height_units,
+                           box_floor=config.box_floor, box_variant=config.box_variant,
+                           box_rear_pattern=config.box_rear_pattern,
+                           facade_floor=config.facade_floor,
+                           module_rear=config.module_rear,
+                           drawer_columns=config.drawer_columns, drawer_rows=config.drawer_rows,
+                           **{**pattern_parameters(config), **wall_parameters(config)})
+        generate = build
+    print(f'Preparing {"multicolor label" if part == "label" else spec.name}', flush=True)
+    previous = output / 'latest' / spec.slug
+    reused = False
+    with stage('cache_check'):
         if previous.is_dir():
             try:
                 manifest = verify_files(previous)
@@ -50,28 +59,39 @@ def main():
                           and not current['dirty'] and manifest.get('git') == current)
             except (ValueError, RuntimeError, KeyError, OSError):
                 pass
-        if reused:
-            destination = previous.resolve()
-            print(f'Reusing checked build {destination.name}', flush=True)
-        else:
-            destination = generate(args.output, spec)
-        builds.append(destination.name)
-        # A failed later part never hides earlier, successfully checked exports.
-        args.receipt.write_text(json.dumps(builds))
-    if source_digest(source_hashes(PROJECT_ROOT)) != digest:
-        raise RuntimeError('Generator source changed during this set. Generate again to use one revision.')
-    if config.part == 'set':
-        from build123d import import_step
-        from .assembly_validation import validate_assembly, validation_signature
-        components = {}
-        from .generator import ASSEMBLY_PARTS
-        assembly_builds = []
+    if reused:
+        destination = previous.resolve()
+        print(f'Reusing checked build {destination.name}', flush=True)
+    else:
+        destination = generate(output, spec)
+    emit('part_completed', part=part, build_id=destination.name, reused=reused)
+    return destination.name
+
+
+def _validate_set(config, builds, output, digest, receipt_id, *, strict_sources=False):
+    from build123d import import_step
+    from .assembly_validation import validate_assembly, validation_signature
+    from ._build import verify_files
+    from .generator import ASSEMBLY_PARTS
+
+    components, assembly_builds = {}, []
+    with stage('assembly_import'):
         for kind, build_id in zip(config.parts, builds):
+            directory = output / 'builds' / build_id
+            if (Path(build_id).name != build_id or
+                    not directory.resolve().is_relative_to((output / 'builds').resolve())):
+                raise ValueError('Invalid component build ID')
+            # The scheduler hands off immutable component IDs. Check every group,
+            # including accessories, belongs to the job's pinned source.
+            if strict_sources:
+                manifest = verify_files(directory)
+                if manifest.get('source_hash') != digest:
+                    raise RuntimeError('Component builds do not share the requested generator source.')
             if kind not in ASSEMBLY_PARTS:
                 continue
             assembly_builds.append(build_id)
-            directory = args.output / 'builds' / build_id
-            manifest = verify_files(directory)
+            if not strict_sources:
+                manifest = verify_files(directory)
             for details in manifest['parts'].values():
                 metadata = details.get('assembly_mesh') or {}
                 relative = metadata.get('step_path', '')
@@ -82,25 +102,70 @@ def main():
                         or relative not in manifest['checksums']):
                     raise RuntimeError('Missing finished assembly geometry; generate all parts again.')
                 components[kind, metadata['component']] = import_step(path)
-        print('Checking assembled component alignments and intersections…', flush=True)
+    print('Checking assembled component alignments and intersections…', flush=True)
+    with stage('assembly_validation'):
         validation = validate_assembly(config, components=components,
                                        progress=lambda message: print(message, flush=True))
-        if source_digest(source_hashes(PROJECT_ROOT)) != digest:
-            raise RuntimeError('Generator source changed during assembly validation. Generate again.')
+        _check_source(digest, assembly=True)
         record = {'validation_signature': validation_signature(config),
                   'configuration': config.as_dict(), 'build_ids': assembly_builds,
                   'accessory_build_ids': [b for b in builds if b not in assembly_builds],
                   'validation': validation}
-        destination = args.output / 'web' / 'assemblies'
-        destination.mkdir(parents=True, exist_ok=True)
-        temporary = destination / (args.receipt.stem + '.tmp')
-        temporary.write_text(json.dumps(record, indent=2))
-        temporary.replace(destination / (args.receipt.stem + '.json'))
+        _write_receipt(output / 'web' / 'assemblies' / (receipt_id + '.json'), record)
         if not validation['passed']:
             failures = {key: [item for item in validation.get(key, []) if not item.get('passed')]
                         for key in ('solids', 'pairs', 'mating')}
             print(json.dumps({'assembly_fit_failures': failures}, indent=2), flush=True)
             raise RuntimeError('Assembly fit checks failed. Individual exports remain available; inspect the assembly warnings and validation report.')
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--configuration', required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--receipt', type=Path, required=True)
+    parser.add_argument('--task', help='One part group, or assembly after all groups have completed')
+    parser.add_argument('--job-id', help='Parent queue job ID for the assembly receipt')
+    parser.add_argument('--source-digest', help='Source revision pinned when this job started')
+    parser.add_argument('--build-ids', help='JSON mapping part groups to checked build IDs')
+    args = parser.parse_args(argv)
+    config = parse_configuration(json.loads(args.configuration))
+    if args.task is not None and args.task not in (*config.parts, 'assembly'):
+        parser.error('Task is not a part of this configuration')
+    if args.task == 'assembly' and config.part != 'set':
+        parser.error('Assembly validation requires a complete set')
+    if args.job_id is not None and (not args.job_id or Path(args.job_id).name != args.job_id
+                                    or args.job_id in ('.', '..')):
+        parser.error('Invalid job ID')
+    with event_output(args.task is not None):
+        try:
+            from ._build import source_hashes, source_digest
+            from .project import PROJECT_ROOT
+            digest = source_digest(source_hashes(PROJECT_ROOT))
+            if args.source_digest is not None and digest != args.source_digest:
+                raise RuntimeError('Generator source changed since this job started. Generate again to use one revision.')
+            if args.task == 'assembly':
+                supplied = json.loads(args.build_ids or '{}')
+                if (not isinstance(supplied, dict) or set(supplied) != set(config.parts)
+                        or not all(isinstance(value, str) and value for value in supplied.values())):
+                    raise ValueError('Assembly task requires exactly one checked build ID for every part group')
+                builds = [supplied[part] for part in config.parts]
+                _validate_set(config, builds, args.output, digest, args.job_id or args.receipt.stem,
+                              strict_sources=True)
+                _write_receipt(args.receipt, builds)
+            else:
+                builds = []
+                for part in (config.parts if args.task is None else (args.task,)):
+                    builds.append(_build_part(config, part, args.output, digest))
+                    # A failed later part never hides earlier checked exports.
+                    _write_receipt(args.receipt, builds)
+                _check_source(digest)
+                if args.task is None and config.part == 'set':
+                    _validate_set(config, builds, args.output, digest, args.job_id or args.receipt.stem)
+        except Exception as failure:
+            emit('task_failed', error=f'{type(failure).__name__}: {failure}',
+                 traceback=traceback.format_exc())
+            raise
     print('All requested parts passed their export checks.', flush=True)
 
 

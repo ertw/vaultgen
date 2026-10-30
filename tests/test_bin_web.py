@@ -64,7 +64,7 @@ class BinHTTPTests(unittest.TestCase):
         self.assertEqual(json.loads(self.request('POST', '/api/jobs', defaults)[1])['id'], job['id'])
         restored = Jobs(self.root, start_worker=False)
         self.addCleanup(restored.close)
-        self.assertEqual(restored.get(job['id'])['status'], 'failed')
+        self.assertEqual(restored.get(job['id'])['status'], 'queued')
         self.assertEqual(restored.get(job['id'])['configuration'], config.as_dict())
         self.assertEqual(self.request('GET', f'/api/jobs/{job["id"]}')[0], 200)
         self.assertEqual(self.request('GET', f'/api/jobs/{job["id"]}/bundle.zip')[0], 409)

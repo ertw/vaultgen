@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ._build import run_build
 from .project import PROJECT_ROOT
+from .build_events import stage
 
 
 PRINT_NOTE = (
@@ -19,7 +20,9 @@ def _export_key(output, spec):
     from .exports import export_part_set
     from .key import build_key_parts
 
-    return export_part_set(output, spec, build_key_parts(),
+    with stage('construction'):
+        parts = build_key_parts()
+    return export_part_set(output, spec, parts,
                            kind='key', print_note=PRINT_NOTE)
 
 

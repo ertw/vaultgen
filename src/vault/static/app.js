@@ -1,5 +1,5 @@
 import { STLViewer } from './stl-viewer.js';
-import { api, downloadLink, errorMessage, isActive } from './client.js';
+import { api, downloadLink, errorMessage, isActive, matchesActiveJob } from './client.js';
 
 const $ = id => document.getElementById(id);
 const state = {
@@ -261,8 +261,9 @@ function renderSelection() {
     renderEnvelope(dimensions); setMetrics(dimensions);
   }
   renderPatternSettings();
-  $('build-button').disabled = state.submitting || isActive(state.job) || Boolean(patternError());
-  $('build-button-text').textContent = state.submitting ? 'Starting build…' : isActive(state.job) ? 'Build in progress…' : config.part === 'set' ? 'Generate complete set' : `Generate ${names[config.part].toLowerCase()}`;
+  const alreadyQueued = matchesActiveJob(state.job, requestConfiguration());
+  $('build-button').disabled = state.submitting || alreadyQueued || Boolean(patternError());
+  $('build-button-text').textContent = state.submitting ? 'Starting build…' : alreadyQueued ? 'Build in progress…' : isActive(state.job) ? 'Add to queue' : config.part === 'set' ? 'Generate complete set' : `Generate ${names[config.part].toLowerCase()}`;
 }
 
 function patternError() {
@@ -649,8 +650,9 @@ async function refreshHistory() {
 }
 function renderJob(job) {
   state.job = job; $('job-panel').hidden = false;
+  $('job-queue-link').href = `/queue?job=${encodeURIComponent(job.id)}`;
   const active = isActive(job), failed = job.status === 'failed';
-  $('job-title').textContent = { queued: 'Build queued', running: 'Generating parts', completed: 'Build complete', failed: 'Build failed' }[job.status] || 'Build status';
+  $('job-title').textContent = { queued: 'Build queued', running: 'Generating parts', completed: 'Build complete', failed: 'Build failed', cancelled: 'Build cancelled' }[job.status] || 'Build status';
   $('job-description').textContent = `${configurationName(job.configuration)} · ${names[job.configuration.part] || job.configuration.part}${active ? ' · Build continues when this page is closed.' : ''}`;
   $('job-status').textContent = job.status.charAt(0).toUpperCase() + job.status.slice(1);
   $('job-indicator').className = `job-indicator${failed ? ' failed' : active ? '' : ' done'}`;
@@ -688,7 +690,7 @@ async function pollJob(id) {
   }
 }
 $('configuration-form').addEventListener('submit', async event => {
-  event.preventDefault(); if (!state.selection || state.submitting || isActive(state.job) || $('build-button').disabled) return;
+  event.preventDefault(); if (!state.selection || state.submitting || $('build-button').disabled) return;
   state.submitting = true; renderSelection(); connectionError(null);
   try {
     const job = await api('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestConfiguration()) });

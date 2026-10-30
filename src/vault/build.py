@@ -9,6 +9,7 @@ import time
 from .project import PROJECT_ROOT
 from .spec import DEFAULT_SPEC, DRAWER_HEIGHTS, ModuleSpec
 from ._build import run_build, source_hashes, verify_files
+from .build_events import stage
 
 
 def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
@@ -17,20 +18,22 @@ def _build_into(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
     started = time.monotonic()
     output.mkdir(parents=True, exist_ok=True)
     print('Building native shell and mechanical connectors…', flush=True)
-    if part_kind(spec) == 'facade':
-        from .facade import build_facade
-        module = build_facade(spec=spec)
-        finished = module
-    elif part_kind(spec) == 'box':
-        from .box import build_box
-        module = build_box(spec=spec)
-        finished = build_box(spec=spec, include_supports=False)
-    else:
-        module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
-        finished = build_module(spec=spec, include_supports=False)
+    with stage('construction'):
+        if part_kind(spec) == 'facade':
+            from .facade import build_facade
+            module = build_facade(spec=spec)
+            finished = module
+        elif part_kind(spec) == 'box':
+            from .box import build_box
+            module = build_box(spec=spec)
+            finished = build_box(spec=spec, include_supports=False)
+        else:
+            module = build_module(spec=spec, progress=lambda message: print(message, flush=True))
+            finished = build_module(spec=spec, include_supports=False)
     return _export_into(module, output, started, spec, finished=finished)
 
 
+@stage('exports')
 def _export_into(module, output: Path, started: float, spec: ModuleSpec = DEFAULT_SPEC, *, finished=None):
     """Export and check an already constructed native model."""
     from build123d import export_brep, export_step
@@ -233,10 +236,11 @@ def _export_rails(output: Path, spec=None):
     from .exports import export_part_set
     from .geared_rails import SPEC, build_gear_rail
     spec = spec or SPEC
-    parts = {f'{spec.family.lower()}_geared_rail_{variant}':
-             (build_gear_rail(retained=retained) if spec == SPEC else
-              build_gear_rail(retained=retained, spec=spec))
-             for variant, retained in (('plain', False), ('retained', True))}
+    with stage('construction'):
+        parts = {f'{spec.family.lower()}_geared_rail_{variant}':
+                 (build_gear_rail(retained=retained) if spec == SPEC else
+                  build_gear_rail(retained=retained, spec=spec))
+                 for variant, retained in (('plain', False), ('retained', True))}
     return export_part_set(output, spec, parts, kind='rail',
                            print_note='Flat broad face on Z=0; teeth lie in the build plate plane.')
 
@@ -244,12 +248,13 @@ def _export_rails(output: Path, spec=None):
 def _export_runners(output: Path, spec):
     from .exports import export_part_set
     kind = part_kind(spec)
-    if kind == 'runner_guides':
-        from .runner_guides import build_runner_guides
-        parts = build_runner_guides(spec=spec)
-    else:
-        from .runner_slides import build_runner_slides
-        parts = build_runner_slides(spec=spec)
+    with stage('construction'):
+        if kind == 'runner_guides':
+            from .runner_guides import build_runner_guides
+            parts = build_runner_guides(spec=spec)
+        else:
+            from .runner_slides import build_runner_slides
+            parts = build_runner_slides(spec=spec)
     parts = {f'{spec.slug}_{name}': solid for name, solid in parts.items()}
     return export_part_set(output, spec, parts, kind=kind,
                            print_note='Print flat in the supplied orientation. One left/right pair per populated '

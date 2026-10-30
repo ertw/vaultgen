@@ -474,7 +474,11 @@ with sync_playwright() as p:
     expect(page.locator('#job-description')).to_contain_text('Floorless')
     expect(page.locator('#job-description')).to_contain_text('Miura-ori')
     expect(page.locator('#job-status')).to_have_text('Queued')
-    expect(page.locator('#build-button')).to_be_disabled()
+    # Reload keeps the queued job visible and restores the default selection;
+    # a different configuration can now join the durable queue.
+    expect(page.locator('#build-button')).to_be_enabled()
+    expect(page.locator('#build-button-text')).to_have_text('Add to queue')
+    assert '/queue?job=' in page.locator('#job-queue-link').get_attribute('href')
     # A separate fixture submission verifies that 4F survives the API payload
     # and queued-job recovery, without sending any CAD work to a real server.
     submissions.clear()

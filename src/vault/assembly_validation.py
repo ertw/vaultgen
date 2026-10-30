@@ -124,6 +124,7 @@ def intersection_volume(left, right):
 
 def check_pair(left_instance, left, right_instance, right):
     """No pair is exempt from the positive-volume collision check."""
+    started = time.monotonic()
     rule = CONTACT_RULES.get(frozenset((left_instance["kind"], right_instance["kind"])))
     if (left_instance["kind"] != "module" and right_instance["kind"] != "module"
             and left_instance.get("bay", 1) != right_instance.get("bay", 1)):
@@ -133,12 +134,19 @@ def check_pair(left_instance, left, right_instance, right):
               "contact_rule": rule, "bounds_gap_mm": lower_bound}
     if lower_bound > DISTANCE_TOLERANCE_MM:
         result.update(method="separated_bounds", intersection_volume_mm3=0.0,
-                      minimum_gap_lower_bound_mm=lower_bound, passed=True)
+                      minimum_gap_lower_bound_mm=lower_bound, passed=True,
+                      elapsed_seconds=time.monotonic() - started)
         return result
+    intersection_started = time.monotonic()
     volume = intersection_volume(left, right)
+    intersection_seconds = time.monotonic() - intersection_started
+    distance_started = time.monotonic()
     gap = left.distance_to(right)
     result.update(method="native_intersection_and_distance", intersection_volume_mm3=volume,
                   minimum_gap_mm=gap,
+                  intersection_seconds=intersection_seconds,
+                  distance_seconds=time.monotonic() - distance_started,
+                  elapsed_seconds=time.monotonic() - started,
                   passed=volume <= VOLUME_TOLERANCE_MM3 and
                          (rule is not None or gap > DISTANCE_TOLERANCE_MM))
     return result
@@ -228,20 +236,27 @@ def validate_assembly(configuration, components=None, *, progress=None):
                                          instance["transform"]))
               for instance in checked_instances]
     solids = []
+    native_volumes = {}
     for instance, shape in placed:
         original = native[(instance["kind"], instance["component"])]
+        key = (instance["kind"], instance["component"])
+        if key not in native_volumes:
+            native_volumes[key] = original.volume
+        volume = shape.volume
         record = {"instance": instance["id"], "valid": shape.is_valid,
-                  "solid_count": len(shape.solids()), "volume_mm3": shape.volume,
-                  "placement_volume_error_mm3": abs(shape.volume - original.volume)}
+                  "solid_count": len(shape.solids()), "volume_mm3": volume,
+                  "placement_volume_error_mm3": abs(volume - native_volumes[key])}
         record["passed"] = (record["valid"] and record["solid_count"] == 1
                             and record["volume_mm3"] > 0
                             and record["placement_volume_error_mm3"] < VOLUME_TOLERANCE_MM3)
         solids.append(record)
     pairs = []
+    from .build_events import stage
     for (left_instance, left), (right_instance, right) in combinations(placed, 2):
         if progress:
             progress(f"checking {left_instance['id']} / {right_instance['id']}")
-        pairs.append(check_pair(left_instance, left, right_instance, right))
+        with stage(f"Fit: {left_instance['id']} / {right_instance['id']}"):
+            pairs.append(check_pair(left_instance, left, right_instance, right))
     mating = mating_checks(configuration, placed, pairs)
     return {"configuration": configuration.as_dict(), "elapsed_seconds": time.monotonic() - started,
             "scope": "drawer_components",

@@ -156,6 +156,7 @@ def build_accessory(output,spec):
     from ._build import run_build
     from .project import PROJECT_ROOT
     from .exports import export_part_set
+    from .build_events import stage
     if spec.accessory=='key':
         from .key_build import build_key
         return build_key(output)
@@ -171,7 +172,9 @@ def build_accessory(output,spec):
            'facade_cap':'Print closed face down. Repeat for each facade screw counterbore.',
            'key_cap':'Print closed face down with the socket upward. Fit over the key handle.'}
     def generate(state):
-        return export_part_set(state.stage,spec,{spec.slug+'_single':constructors[spec.accessory]()},
+        with stage('construction'):
+            parts = {spec.slug+'_single':constructors[spec.accessory]()}
+        return export_part_set(state.stage,spec,parts,
                                kind=spec.accessory,print_note=notes[spec.accessory])
     digest=hashlib.sha256(json.dumps(config,sort_keys=True).encode()).hexdigest()
     return run_build(PROJECT_ROOT,digest,generate,parameters=config,output=output,aliases=[f'latest/{spec.slug}'])

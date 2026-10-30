@@ -10,6 +10,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from ._build import run_build, write_json
 from .label_config import LabelConfiguration, label_dimensions, label_layout
 from .project import PROJECT_ROOT
+from .build_events import stage
 
 
 PRINT_NOTE = (
@@ -146,63 +147,65 @@ def _export_label(output, config):
     from .tessellation import export_print_mesh
 
     started = time.monotonic()
-    native, geometry_check = build_label_parts(config)
-    reports, components, print_children, native_children, meshes = {}, [], [], [], {}
-    for name, description in native.items():
-        shape = description['shape']
-        printable = to_print(shape,config)
-        print(f'Exporting {name} ({description["color"]}) in common print coordinates…',flush=True)
-        for item,suffix in ((shape,''),(printable,'_print')):
-            path = output / f'{name}{suffix}.step'
-            if not export_step(item,path):
-                raise ValueError(f'{name}: STEP export failed')
-            _,check = _check_step(item,path)
-            if suffix: print_check = check
-            else: native_check = check
-        if not export_brep(shape,output/f'{name}.brep'):
-            raise ValueError(f'{name}: BREP export failed')
-        mesh = export_print_mesh(printable,output/'stl'/f'{name}.stl')
-        meshes[name] = mesh
-        bounds = printable.bounding_box()
-        reports[name] = {'kind':'label','role':description['role'],'color':description['color'],
-                         'cad_valid':True,'solids':len(shape.solids()),'boundary_shells':len(shape.shells()),
-                         'cad_volume_mm3':precise_volume(shape),'step_roundtrip':native_check,
-                         'print_step_roundtrip':print_check,'print_bbox_mm':list(bounds.size),
-                         'print_bounds_mm':[list(bounds.min),list(bounds.max)],'print_note':PRINT_NOTE,
-                         'stl_watertight':bool(mesh.is_watertight),'stl_winding_consistent':bool(mesh.is_winding_consistent)}
-        components.append({'name':name,'step':f'{name}.step','kind':'label','color':description['color']})
-        for children,item in ((native_children,shape),(print_children,printable)):
-            child = deepcopy(item)
-            child.parent = None
-            child.label = name
-            children.append(child)
-    checks = {}
-    for children,suffix in ((native_children,''),(print_children,'_print')):
-        assembly = Compound(label=config.name,children=children)
-        path = output / f'{config.slug}{suffix}.step'
-        if not export_step(assembly,path):
-            raise ValueError('Label assembly STEP export failed')
-        restored,check = _check_step(assembly,path)
-        if {child.label for child in restored.children} != set(native):
-            raise ValueError('Label STEP lost color component names')
-        checks[suffix or 'native'] = check
-    three_mf = f'{config.slug}.3mf'
-    multicolor_check = _write_3mf(output/three_mf,meshes,{name:item['color'] for name,item in native.items()})
-    dimensions = label_dimensions(config)
-    (output/'printing.txt').write_text(f'VAULT {config.family} LABEL — PRINTING\n\n'
-        f'{dimensions["width_mm"]:g} × {dimensions["height_mm"]:g} × {dimensions["thickness_mm"]:g} mm\n\n'+PRINT_NOTE+'\n\n'+
-        '\n'.join(f'{name}: {item["color"]}' for name,item in native.items())+'\n')
-    manifest = {'passed':True,'project':'vault','name':config.name,'units':'mm','status':'Completed CAD build',
-                'cad_valid':True,'solids':sum(item['solids'] for item in reports.values()),
-                'boundary_shells':sum(item['boundary_shells'] for item in reports.values()),
-                'cad_volume_mm3':geometry_check['color_volume_mm3'],'parts':reports,
-                'label_configuration':config.as_dict(),'label_dimensions':dimensions,
-                'label_layout':label_layout(config),'geometry_check':geometry_check,
-                'step_roundtrip':checks['native'],'print_step_roundtrip':checks['_print'],
-                'multicolor_3mf':three_mf,'multicolor_roundtrip':multicolor_check,
-                'print_instructions':'printing.txt','elapsed_seconds':time.monotonic()-started}
-    write_json(output/'build.json',manifest)
-    return manifest, {'assembly':f'{config.slug}.step','components':components}
+    with stage('construction'):
+        native, geometry_check = build_label_parts(config)
+    with stage('exports'):
+        reports, components, print_children, native_children, meshes = {}, [], [], [], {}
+        for name, description in native.items():
+            shape = description['shape']
+            printable = to_print(shape,config)
+            print(f'Exporting {name} ({description["color"]}) in common print coordinates…',flush=True)
+            for item,suffix in ((shape,''),(printable,'_print')):
+                path = output / f'{name}{suffix}.step'
+                if not export_step(item,path):
+                    raise ValueError(f'{name}: STEP export failed')
+                _,check = _check_step(item,path)
+                if suffix: print_check = check
+                else: native_check = check
+            if not export_brep(shape,output/f'{name}.brep'):
+                raise ValueError(f'{name}: BREP export failed')
+            mesh = export_print_mesh(printable,output/'stl'/f'{name}.stl')
+            meshes[name] = mesh
+            bounds = printable.bounding_box()
+            reports[name] = {'kind':'label','role':description['role'],'color':description['color'],
+                             'cad_valid':True,'solids':len(shape.solids()),'boundary_shells':len(shape.shells()),
+                             'cad_volume_mm3':precise_volume(shape),'step_roundtrip':native_check,
+                             'print_step_roundtrip':print_check,'print_bbox_mm':list(bounds.size),
+                             'print_bounds_mm':[list(bounds.min),list(bounds.max)],'print_note':PRINT_NOTE,
+                             'stl_watertight':bool(mesh.is_watertight),'stl_winding_consistent':bool(mesh.is_winding_consistent)}
+            components.append({'name':name,'step':f'{name}.step','kind':'label','color':description['color']})
+            for children,item in ((native_children,shape),(print_children,printable)):
+                child = deepcopy(item)
+                child.parent = None
+                child.label = name
+                children.append(child)
+        checks = {}
+        for children,suffix in ((native_children,''),(print_children,'_print')):
+            assembly = Compound(label=config.name,children=children)
+            path = output / f'{config.slug}{suffix}.step'
+            if not export_step(assembly,path):
+                raise ValueError('Label assembly STEP export failed')
+            restored,check = _check_step(assembly,path)
+            if {child.label for child in restored.children} != set(native):
+                raise ValueError('Label STEP lost color component names')
+            checks[suffix or 'native'] = check
+        three_mf = f'{config.slug}.3mf'
+        multicolor_check = _write_3mf(output/three_mf,meshes,{name:item['color'] for name,item in native.items()})
+        dimensions = label_dimensions(config)
+        (output/'printing.txt').write_text(f'VAULT {config.family} LABEL — PRINTING\n\n'
+            f'{dimensions["width_mm"]:g} × {dimensions["height_mm"]:g} × {dimensions["thickness_mm"]:g} mm\n\n'+PRINT_NOTE+'\n\n'+
+            '\n'.join(f'{name}: {item["color"]}' for name,item in native.items())+'\n')
+        manifest = {'passed':True,'project':'vault','name':config.name,'units':'mm','status':'Completed CAD build',
+                    'cad_valid':True,'solids':sum(item['solids'] for item in reports.values()),
+                    'boundary_shells':sum(item['boundary_shells'] for item in reports.values()),
+                    'cad_volume_mm3':geometry_check['color_volume_mm3'],'parts':reports,
+                    'label_configuration':config.as_dict(),'label_dimensions':dimensions,
+                    'label_layout':label_layout(config),'geometry_check':geometry_check,
+                    'step_roundtrip':checks['native'],'print_step_roundtrip':checks['_print'],
+                    'multicolor_3mf':three_mf,'multicolor_roundtrip':multicolor_check,
+                    'print_instructions':'printing.txt','elapsed_seconds':time.monotonic()-started}
+        write_json(output/'build.json',manifest)
+        return manifest, {'assembly':f'{config.slug}.step','components':components}
 
 
 def build_label(output: Path, config=None):

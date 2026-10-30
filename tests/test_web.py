@@ -56,27 +56,21 @@ class GeneratorTests(unittest.TestCase):
             with self.assertRaises(OverflowError):
                 jobs.submit(Configuration(depth_units=7))
             restored = Jobs(directory, start_worker=False)
-            self.assertEqual(restored.get(first['id'])['status'], 'failed')
-            self.assertIn('restarted', restored.get(first['id'])['error'])
+            self.assertEqual(restored.get(first['id'])['status'], 'queued')
+            self.assertIsNone(restored.get(first['id'])['error'])
 
     def test_failed_set_publishes_partial_receipt_with_terminal_state(self):
         with tempfile.TemporaryDirectory() as directory:
             jobs = Jobs(directory, start_worker=False)
             job = jobs.submit(Configuration())
-            (jobs.state / (job['id'] + '.receipt')).write_text(json.dumps(['checked-earlier-part']))
-            jobs.pending.put(None)
-            snapshots = []
-            save = jobs._save
-            def capture(item):
-                snapshots.append(json.loads(json.dumps(item)))
-                save(item)
-            with patch.object(jobs, '_save', side_effect=capture), patch('vault.web_jobs.subprocess.Popen') as process:
-                process.return_value.stdout = iter(['First part complete\n', 'Second part failed\n'])
-                process.return_value.wait.return_value = 1
-                jobs._work()
-            terminal = [item for item in snapshots if item['status'] == 'failed']
-            self.assertEqual(len(terminal), 1)
-            self.assertEqual(terminal[0]['build_ids'], ['checked-earlier-part'])
+            first = jobs.store.claim('fixture-source')
+            jobs.store.finish(first['id'], build_ids=['checked-earlier-part'])
+            second = jobs.store.claim('fixture-source')
+            jobs.store.finish(second['id'], error='Second part failed')
+            terminal = jobs.store.get(job['id'])
+            self.assertEqual(terminal['status'], 'failed')
+            self.assertEqual(terminal['build_ids'], ['checked-earlier-part'])
+            self.assertEqual(terminal['tasks'][1]['error'], 'Second part failed')
 
 
 class BuildFilesTests(unittest.TestCase):
@@ -363,7 +357,10 @@ class HTTPTests(unittest.TestCase):
             (directory / 'resolved-parameters.json').write_text(json.dumps({
                 'part': part_names.get(kind, kind)}))
         job = self.jobs.submit(configuration)
-        self.jobs.items[job['id']].update(status='completed', build_ids=build_ids)
+        with self.jobs.store.transaction() as db:
+            stored = self.jobs.store._job(db, job['id'])
+            stored.update(status='completed', build_ids=build_ids)
+            self.jobs.store._write_job(db, stored)
         status, data = self.request('GET', f'/api/jobs/{job["id"]}/bundle.zip')
         self.assertEqual(status, 200)
         with zipfile.ZipFile(io.BytesIO(data)) as bundle:

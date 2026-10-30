@@ -6,6 +6,7 @@ from pathlib import Path
 from ._build import run_build, write_json
 from .bin_config import BinConfiguration, bin_layout
 from .project import PROJECT_ROOT
+from .build_events import stage
 
 
 def print_note(config):
@@ -39,7 +40,8 @@ def _export_bins(output, config):
     from .bin import build_bins as construct_bins
     from .exports import export_part_set
 
-    parts = construct_bins(config)
+    with stage('construction'):
+        parts = construct_bins(config)
     note = print_note(config)
     manifest, viewer = export_part_set(
         output, config, parts, kind='gridfinity_bins', print_note=note)

@@ -1,4 +1,5 @@
 """Verify native STEP solids using the cyclone export round-trip checks."""
+from .build_events import stage
 
 
 def precise_volume(shape):
@@ -58,6 +59,7 @@ def translation_matrix(offset):
     return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1]
 
 
+@stage('exports')
 def export_part_set(output, spec, parts, *, kind, print_note):
     """Export named printable solids with shared per-part and assembly checks."""
     from copy import deepcopy

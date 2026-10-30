@@ -2,6 +2,7 @@
 from pathlib import Path
 import numpy as np
 from PIL import Image
+from .build_events import stage
 
 
 def render_mesh(mesh, path: Path, eye=(1, 1, 1.15), width=1400, height=1000, *, backend='auto'):
@@ -71,6 +72,7 @@ def _rasterize_python(xy, z_coordinates, faces, visible, colors, pixels, depth):
         pixels[y0:y1+1, x0:x1+1][inside] = colors[i]
 
 
+@stage('render')
 def render_review(mesh, directory: Path):
     for name, eye in {
         'isometric': (1, 1, 1.15),

@@ -46,7 +46,11 @@ class StepExportTests(unittest.TestCase):
             with self.subTest(spec=spec), tempfile.TemporaryDirectory() as temporary:
                 output = Path(temporary)
                 native = Pos(2, 3, 25) * Box(10, 20, 30)
-                with patch('vault.render.render_review'):
+                # This off-origin box isolates coordinate registration. It is
+                # not a facade with the padlock inlay lands; real facade material
+                # exports are checked separately by test_facade_markings.
+                with patch('vault.render.render_review'), \
+                        patch('vault.facade_build.export_facade_materials', return_value={}):
                     report = _export_into(native, output, time.monotonic(), spec, finished=native)
                 metadata = report['assembly_mesh']
                 preview = trimesh.load_mesh(output / metadata['path'])

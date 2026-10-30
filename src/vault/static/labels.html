@@ -12,7 +12,7 @@
 <body>
   <header class="site-header">
     <h1><a href="/">Vault generator</a></h1>
-    <nav class="label-navigation" aria-label="Generator"><a href="/">Parts</a><a href="/labels" aria-current="page">Labels</a><a href="/gridfinity">Gridfinity</a><a href="https://cad.erik.cl/" target="_blank" rel="noreferrer">CAD library ↗</a></nav>
+    <nav class="label-navigation" aria-label="Generator"><a href="/">Parts</a><a href="/labels" aria-current="page">Labels</a><a href="/gridfinity">Gridfinity</a><a href="/queue">Queue</a><a href="https://cad.erik.cl/" target="_blank" rel="noreferrer">CAD library ↗</a></nav>
   </header>
   <main>
     <div class="label-intro"><div><p class="eyebrow">MAKE IT YOURS</p><h2>A place for everything.<br>A label for every drawer.</h2></div><p>Flush lettering. Your colors.<br>Designed to print face down.</p></div>
@@ -48,7 +48,7 @@
         <div id="label-downloads" class="artifact-panel" hidden><div class="artifact-top"><div><span class="eyebrow">GENERATED LABEL</span><p id="artifact-name"></p></div><span id="artifact-colors" class="badge"></span></div><p id="artifact-freshness" class="dimension-hint" hidden></p><p class="print-note">Open the 3MF as one object with multiple parts. Assign a filament to each color and keep the supplied face-down orientation.</p><div class="download-row"><a id="download-3mf" class="button button-dark">Download 3MF ↓</a><a id="download-zip" class="button button-outline">STL + STEP ZIP ↓</a></div><details><summary>Individual color parts</summary><div id="color-downloads"></div></details></div>
       </section>
     </div>
-    <section id="label-job-panel" class="job-panel panel" aria-labelledby="job-title" hidden><div class="job-heading"><span id="job-indicator" class="job-indicator"></span><div><h2 id="job-title">Generating label</h2><p id="job-description"></p></div><span id="job-status" class="badge">Running</span></div><p id="job-error" class="error-message" role="alert" hidden></p><button id="view-job-result" class="text-button" type="button" hidden>View generated label →</button><details id="job-log-details"><summary>Build log</summary><pre id="job-log" aria-label="Build output"></pre></details></section>
+    <section id="label-job-panel" class="job-panel panel" aria-labelledby="job-title" hidden><div class="job-heading"><span id="job-indicator" class="job-indicator"></span><div><h2 id="job-title">Generating label</h2><p id="job-description"></p></div><span id="job-status" class="badge">Running</span></div><p id="job-error" class="error-message" role="alert" hidden></p><div class="job-actions"><a id="job-queue-link" href="/queue" class="text-button">View in queue →</a><button id="view-job-result" class="text-button" type="button" hidden>View generated label →</button></div><details id="job-log-details"><summary>Build log</summary><pre id="job-log" aria-label="Build output"></pre></details></section>
     <section class="label-guidance"><p><strong>Made for Vault.</strong> <span id="mounting-note">A compact plate for the facade recess. Attach with adhesive; check fit on your first print.</span></p><p>Preview colors describe the design. The printed finish depends on your filament and build plate.</p></section>
     <section class="history-section" aria-labelledby="history-title"><div class="section-heading"><h2 id="history-title">Recent labels</h2><button id="refresh-labels" class="text-button" type="button">Refresh ↺</button></div><div id="label-history" class="history-list"><p class="empty-history">No labels generated yet.</p></div></section>
   </main>

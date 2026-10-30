@@ -6,7 +6,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
 from pathlib import Path
+import signal
 import tempfile
+import threading
 from urllib.parse import unquote, urlsplit, parse_qs
 
 from .generator import Configuration, catalog, parse_configuration
@@ -90,6 +92,17 @@ def handler(jobs):
                     return self.build_bundle([build], build['configuration'], f'vault-{build["id"]}.zip')
                 if path == '/api/jobs':
                     return self.send(200, {'jobs': jobs.history()})
+                if path == '/api/queue':
+                    query = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
+                    try:
+                        if set(query) - {'status', 'limit', 'offset'} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError('Unknown or duplicate queue parameters')
+                        return self.send(200, jobs.summaries(
+                            status=query.get('status', ['all'])[0],
+                            limit=int(query.get('limit', ['30'])[0]),
+                            offset=int(query.get('offset', ['0'])[0])))
+                    except (ValueError, TypeError) as error:
+                        return self.send(400, {'error': str(error)})
                 if path.startswith('/api/jobs/'):
                     pieces = path.strip('/').split('/')
                     if len(pieces) == 3:
@@ -105,9 +118,10 @@ def handler(jobs):
                                      Path(relative).name if not relative.endswith('.png') else None)
                 relative = ('index.html' if path == '/' else 'labels.html'
                             if path in ('/labels', '/labels/') else 'gridfinity.html'
-                            if path in ('/gridfinity', '/gridfinity/') else path.removeprefix('/static/'))
+                            if path in ('/gridfinity', '/gridfinity/') else 'queue.html'
+                            if path in ('/queue', '/queue/') else path.removeprefix('/static/'))
                 file = STATIC / relative
-                if (path not in ('/', '/labels', '/labels/', '/gridfinity', '/gridfinity/') and not path.startswith('/static/')) or not file.resolve().is_relative_to(STATIC.resolve()):
+                if (path not in ('/', '/labels', '/labels/', '/gridfinity', '/gridfinity/', '/queue', '/queue/') and not path.startswith('/static/')) or not file.resolve().is_relative_to(STATIC.resolve()):
                     raise FileNotFoundError('Unknown page')
                 return self.send(200, file.read_bytes(), mimetypes.guess_type(file.name)[0] or 'application/octet-stream')
             except (OSError, KeyError, IndexError):
@@ -141,7 +155,11 @@ def handler(jobs):
             if (origin.scheme not in ('http', 'https') or origin.netloc != self.headers.get('Host')
                     or self.headers.get('Sec-Fetch-Site', 'same-origin') not in ('same-origin', 'none')):
                 return self.send(403, {'error': 'Same-origin request required'})
-            if self.path != '/api/jobs':
+            path = urlsplit(self.path).path
+            pieces = path.strip('/').split('/')
+            action = (pieces[3] if len(pieces) == 4 and pieces[:2] == ['api', 'jobs']
+                      and pieces[3] in ('cancel', 'retry') else None)
+            if path != '/api/jobs' and action is None:
                 return self.send(404, {'error': 'Unknown endpoint'})
             if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
                 return self.send(415, {'error': 'Use application/json'})
@@ -150,8 +168,18 @@ def handler(jobs):
                 if not 0 < length <= 8192:
                     return self.send(413, {'error': 'Request must contain at most 8192 bytes'})
                 value = json.loads(self.rfile.read(length))
+                if action:
+                    if value != {}:
+                        raise ValueError('Queue actions require an empty JSON object')
+                    try:
+                        job = jobs.cancel(pieces[2]) if action == 'cancel' else jobs.retry(pieces[2])
+                    except ValueError as error:
+                        return self.send(409, {'error': str(error)})
+                    return self.send(200 if action == 'cancel' else 202, job)
                 config = parse_configuration(value, new_request=True)
                 return self.send(202, jobs.submit(config))
+            except FileNotFoundError:
+                self.send(404, {'error': 'Job not found'})
             except (ValueError, TypeError) as error:
                 self.send(400, {'error': str(error)})
             except OverflowError as error:
@@ -165,9 +193,20 @@ def main():
     parser.add_argument('--host', default='127.0.0.1', choices=['127.0.0.1'])
     parser.add_argument('--port', type=int, default=3941)
     parser.add_argument('--output', type=Path, default=PROJECT_ROOT / 'out')
+    parser.add_argument('--workers', type=int, choices=range(1, 5), default=2,
+                        help='Maximum concurrent CAD processes (default: 2)')
+    parser.add_argument('--queue-capacity', type=int, default=4,
+                        help='Maximum queued/running jobs (default: 4)')
     args = parser.parse_args()
-    jobs = Jobs(args.output)
+    if args.queue_capacity < 1:
+        parser.error('--queue-capacity must be positive')
+    jobs = Jobs(args.output, workers=args.workers, capacity=args.queue_capacity)
     server = ThreadingHTTPServer((args.host, args.port), handler(jobs))
+    # shutdown() must run outside serve_forever's thread. Give the scheduler a
+    # chance to terminate children and persist interrupted work on systemd stop.
+    def stop(_signum, _frame):
+        threading.Thread(target=server.shutdown, daemon=True).start()
+    signal.signal(signal.SIGTERM, stop)
     print(f'Vault generator: http://{args.host}:{args.port}', flush=True)
     try:
         server.serve_forever()

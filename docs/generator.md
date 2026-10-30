@@ -281,12 +281,45 @@ when either checkout was dirty, or when provenance is unknown. This is a
 conservative revision check, not a claim that a particular edit affects a part.
 Generate rebuilds rather than reusing caches while the repository is dirty.
 
-Generation runs in a separate Python process. One job runs at a time, up to four
-jobs can be running/queued, duplicate active requests reuse the same job, and
-completed parts are reused only when source and clean Git revision match. Jobs survive browser reloads;
-a service restart marks interrupted jobs as failed. Generate again to reuse any
-parts already completed. The build log is bounded and jobs time out after one
-hour. Failed generation preserves all earlier successful builds and downloads.
+### Build queue and timings
+
+The **Queue** page at `/queue` lists running, waiting and previous jobs from all
+three editors. Select a job to inspect its parts, current stages, errors and
+logs, start/finish times, waiting time, run time and render time. Completed parts
+keep their checked downloads even if a later task fails. Cancel stops remaining
+work; retry creates a new job, or returns an identical active job, and keeps the
+original record. Changing a design
+while another job runs enables **Add to queue**. An identical active request
+returns its existing job.
+
+Jobs and part tasks are stored transactionally in `out/web/jobs.sqlite3`.
+The scheduler runs at most **two isolated CAD processes** by default, shared
+across all jobs. Independent parts of a complete set can run concurrently;
+assembly validation starts only after all requested parts succeed and occupies
+one of the same worker slots. Tasks are claimed in job submission order, then
+part order. Up to four jobs can be queued/running. Both limits can be configured
+with the server's `--workers` and `--queue-capacity` options.
+
+Waiting jobs survive a service restart. A job interrupted during execution is
+marked failed, with its completed parts retained; **Retry** resubmits it.
+Closing or refreshing the browser does not interrupt work. The execution limit
+is one hour from the job's first task through its final validation, excluding
+its initial queue wait. Cancellation or failure stops the job's remaining work,
+including running processes, without changing successful published artifacts.
+
+Run time includes construction, export validation and rendering. **Render**
+measures the review-image renderer specifically, not the entire CAD build.
+Stage timings are inclusive: rendering is also within the export stage, so
+stage durations should not be added together. Parallel task durations can sum
+to more than the job's elapsed wall time. An em dash means no measurement is
+available; historical JSON jobs are imported once without inventing timings.
+Original JSON files, receipts and immutable builds remain untouched.
+
+Each job pins its source digest when work starts. Every part and the final
+assembly must use that digest. Completed parts are reused only when checksums,
+source digest and clean Git revision match; uncommitted changes still force a
+rebuild. Assembly checks retain native intersection and clearance tests, with
+per-pair timing records. CAD validation does not establish physical printed fit.
 
 STL files use the intended print orientation. STEP is available both in original
 model coordinates and per-part print coordinates. Every downloadable artifact

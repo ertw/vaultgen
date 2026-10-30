@@ -1,5 +1,5 @@
 import { STLViewer } from './stl-viewer.js';
-import { api, downloadLink as link, errorMessage, isActive as active } from './client.js';
+import { api, downloadLink as link, errorMessage, isActive as active, matchesActiveJob } from './client.js';
 
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -128,8 +128,9 @@ function render() {
   $('background-hex').textContent = state.draft.background.toUpperCase();
   for (const button of $('background-presets').children) button.setAttribute('aria-pressed', String(button.dataset.color === state.draft.background.toLowerCase()));
   $('material-summary').textContent = `${colors(state.draft).length} colors · face down`;
-  $('generate-label').disabled = Boolean(result.errors.length || state.submitting || active(state.job));
-  $('generate-label-text').textContent = state.submitting ? 'Submitting…' : active(state.job) ? 'Build in progress…' : 'Generate label';
+  const alreadyQueued = matchesActiveJob(state.job, state.draft);
+  $('generate-label').disabled = Boolean(result.errors.length || state.submitting || alreadyQueued);
+  $('generate-label-text').textContent = state.submitting ? 'Submitting…' : alreadyQueued ? 'Build in progress…' : active(state.job) ? 'Add to queue' : 'Generate label';
   drawFace(); drawSection();
 }
 function edited() {
@@ -196,8 +197,9 @@ function viewBuild(build, bundleUrl) {
 }
 
 function renderJob(job) {
+  $('job-queue-link').href = `/queue?job=${encodeURIComponent(job.id)}`;
   state.job = job; $('label-job-panel').hidden = false;
-  $('job-title').textContent = { queued: 'Label queued', running: 'Generating label', completed: 'Your label is ready', failed: 'Label generation failed' }[job.status] || 'Label build';
+  $('job-title').textContent = { queued: 'Label queued', running: 'Generating label', completed: 'Your label is ready', failed: 'Label generation failed', cancelled: 'Label cancelled' }[job.status] || 'Label build';
   $('job-description').textContent = `${familyDescription(job.configuration)} · ${job.configuration.lines.map(line => line.text).join(' / ')}${active(job) ? ' · Building continues if you close this page.' : ''}`;
   $('job-status').textContent = job.status.charAt(0).toUpperCase() + job.status.slice(1);
   $('job-indicator').className = `job-indicator${active(job) ? '' : job.status === 'failed' ? ' failed' : ' done'}`;
@@ -243,7 +245,7 @@ async function refreshHistory() {
 }
 
 $('label-form').addEventListener('submit', async event => {
-  event.preventDefault(); if (!state.draft || state.errors.length || state.submitting || active(state.job)) return;
+  event.preventDefault(); if (!state.draft || state.errors.length || state.submitting || matchesActiveJob(state.job, state.draft)) return;
   state.submitting = true; render(); connectionError(null);
   const submitted = JSON.stringify(state.draft); state.submittedVersion = state.draftVersion;
   try { const job = await api('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: submitted }); storage('vault-label-job', job.id); renderJob(job); if (active(job)) pollJob(job.id); }

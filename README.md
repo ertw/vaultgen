@@ -31,6 +31,9 @@ Generated results include actual CAD material volume and clear compartment heigh
 
 Run locally with `python -m vault.web` (loopback port 3941). See
 [deployment](deploy/README.md) and [generator behavior](docs/generator.md).
+The **Queue** page shows each job's parts, errors, logs and build/render timings,
+with cancellation and retry. SQLite preserves waiting work across restarts;
+two CAD processes can build independent parts concurrently.
 The [architecture guide](docs/architecture.md) maps the components, build flow,
 storage boundaries and test coverage.
 

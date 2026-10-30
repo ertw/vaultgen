@@ -136,8 +136,9 @@ function render() {
   $('guidance-detail').textContent = drawer ? 'Use inside a plain Vault drawer. The balanced design is a starting point; choose one perimeter to compare material use and stiffness.' : 'Full drawer fills all whole grid cells.';
   $('validation-message').textContent = selected.size ? 'Ready to generate.' : 'Paint at least one cell to create a container.';
   $('validation-message').classList.toggle('invalid', !selected.size);
-  $('generate-bins').disabled = !selected.size || state.recovering || state.submitting || Boolean(isActive(state.job));
-  $('generate-text').textContent = state.recovering ? 'Checking saved jobs…' : state.submitting ? 'Submitting…' : isActive(state.job) ? 'Build in progress…' : 'Generate containers';
+  const alreadyQueued = isActive(state.job) && sameDesign(state.job.configuration, state.draft);
+  $('generate-bins').disabled = !selected.size || state.recovering || state.submitting || Boolean(alreadyQueued);
+  $('generate-text').textContent = state.recovering ? 'Checking saved jobs…' : state.submitting ? 'Submitting…' : alreadyQueued ? 'Build in progress…' : isActive(state.job) ? 'Add to queue' : 'Generate containers';
   $('undo-layout').disabled = !state.undo.length;
   $('draft-note').hidden = !state.selected || sameDesign(state.selected.configuration, state.draft);
 }
@@ -228,8 +229,9 @@ function showBuild(build, bundleUrl) {
 }
 function viewBuild(build, bundleUrl) { showBuild(build, bundleUrl); setView('model'); announce('Showing a saved container build. The layout draft is unchanged.'); }
 function renderJob(job) {
+  $('job-queue-link').href = `/queue?job=${encodeURIComponent(job.id)}`;
   state.job = job; $('bin-job-panel').hidden = false;
-  $('job-title').textContent = { queued: 'Containers queued', running: 'Generating containers', completed: 'Your containers are ready', failed: 'Container generation failed' }[job.status] || 'Container build';
+  $('job-title').textContent = { queued: 'Containers queued', running: 'Generating containers', completed: 'Your containers are ready', failed: 'Container generation failed', cancelled: 'Containers cancelled' }[job.status] || 'Container build';
   $('job-description').textContent = `${describe(job.configuration)}${isActive(job) ? ' · Building continues if you close this page.' : ''}`;
   $('job-status').textContent = job.status; $('job-indicator').className = `job-indicator${isActive(job) ? '' : job.status === 'failed' ? ' failed' : ' done'}`;
   $('job-error').hidden = !job.error; $('job-error').textContent = job.error || ''; $('job-log').textContent = job.logs || 'Waiting for the build worker…';
@@ -257,7 +259,7 @@ async function refreshHistory() {
   }
 }
 $('bin-form').addEventListener('submit', async event => {
-  event.preventDefault(); if (!state.draft?.cells.length || state.recovering || state.submitting || isActive(state.job)) return;
+  event.preventDefault(); if (!state.draft?.cells.length || state.recovering || state.submitting || (isActive(state.job) && sameDesign(state.job.configuration, state.draft))) return;
   state.submitting = true; state.submittedVersion = state.version; render(); connectionError(null);
   try { const job = await api('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state.draft) }); storage('vault-bin-job', job.id); renderJob(job); if (isActive(job)) pollJob(job.id); }
   catch (error) { connectionError(error); } finally { state.submitting = false; render(); }
