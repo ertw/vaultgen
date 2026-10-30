@@ -28,7 +28,8 @@ def _check_source(digest, *, assembly=False):
 
 def _build_part(config, part, output, digest):
     from .build import build, select_spec
-    from ._build import verify_files, git_provenance
+    from ._build import git_provenance
+    from .build_cache import expected_for_spec, find_reusable
     from .project import PROJECT_ROOT
 
     _check_source(digest)
@@ -48,19 +49,15 @@ def _build_part(config, part, output, digest):
                            **{**pattern_parameters(config), **wall_parameters(config)})
         generate = build
     print(f'Preparing {"multicolor label" if part == "label" else spec.name}', flush=True)
-    previous = output / 'latest' / spec.slug
-    reused = False
     with stage('cache_check'):
-        if previous.is_dir():
-            try:
-                manifest = verify_files(previous)
-                current = git_provenance(PROJECT_ROOT)
-                reused = (manifest['source_hash'] == digest and current is not None
-                          and not current['dirty'] and manifest.get('git') == current)
-            except (ValueError, RuntimeError, KeyError, OSError):
-                pass
+        expected = expected_for_spec(spec)
+        destination, reasons = find_reusable(output, spec, expected, digest,
+                                             git_provenance(PROJECT_ROOT))
+        reused = destination is not None
+        emit('cache_decision', part=part, reused=reused, reasons=reasons,
+             dependency_digest=expected.get('digest'))
+        print('Cache: ' + '; '.join(reasons), flush=True)
     if reused:
-        destination = previous.resolve()
         print(f'Reusing checked build {destination.name}', flush=True)
     else:
         destination = generate(output, spec)
@@ -73,8 +70,10 @@ def _validate_set(config, builds, output, digest, receipt_id, *, strict_sources=
     from .assembly_validation import validate_assembly, validation_signature
     from ._build import verify_files
     from .generator import ASSEMBLY_PARTS
+    from .build_cache import expected_for_spec, verify_dependency_record
+    from .build import select_spec
 
-    components, assembly_builds = {}, []
+    components, assembly_builds, component_dependencies = {}, [], {}
     with stage('assembly_import'):
         for kind, build_id in zip(config.parts, builds):
             directory = output / 'builds' / build_id
@@ -83,15 +82,36 @@ def _validate_set(config, builds, output, digest, receipt_id, *, strict_sources=
                 raise ValueError('Invalid component build ID')
             # The scheduler hands off immutable component IDs. Check every group,
             # including accessories, belongs to the job's pinned source.
-            if strict_sources:
-                manifest = verify_files(directory)
+            manifest = verify_files(directory)
+            if 'dependencies' in manifest:
+                spec = select_spec(kind, config.family, config.depth_units, config.height_units,
+                    box_floor=config.box_floor, box_variant=config.box_variant,
+                    box_rear_pattern=config.box_rear_pattern, facade_floor=config.facade_floor,
+                    module_rear=config.module_rear, drawer_columns=config.drawer_columns,
+                    drawer_rows=config.drawer_rows,
+                    **{**pattern_parameters(config), **wall_parameters(config)})
+                expected = expected_for_spec(spec)
+                # A freshly generated dirty build is valid within this job's
+                # pinned source; cross-source reuse additionally needs clean Git.
+                ok, reasons = verify_dependency_record(directory, manifest, expected,
+                    require_reusable=manifest.get('source_hash') != digest)
+                if not ok:
+                    raise RuntimeError('Component dependencies changed: ' + '; '.join(reasons))
+                if manifest.get('source_hash') != digest:
+                    from ._build import git_provenance
+                    from .project import PROJECT_ROOT
+                    current, built = git_provenance(PROJECT_ROOT), manifest.get('git') or {}
+                    if (not current or not current.get('commit') or current.get('dirty') is not False
+                            or not isinstance(built, dict) or not built.get('commit')
+                            or built.get('dirty') is not False):
+                        raise RuntimeError('Component reuse requires clean Git provenance.')
+                component_dependencies[kind] = expected['digest']
+            elif strict_sources:
                 if manifest.get('source_hash') != digest:
                     raise RuntimeError('Component builds do not share the requested generator source.')
             if kind not in ASSEMBLY_PARTS:
                 continue
             assembly_builds.append(build_id)
-            if not strict_sources:
-                manifest = verify_files(directory)
             for details in manifest['parts'].values():
                 metadata = details.get('assembly_mesh') or {}
                 relative = metadata.get('step_path', '')
@@ -110,6 +130,7 @@ def _validate_set(config, builds, output, digest, receipt_id, *, strict_sources=
         record = {'validation_signature': validation_signature(config),
                   'configuration': config.as_dict(), 'build_ids': assembly_builds,
                   'accessory_build_ids': [b for b in builds if b not in assembly_builds],
+                  **({'component_dependencies': component_dependencies} if component_dependencies else {}),
                   'validation': validation}
         _write_receipt(output / 'web' / 'assemblies' / (receipt_id + '.json'), record)
         if not validation['passed']:

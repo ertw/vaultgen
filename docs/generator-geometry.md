@@ -552,6 +552,11 @@ build groups and fifteen STL files; repeated tier quantities reuse those files.
 native arcs, extrusions, lofts and fillets. `key.py` / `key_build.py` supply the
 single-piece key with an integrated drive pinion. CLI selectors are `key`, `spring`, `runner_stop`,
 `facade_cap`, `key_cap`, and `latch`; these have no family/depth/height dependencies.
+New key exports record their own constructor/export dependency graph, allowing
+checked reuse after unrelated drawer or browser edits in a clean checkout.
+Shared export, tessellation, declared asset or runtime-toolchain changes still
+invalidate affected artifacts. The full original source snapshot is retained;
+assembly fit evidence continues to identify the exact component build IDs.
 `latch.py` uses native symmetric curves for the underside latch.
 `LatchDimensions` records explicit outline and thickness relief (0.10 and
 0.15 mm), giving a default print thickness of 4.35 mm. Setting both to zero

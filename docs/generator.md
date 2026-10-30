@@ -276,10 +276,13 @@ installation and loaded or printed behavior.
 
 Repository status refreshes every 15 seconds. Text, a symbol and green/amber
 color distinguish a clean repository from uncommitted changes or unavailable
-revision information. Cached parts warn when their commit differs from HEAD,
-when either checkout was dirty, or when provenance is unknown. This is a
-conservative revision check, not a claim that a particular edit affects a part.
-Generate rebuilds rather than reusing caches while the repository is dirty.
+revision information. New cached parts are checked against their recorded
+dependency graph, resolved parameters and runtime toolchain. A build from an
+older clean commit can remain fresh when those inputs agree. Changed dependency
+files appear in the freshness reasons. Either dirty checkout or unknown Git
+provenance still requires rebuilding. Legacy builds without dependency metadata
+retain the exact clean-revision policy. Generate rebuilds rather than reusing
+caches while the repository is dirty.
 
 ### Build queue and timings
 
@@ -315,11 +318,43 @@ to more than the job's elapsed wall time. An em dash means no measurement is
 available; historical JSON jobs are imported once without inventing timings.
 Original JSON files, receipts and immutable builds remain untouched.
 
-Each job pins its source digest when work starts. Every part and the final
-assembly must use that digest. Completed parts are reused only when checksums,
-source digest and clean Git revision match; uncommitted changes still force a
-rebuild. Assembly checks retain native intersection and clearance tests, with
-per-pair timing records. CAD validation does not establish physical printed fit.
+Each job pins its complete source digest when work starts; source changes during
+the job still fail it. New builds also save `dependencies.json`, with transitive
+local imports, declared data assets, file hashes, resolved parameters and runtime
+toolchain identity. The worker searches immutable build history for matching
+dependency fingerprints and checks all recorded artifact checksums before reuse.
+It can reuse a part from an older clean commit even when unrelated source files
+changed. Dirty or unknown Git provenance prevents reuse. Legacy builds retain
+the original latest-pointer, complete-source and exact clean-revision checks.
+
+Assembly validation verifies each dependency-aware component against the pinned
+job's expected inputs, then records its exact immutable build ID and dependency
+digest. It can combine compatible parts from different complete source snapshots.
+Native intersection and clearance checks retain per-pair timing records; changed
+assembly definitions or validators require fresh fit evidence. CAD validation
+does not establish physical printed fit.
+
+The graph follows imports inside functions and branches conservatively, so shared
+builder files can invalidate more parts than strictly necessary. Tests and browser
+assets are outside the geometry graph unless an actual dependency includes them.
+The label font JSON and renderer C source are explicit data dependencies. Unknown
+local imports, dynamic code loading and missing declared assets prevent reuse.
+This is a checked input model, not a sandbox or a proof that arbitrary Python has
+no undeclared inputs; it does not provide unconditional 100% confidence.
+
+Inspect the graph, or compare its file states with a saved build, without running
+CAD construction:
+
+```bash
+source .local-env
+python -m vault.dependencies --kind key
+python -m vault.dependencies --kind key \
+  --parameters out/latest/snap_key/resolved-parameters.json \
+  --compare out/latest/snap_key/manifest.json
+```
+
+Cache decisions and their reasons are retained in worker logs. Direct CLI builds
+continue to generate a new checked export rather than selecting cached artifacts.
 
 STL files use the intended print orientation. STEP is available both in original
 model coordinates and per-part print coordinates. Every downloadable artifact

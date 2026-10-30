@@ -201,13 +201,10 @@ def build(output: Path, spec: ModuleSpec = DEFAULT_SPEC):
         return build_runners(output, spec)
     if part_kind(spec) == 'rail':
         return build_rails(output, spec)
-    from dataclasses import asdict, replace
+    from dataclasses import replace
     if isinstance(spec, ModuleSpec):
         spec = replace(spec, drawer_rows=1)
-    configuration = {**asdict(spec), 'part': spec.slug}
-    if part_kind(spec) in {'facade', 'module'}:
-        from .shadow_gap import DEFAULT_GAP
-        configuration['shadow_gap'] = asdict(DEFAULT_GAP)
+    configuration = build_parameters(spec)
     configuration_hash = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
     def generate(state):
         manifest = _build_into(state.stage, spec)
@@ -262,8 +259,7 @@ def _export_runners(output: Path, spec):
 
 
 def build_runners(output: Path, spec):
-    from dataclasses import asdict
-    configuration = {**asdict(spec), 'part': spec.slug}
+    configuration = build_parameters(spec)
     digest = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
     return run_build(PROJECT_ROOT, digest, lambda state: _export_runners(state.stage, spec),
                      parameters=configuration, output=output,
@@ -272,15 +268,44 @@ def build_runners(output: Path, spec):
 
 def build_rails(output: Path, spec=None):
     """Publish a two-part rail set only after each export has passed validation."""
-    from dataclasses import asdict
-    from .geared_rails import SPEC, rail_dimensions
+    from .geared_rails import SPEC
     spec = spec or SPEC
-    configuration = {**asdict(spec), 'part': spec.slug,
-                     'geared_rails': asdict(rail_dimensions(spec.family))}
+    configuration = build_parameters(spec)
     digest = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
     return run_build(PROJECT_ROOT, digest, lambda state: _export_rails(state.stage, spec),
                      parameters=configuration, output=output,
                      aliases=[f'latest/{spec.slug}'])
+
+
+def build_parameters(spec):
+    """Canonical publication inputs, shared by generation and cache lookup."""
+    from dataclasses import asdict, replace
+    if hasattr(spec, 'accessory'):
+        if spec.accessory == 'key':
+            return {'part': 'snap_key', 'construction': 'single_piece'}
+        config = {'part': spec.slug}
+        if spec.accessory == 'spring':
+            from .accessories import SpringDimensions
+            config['spring_dimensions'] = asdict(SpringDimensions())
+        if spec.accessory == 'latch':
+            from .latch import LatchDimensions
+            config['latch_dimensions'] = asdict(LatchDimensions())
+        return config
+    if hasattr(spec, 'as_dict'):
+        key = 'gridfinity_configuration' if spec.as_dict().get('part') == 'gridfinity_bins' else 'label_configuration'
+        return {'part': spec.slug, key: spec.as_dict()}
+    if spec.slug == 'snap_key':
+        return {'part': 'snap_key', 'construction': 'single_piece'}
+    if isinstance(spec, ModuleSpec):
+        spec = replace(spec, drawer_rows=1)
+    config = {**asdict(spec), 'part': spec.slug}
+    if part_kind(spec) in {'facade', 'module'}:
+        from .shadow_gap import DEFAULT_GAP
+        config['shadow_gap'] = asdict(DEFAULT_GAP)
+    if part_kind(spec) == 'rail':
+        from .geared_rails import rail_dimensions
+        config['geared_rails'] = asdict(rail_dimensions(spec.family))
+    return config
 
 
 def build_preview(configuration):

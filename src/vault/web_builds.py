@@ -12,21 +12,54 @@ from .project import PROJECT_ROOT
 from ._build import git_provenance
 
 
-def freshness(manifest, current):
+def freshness(manifest, current, *, dependency_cache=None):
+    """Check declared artifact inputs while retaining clean revision guards.
+
+    Older manifests keep their original commit-only policy. A per-request cache
+    avoids rebuilding the same graph for every historical instance of a part.
+    """
     built = manifest.get("git") or {}
     reasons = []
-    if current is None:
+    dependencies_match, dependency_digest = None, None
+    if 'dependencies' in manifest:
+        from .build_cache import compatible
+        from .dependencies import fingerprint
+        dependencies = manifest['dependencies']
+        try:
+            kind, parameters = dependencies['kind'], dependencies['parameters']
+            key = json.dumps([kind, parameters], sort_keys=True, allow_nan=False)
+            if dependency_cache is not None and key in dependency_cache:
+                expected = dependency_cache[key]
+            else:
+                if dependency_cache is not None:
+                    from .dependencies import toolchain_identity
+                    # A history scan observes one runtime. Distribution and
+                    # compiler inspection need only run once across all sizes.
+                    if None not in dependency_cache:
+                        dependency_cache[None] = toolchain_identity()
+                    expected = fingerprint(kind, parameters, toolchain=dependency_cache[None])
+                    dependency_cache[key] = expected
+                else:
+                    expected = fingerprint(kind, parameters)
+            dependencies_match, dependency_reasons = compatible(manifest, expected)
+            dependency_digest = expected['digest']
+            reasons.extend(dependency_reasons)
+        except (KeyError, TypeError, ValueError, OSError, AttributeError):
+            dependencies_match = False
+            reasons.append('Dependency metadata unavailable or invalid; rebuild this cached part.')
+    if not current or not current.get('commit'):
         reasons.append("Repository revision unavailable; rebuild to verify this cached part.")
     else:
         if current.get("dirty"):
             reasons.append("Repository has uncommitted changes; rebuild to include current code.")
         if not built.get("commit"):
             reasons.append("Cached build revision is unknown; rebuild recommended.")
-        elif built["commit"] != current["commit"]:
+        elif 'dependencies' not in manifest and built["commit"] != current["commit"]:
             reasons.append("Cached build is from a different commit; rebuild for the current revision.")
     if built.get("dirty"):
         reasons.append("Cached build was generated with uncommitted changes.")
-    return {"warning": bool(reasons), "reasons": reasons, "commit": built.get("commit")}
+    return {"warning": bool(reasons), "reasons": reasons, "commit": built.get("commit"),
+            "dependencies_match": dependencies_match, "dependency_digest": dependency_digest}
 
 
 BUILD_ID = re.compile(r'\d{8}T\d{12}Z-[a-f0-9]{12}')
@@ -89,7 +122,10 @@ class BuildFiles:
         defaults, selected = Configuration().as_dict(), configuration.as_dict()
         selected_drawer = {**selected, 'family': configuration.drawer_family,
                            'height_units': configuration.drawer_height_units}
-        matched = {kind: next((build for build in builds if build['kind'] == kind
+        # Prefer an older input-compatible build over newer stale geometry;
+        # retain stale previews with warnings when no fresh candidate exists.
+        preferred = sorted(builds, key=lambda build: build['freshness']['warning'])
+        matched = {kind: next((build for build in preferred if build['kind'] == kind
                     and not build['legacy_partitioned_module'] and
                     all(build['configuration'].get(key, defaults[key]) ==
                         (selected if kind == 'module' else selected_drawer)[key]
@@ -111,7 +147,9 @@ class BuildFiles:
                               'build_id': build['id'], 'freshness': build['freshness']})
         for build in used.values():
             warnings.extend(build['freshness']['reasons'])
-        if len({build.get('source_hash') for build in used.values()}) > 1:
+        if (len({build.get('source_hash') for build in used.values()}) > 1
+                and not all(build['freshness'].get('dependencies_match') is True
+                            and not build['freshness']['warning'] for build in used.values())):
             warnings.append('These cached components were generated from different source revisions.')
         # A checked receipt certifies these exact immutable component builds.
         validation = None
@@ -158,7 +196,7 @@ class BuildFiles:
                 'instances': instances, 'missing': missing, 'warnings': list(dict.fromkeys(warnings)),
                 'complete': not missing, 'repository': repository, 'validation': validation}
 
-    def describe(self, build_id, repository=None):
+    def describe(self, build_id, repository=None, *, dependency_cache=None):
         path, manifest = self.read(build_id)
         parameters = json.loads((path / 'resolved-parameters.json').read_text())
         part = parameters.get('part', '')
@@ -226,7 +264,8 @@ class BuildFiles:
                           'stl_url': url(f'stl/{name}.stl'),
                           'step_url': url(f'{name}_print.step'),
                           'print_step_url': url(f'{name}_print.step')})
-        return {'freshness': freshness(manifest, repository if repository is not None else git_provenance(PROJECT_ROOT)),
+        return {'freshness': freshness(manifest, repository if repository is not None else git_provenance(PROJECT_ROOT),
+                                       dependency_cache=dependency_cache),
                 'source_hash': manifest.get('source_hash'),
                 'legacy_partitioned_module': kind == 'module' and '_2_rows_module_' in part,
                 'id': build_id, 'name': manifest.get('name', part), 'kind': kind,
@@ -242,10 +281,11 @@ class BuildFiles:
 
     def history(self, repository=None):
         result = []
+        dependency_cache = {}
         repository = repository if repository is not None else git_provenance(PROJECT_ROOT)
         for path in sorted(self.root.glob('*'), reverse=True):
             try:
-                item = self.describe(path.name, repository)
+                item = self.describe(path.name, repository, dependency_cache=dependency_cache)
                 config = item['configuration']
                 if (config['part'] in ('label', 'gridfinity_bins', 'key', 'spring', 'runner_stop', 'facade_cap', 'key_cap', 'latch') or ((config.get('family') in ('S', 'M', 'L')
                      or (config['part'] in ('runner_guides', 'runner_slides') and 'family' not in config))

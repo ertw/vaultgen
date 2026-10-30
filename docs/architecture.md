@@ -38,6 +38,7 @@ flowchart TD
 | Build orchestration | `build.py`, `key_build.py`, `label_build.py` | Select part specifications and coordinate construction, export, validation and publication. `__main__.py` handles CLI arguments and commands. |
 | Export and rendering | `exports.py`, `tessellation.py`, `mesh_cleanup.py`, `render.py`, `native_renderer.py` | Check STEP round trips, produce watertight print meshes and review images. The native rasterizer has a Python fallback. |
 | Shared storage adapter | `_build.py`, `project.py` | Load the sibling `cad_build` package and identify the project root without importing research or CAD dependencies. |
+| Dependency cache | `dependencies.py`, `build_cache.py` | Conservative transitive import graphs, explicit asset inputs and runtime fingerprints; history lookup with clean provenance and artifact checksums. |
 | Web transport | `web.py` | Loopback HTTP, same-origin JSON submission, bounded requests, local static files and response streaming. |
 | Job lifecycle | `job_store.py`, `web_jobs.py`, `web_worker.py`, `build_events.py` | Transactional SQLite job/task claims, bounded process scheduling, cancellation and recovery, structured timing/error events, retained partial results and revision-pinned fit receipts. |
 | Build access | `web_builds.py` | Describe saved builds, resolve matching assembly assets, check download hashes and compose printable ZIPs. |
@@ -53,15 +54,21 @@ flowchart TD
    SQLite. `Jobs` claims ready tasks for a bounded global process pool, sharing
    two slots across independent parts and jobs. A set's assembly task waits for
    every requested part. `web_worker` resolves part specs via
-   `build.select_spec`, reusing a cached build only when its checksums, source
-   digest and clean Git provenance agree.
+   `build.select_spec`. Dependency-aware cached builds require matching resolved
+   parameters, transitive source/asset hashes and runtime toolchain identity,
+   clean Git provenance, and checked artifact checksums. An older clean commit
+   can supply unchanged parts. Legacy records retain complete-source and exact
+   clean-revision checks through their latest pointer.
 3. Constructors produce native geometry. Export code checks solids, STEP
    round trips and watertight print meshes before `cad_build` publishes a build
    and updates its latest pointer. A source change during construction prevents
-   publication.
+   publication. The adapter also records a checksummed `dependencies.json` and
+   verifies its inputs again before publication.
 4. A complete-set worker imports the exact finished STEP components, applies
    the recorded assembly transforms and validates their seated pose. Its fit
-   receipt names the exact component build IDs and validator signature.
+   receipt names the exact component build IDs, dependency digests and validator
+   signature. A dependency-aware component can come from another source snapshot
+   only when its inputs still match; the job's complete source pin remains active.
 5. `BuildFiles` serves only allowed, checksummed artifacts. Print ZIPs omit
    source snapshots and preview geometry. Printable parts retain sacrificial
    supports; assembly previews omit them.
@@ -69,6 +76,17 @@ flowchart TD
 Runtime jobs and fit receipts live in `out/web/`. Successful artifacts in
 `out/builds/` are immutable; failures preserve earlier builds. Catalog membership
 comes from `partcad.json` and `cad-builds.json`, independently of saved files.
+
+Dependency discovery follows local Python imports in all branches and function
+bodies. Non-Python inputs such as the shared font outlines and renderer C source
+are declared explicitly. Shared builder modules can therefore overinvalidate;
+the key's separate builder avoids unrelated drawer geometry. Unknown imports,
+dynamic code loading and missing assets disable reuse. Runtime versions,
+platform and compiler identity accompany pinned environment files. This model
+accounts for declared inputs without enforcing hermetic execution, so it cannot
+prove that arbitrary future Python code reads no undeclared inputs. The graph
+CLI and cache reasons expose what changed. Full source snapshots and original
+Git provenance remain attached to every immutable build.
 The historical `vault.__main__.build_preview` catalog entry remains available;
 new Python callers should import reusable build functions from `vault.build`.
 
